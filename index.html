@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Gesangs-App – Lyric-Blätter</title>
+
+<!-- ============================================================
+     KONFIGURATION – hier deine eigenen Werte eintragen
+     ============================================================ -->
+<script>
+  const CONFIG = {
+    // Aus Google Cloud Console → APIs & Dienste → Anmeldedaten → OAuth-Client-ID (Typ "Webanwendung")
+    CLIENT_ID: 'DEINE_CLIENT_ID.apps.googleusercontent.com',
+    // Name des Drive-Ordners, in dem alles abgelegt wird (wird automatisch angelegt, falls nicht vorhanden)
+    FOLDER_NAME: 'Gesangs-App Lyrics',
+    // Minimal nötiger Scope: die App sieht/verwaltet nur Dateien, die sie selbst anlegt
+    SCOPE: 'https://www.googleapis.com/auth/drive.file'
+  };
+</script>
+
+<style>
+  :root{
+    --bg:#faf9f7; --panel:#ffffff; --border:#e2ddd6; --text:#2a2622; --muted:#8a8178;
+    --accent:#6b4f3b; --accent-light:#ede6dd; --danger:#b3452f; --ok:#4a7a58;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--text); display:flex; flex-direction:column; overflow:hidden;
+  }
+  header{
+    display:flex; align-items:center; gap:12px; padding:10px 14px;
+    background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0; z-index:20;
+  }
+  header h1{font-size:16px; margin:0; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  button{
+    font:inherit; border:1px solid var(--border); background:var(--panel); color:var(--text);
+    padding:8px 12px; border-radius:8px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  button:active{background:var(--accent-light);}
+  button.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  button.icon{padding:8px; width:38px; height:38px; display:flex; align-items:center; justify-content:center;}
+  #status{font-size:12px; color:var(--muted); min-width:90px; text-align:right;}
+  #status.saving{color:var(--accent);}
+  #status.error{color:var(--danger);}
+
+  #app{flex:1; display:flex; min-height:0; position:relative;}
+
+  #sidebar{
+    width:260px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; transition:transform .2s ease; z-index:15;
+  }
+  #sidebar-header{padding:10px; border-bottom:1px solid var(--border); display:flex; gap:8px;}
+  #fileInput{display:none;}
+  #fileList{flex:1; overflow-y:auto; padding:6px;}
+  .file-item{
+    display:flex; align-items:center; gap:8px; padding:10px 8px; border-radius:8px; cursor:pointer;
+    font-size:14px;
+  }
+  .file-item:hover, .file-item.active{background:var(--accent-light);}
+  .file-item .name{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-item .del{opacity:.5; border:none; background:none; padding:4px;}
+  .file-item .del:hover{opacity:1; color:var(--danger);}
+  .file-item .type-icon{width:20px; text-align:center; color:var(--muted); font-size:12px; flex-shrink:0;}
+
+  #viewer{flex:1; display:flex; flex-direction:column; min-width:0; position:relative;}
+  #toolbar{
+    display:flex; align-items:center; gap:6px; padding:8px; background:var(--panel);
+    border-bottom:1px solid var(--border); flex-wrap:wrap; flex-shrink:0;
+  }
+  #toolbar .sep{width:1px; height:24px; background:var(--border); margin:0 4px;}
+  .swatch{width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0;}
+  .swatch.active{border-color:var(--text);}
+  #widthRange{width:80px;}
+  #pageNav{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted);}
+
+  #canvasWrap{
+    flex:1; overflow:auto; position:relative; display:flex; justify-content:center;
+    background:#ded7cc; padding:16px;
+  }
+  #canvasStack{position:relative; box-shadow:0 2px 10px rgba(0,0,0,.15); background:#fff; touch-action:none;}
+  #baseCanvas, #inkCanvas{position:absolute; top:0; left:0;}
+  #inkCanvas{touch-action:none;}
+
+  #notesPanel{
+    border-top:1px solid var(--border); background:var(--panel); flex-shrink:0;
+    display:flex; flex-direction:column; max-height:30vh;
+  }
+  #notesPanel textarea{
+    border:none; resize:none; font:inherit; padding:10px 14px; outline:none; background:transparent;
+    min-height:70px;
+  }
+  #notesToggle{
+    display:flex; align-items:center; justify-content:space-between; padding:6px 14px;
+    font-size:12px; color:var(--muted); cursor:pointer; border-bottom:1px solid var(--border);
+  }
+
+  #empty{flex:1; display:flex; align-items:center; justify-content:center; color:var(--muted); text-align:center; padding:20px;}
+  #signedOut{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:20px;}
+  #signedOut p{color:var(--muted); max-width:340px; font-size:14px;}
+
+  #sidebarToggle{display:none;}
+  @media (max-width: 760px){
+    #sidebarToggle{display:flex;}
+    #sidebar{position:absolute; top:0; bottom:0; left:0; transform:translateX(-100%); box-shadow:4px 0 12px rgba(0,0,0,.15);}
+    #sidebar.open{transform:translateX(0);}
+    #app{position:relative;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button id="sidebarToggle" class="icon" title="Liste">☰</button>
+  <h1 id="currentTitle">Gesangs-App – Lyric-Blätter</h1>
+  <span id="status"></span>
+  <button id="authBtn" class="primary">Anmelden</button>
+</header>
+
+<div id="app">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <button id="uploadBtn" style="flex:1;">+ Blatt hinzufügen</button>
+      <input type="file" id="fileInput" accept="application/pdf,image/*" multiple>
+    </div>
+    <div id="fileList"></div>
+  </div>
+
+  <div id="viewer">
+    <div id="signedOut">
+      <p>Melde dich mit Google an, um deine Lyric-Blätter zu sehen und zu bearbeiten. Dateien werden in deinem eigenen Google Drive gespeichert.</p>
+      <button class="primary" id="authBtn2">Mit Google anmelden</button>
+    </div>
+
+    <div id="mainViewer" style="display:none; flex:1; flex-direction:column; min-height:0;">
+      <div id="toolbar">
+        <div class="swatch active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+        <div class="swatch" data-color="#c0392b" style="background:#c0392b"></div>
+        <div class="swatch" data-color="#2471a3" style="background:#2471a3"></div>
+        <div class="swatch" data-color="#27633f" style="background:#27633f"></div>
+        <input type="range" id="widthRange" min="1" max="10" value="3">
+        <div class="sep"></div>
+        <button id="eraserBtn" class="icon" title="Radiergummi">⌫</button>
+        <button id="undoBtn" class="icon" title="Rückgängig">↶</button>
+        <button id="clearBtn" class="icon" title="Seite leeren">🗑</button>
+        <div class="sep"></div>
+        <div id="pageNav">
+          <button id="prevPage" class="icon">‹</button>
+          <span id="pageLabel">1 / 1</span>
+          <button id="nextPage" class="icon">›</button>
+        </div>
+        <div style="flex:1"></div>
+        <button id="saveBtn">Speichern</button>
+      </div>
+
+      <div id="canvasWrap">
+        <div id="canvasStack">
+          <canvas id="baseCanvas"></canvas>
+          <canvas id="inkCanvas"></canvas>
+        </div>
+      </div>
+
+      <div id="notesPanel">
+        <div id="notesToggle">
+          <span>Notizen</span><span id="notesArrow">▾</span>
+        </div>
+        <textarea id="notesArea" placeholder="Notizen zu diesem Blatt (Atmung, Phrasierung, Anmerkungen vom Gesangsunterricht …)"></textarea>
+      </div>
+    </div>
+
+    <div id="empty" style="display:none;">Wähle links ein Blatt aus oder lade ein neues hoch.</div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<script type="module">
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/pdf.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/pdf.worker.min.mjs';
+
+// ---------------------------------------------------------------
+// State
+// ---------------------------------------------------------------
+let accessToken = null;
+let tokenClient = null;
+let folderId = localStorage.getItem('gapp_folderId') || null;
+
+let files = [];              // Drive files in the folder (pdf/image)
+let currentFile = null;      // currently selected base file {id, name, mimeType}
+let currentDoc = null;       // parsed pdf.js document (if PDF)
+let currentPage = 1;
+let totalPages = 1;
+let annotFileId = null;      // Drive file id of the sidecar json (if exists)
+let annotData = { notes: '', pages: {} }; // pages: { "1": [stroke, stroke, ...] }
+
+let drawing = false;
+let currentStroke = null;
+let tool = { color: '#1a1a1a', width: 3, eraser: false };
+let dirty = false;
+let saveTimer = null;
+
+// ---------------------------------------------------------------
+// DOM refs
+// ---------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const authBtn = $('authBtn'), authBtn2 = $('authBtn2');
+const statusEl = $('status');
+const fileListEl = $('fileList');
+const sidebar = $('sidebar');
+const signedOutEl = $('signedOut');
+const mainViewerEl = $('mainViewer');
+const emptyEl = $('empty');
+const currentTitleEl = $('currentTitle');
+const baseCanvas = $('baseCanvas'), inkCanvas = $('inkCanvas');
+const baseCtx = baseCanvas.getContext('2d'), inkCtx = inkCanvas.getContext('2d');
+const notesArea = $('notesArea');
+const pageLabel = $('pageLabel');
+
+function setStatus(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = cls || '';
+}
+
+// ---------------------------------------------------------------
+// Auth (Google Identity Services – token client, client-side only)
+// ---------------------------------------------------------------
+function initAuth() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.CLIENT_ID,
+    scope: CONFIG.SCOPE,
+    callback: async (resp) => {
+      if (resp.error) { setStatus('Anmeldung fehlgeschlagen', 'error'); return; }
+      accessToken = resp.access_token;
+      authBtn.textContent = 'Angemeldet';
+      signedOutEl.style.display = 'none';
+      emptyEl.style.display = 'flex';
+      await ensureFolder();
+      await loadFileList();
+    }
+  });
+}
+
+function signIn() {
+  if (!tokenClient) { alert('CLIENT_ID in der Konfiguration am Dateianfang eintragen.'); return; }
+  tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
+}
+authBtn.addEventListener('click', signIn);
+authBtn2.addEventListener('click', signIn);
+
+// ---------------------------------------------------------------
+// Drive helpers
+// ---------------------------------------------------------------
+const DRIVE_FILES = 'https://www.googleapis.com/drive/v3/files';
+const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+
+function authHeaders(extra) {
+  return Object.assign({ Authorization: 'Bearer ' + accessToken }, extra || {});
+}
+
+async function driveFetch(url, opts = {}) {
+  opts.headers = authHeaders(opts.headers);
+  const res = await fetch(url, opts);
+  if (res.status === 401) { setStatus('Sitzung abgelaufen – bitte neu anmelden', 'error'); accessToken = null; throw new Error('unauthorized'); }
+  if (!res.ok) { const t = await res.text(); throw new Error('Drive-Fehler: ' + res.status + ' ' + t); }
+  return res;
+}
+
+async function ensureFolder() {
+  if (folderId) return folderId;
+  const q = encodeURIComponent(`name='${CONFIG.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&fields=files(id,name)`);
+  const data = await res.json();
+  if (data.files && data.files.length) {
+    folderId = data.files[0].id;
+  } else {
+    const createRes = await driveFetch(DRIVE_FILES, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: CONFIG.FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+    });
+    const created = await createRes.json();
+    folderId = created.id;
+  }
+  localStorage.setItem('gapp_folderId', folderId);
+  return folderId;
+}
+
+async function loadFileList() {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and (mimeType='application/pdf' or mimeType contains 'image/') and not name contains '.annotations.json'`);
+  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&orderBy=name&fields=files(id,name,mimeType,modifiedTime)`);
+  const data = await res.json();
+  files = data.files || [];
+  renderFileList();
+}
+
+function renderFileList() {
+  fileListEl.innerHTML = '';
+  if (!files.length) {
+    const p = document.createElement('div');
+    p.style.cssText = 'padding:16px;color:var(--muted);font-size:13px;';
+    p.textContent = 'Noch keine Blätter. Oben hochladen.';
+    fileListEl.appendChild(p);
+    return;
+  }
+  files.forEach(f => {
+    const item = document.createElement('div');
+    item.className = 'file-item' + (currentFile && currentFile.id === f.id ? ' active' : '');
+    const icon = f.mimeType === 'application/pdf' ? 'PDF' : 'IMG';
+    item.innerHTML = `<span class="type-icon">${icon}</span><span class="name">${f.name}</span><button class="del" title="In Papierkorb">🗑</button>`;
+    item.querySelector('.name').addEventListener('click', () => openFile(f));
+    item.querySelector('.type-icon').addEventListener('click', () => openFile(f));
+    item.querySelector('.del').addEventListener('click', (e) => { e.stopPropagation(); trashFile(f); });
+    fileListEl.appendChild(item);
+  });
+}
+
+async function trashFile(f) {
+  if (!confirm(`"${f.name}" in den Papierkorb verschieben?`)) return;
+  await driveFetch(`${DRIVE_FILES}/${f.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trashed: true })
+  });
+  if (currentFile && currentFile.id === f.id) { currentFile = null; mainViewerEl.style.display = 'none'; emptyEl.style.display = 'flex'; }
+  await loadFileList();
+}
+
+async function uploadFiles(fileListRaw) {
+  for (const file of fileListRaw) {
+    setStatus('Lade hoch …', 'saving');
+    const metadata = { name: file.name, parents: [folderId] };
+    const boundary = 'gappboundary' + Date.now();
+    const metaPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
+    const closeDelim = `\r\n--${boundary}--`;
+    const fileBuf = await file.arrayBuffer();
+    const head = new TextEncoder().encode(`${metaPart}--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`);
+    const tail = new TextEncoder().encode(closeDelim);
+    const body = new Blob([head, fileBuf, tail]);
+    await driveFetch(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id,name,mimeType`, {
+      method: 'POST',
+      headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+      body
+    });
+  }
+  setStatus('Hochgeladen', 'ok');
+  await loadFileList();
+}
+
+async function findAnnotationFile(baseId) {
+  const name = `${baseId}.annotations.json`;
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and name='${name}'`);
+  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&fields=files(id,name)`);
+  const data = await res.json();
+  return data.files && data.files.length ? data.files[0].id : null;
+}
+
+async function loadAnnotations(baseId) {
+  annotFileId = await findAnnotationFile(baseId);
+  if (!annotFileId) { annotData = { notes: '', pages: {} }; return; }
+  const res = await driveFetch(`${DRIVE_FILES}/${annotFileId}?alt=media`);
+  annotData = await res.json();
+  if (!annotData.pages) annotData.pages = {};
+}
+
+async function saveAnnotations() {
+  if (!currentFile) return;
+  setStatus('Speichert …', 'saving');
+  const name = `${currentFile.id}.annotations.json`;
+  const metadata = annotFileId ? {} : { name, parents: [folderId] };
+  const blob = new Blob([JSON.stringify(annotData)], { type: 'application/json' });
+  const boundary = 'gappboundary' + Date.now();
+  const head = new TextEncoder().encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n`);
+  const tail = new TextEncoder().encode(`\r\n--${boundary}--`);
+  const bodyBlob = new Blob([head, await blob.arrayBuffer(), tail]);
+  try {
+    if (annotFileId) {
+      await driveFetch(`${DRIVE_UPLOAD}/${annotFileId}?uploadType=multipart`, {
+        method: 'PATCH', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body: bodyBlob
+      });
+    } else {
+      const res = await driveFetch(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id`, {
+        method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body: bodyBlob
+      });
+      const created = await res.json();
+      annotFileId = created.id;
+    }
+    dirty = false;
+    setStatus('Gespeichert', 'ok');
+  } catch (e) {
+    setStatus('Fehler beim Speichern', 'error');
+    console.error(e);
+  }
+}
+
+function queueSave() {
+  dirty = true;
+  setStatus('Ungespeicherte Änderung', '');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveAnnotations, 2000);
+}
+
+// ---------------------------------------------------------------
+// Viewer
+// ---------------------------------------------------------------
+async function openFile(f) {
+  currentFile = f;
+  currentTitleEl.textContent = f.name;
+  emptyEl.style.display = 'none';
+  mainViewerEl.style.display = 'flex';
+  sidebar.classList.remove('open');
+  renderFileList();
+
+  await loadAnnotations(f.id);
+  notesArea.value = annotData.notes || '';
+
+  const res = await driveFetch(`${DRIVE_FILES}/${f.id}?alt=media`);
+  const blob = await res.blob();
+
+  if (f.mimeType === 'application/pdf') {
+    const buf = await blob.arrayBuffer();
+    currentDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+    totalPages = currentDoc.numPages;
+    currentPage = 1;
+    await renderPage();
+  } else {
+    currentDoc = null;
+    totalPages = 1;
+    currentPage = 1;
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      setupCanvasSize(img.width, img.height);
+      baseCtx.drawImage(img, 0, 0);
+      redrawInk();
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+  updatePageNav();
+}
+
+function setupCanvasSize(w, h) {
+  const maxW = Math.min(document.getElementById('canvasWrap').clientWidth - 32, 900);
+  const scale = w > maxW ? maxW / w : 1;
+  const cw = Math.round(w * scale), ch = Math.round(h * scale);
+  [baseCanvas, inkCanvas].forEach(c => { c.width = cw; c.height = ch; c.style.width = cw + 'px'; c.style.height = ch + 'px'; });
+  document.getElementById('canvasStack').style.width = cw + 'px';
+  document.getElementById('canvasStack').style.height = ch + 'px';
+  return scale;
+}
+
+async function renderPage() {
+  const page = await currentDoc.getPage(currentPage);
+  const wrapW = Math.min(document.getElementById('canvasWrap').clientWidth - 32, 900);
+  const baseViewport = page.getViewport({ scale: 1 });
+  const scale = wrapW / baseViewport.width;
+  const viewport = page.getViewport({ scale });
+  setupCanvasSize(viewport.width, viewport.height);
+  await page.render({ canvasContext: baseCtx, viewport }).promise;
+  redrawInk();
+}
+
+function updatePageNav() {
+  pageLabel.textContent = `${currentPage} / ${totalPages}`;
+  $('prevPage').disabled = currentPage <= 1;
+  $('nextPage').disabled = currentPage >= totalPages;
+}
+
+$('prevPage').addEventListener('click', async () => { if (currentPage > 1) { currentPage--; await renderPage(); updatePageNav(); } });
+$('nextPage').addEventListener('click', async () => { if (currentPage < totalPages) { currentPage++; await renderPage(); updatePageNav(); } });
+
+// ---------------------------------------------------------------
+// Ink / annotation drawing
+// ---------------------------------------------------------------
+function getStrokes() {
+  const key = String(currentPage);
+  if (!annotData.pages[key]) annotData.pages[key] = [];
+  return annotData.pages[key];
+}
+
+function redrawInk() {
+  inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
+  const strokes = getStrokes();
+  for (const s of strokes) drawStroke(s);
+}
+
+function drawStroke(s) {
+  if (!s.points.length) return;
+  inkCtx.save();
+  inkCtx.globalCompositeOperation = s.eraser ? 'destination-out' : 'source-over';
+  inkCtx.strokeStyle = s.color;
+  inkCtx.lineWidth = s.width;
+  inkCtx.lineCap = 'round';
+  inkCtx.lineJoin = 'round';
+  inkCtx.beginPath();
+  inkCtx.moveTo(s.points[0].x, s.points[0].y);
+  for (const p of s.points.slice(1)) inkCtx.lineTo(p.x, p.y);
+  inkCtx.stroke();
+  inkCtx.restore();
+}
+
+function canvasPoint(e) {
+  const rect = inkCanvas.getBoundingClientRect();
+  const scaleX = inkCanvas.width / rect.width;
+  const scaleY = inkCanvas.height / rect.height;
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+}
+
+inkCanvas.addEventListener('pointerdown', (e) => {
+  if (!currentFile) return;
+  inkCanvas.setPointerCapture(e.pointerId);
+  drawing = true;
+  currentStroke = { color: tool.color, width: tool.eraser ? tool.width * 4 : tool.width, eraser: tool.eraser, points: [canvasPoint(e)] };
+});
+inkCanvas.addEventListener('pointermove', (e) => {
+  if (!drawing) return;
+  currentStroke.points.push(canvasPoint(e));
+  drawStroke({ ...currentStroke, points: currentStroke.points.slice(-2) });
+});
+function endStroke() {
+  if (!drawing) return;
+  drawing = false;
+  if (currentStroke && currentStroke.points.length > 1) {
+    getStrokes().push(currentStroke);
+    queueSave();
+  }
+  currentStroke = null;
+}
+inkCanvas.addEventListener('pointerup', endStroke);
+inkCanvas.addEventListener('pointercancel', endStroke);
+inkCanvas.addEventListener('pointerleave', endStroke);
+
+// Toolbar
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    tool.color = sw.dataset.color;
+    tool.eraser = false;
+    $('eraserBtn').style.background = '';
+  });
+});
+$('widthRange').addEventListener('input', (e) => { tool.width = Number(e.target.value); });
+$('eraserBtn').addEventListener('click', () => {
+  tool.eraser = !tool.eraser;
+  $('eraserBtn').style.background = tool.eraser ? 'var(--accent-light)' : '';
+});
+$('undoBtn').addEventListener('click', () => {
+  const strokes = getStrokes();
+  strokes.pop();
+  redrawInk();
+  queueSave();
+});
+$('clearBtn').addEventListener('click', () => {
+  if (!confirm('Alle Notizen/Zeichnungen dieser Seite löschen?')) return;
+  annotData.pages[String(currentPage)] = [];
+  redrawInk();
+  queueSave();
+});
+$('saveBtn').addEventListener('click', saveAnnotations);
+
+notesArea.addEventListener('input', () => { annotData.notes = notesArea.value; queueSave(); });
+
+// ---------------------------------------------------------------
+// Upload / sidebar toggle
+// ---------------------------------------------------------------
+$('uploadBtn').addEventListener('click', () => $('fileInput').click());
+$('fileInput').addEventListener('change', (e) => { if (e.target.files.length) uploadFiles(e.target.files); e.target.value = ''; });
+$('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
+$('notesToggle').addEventListener('click', () => {
+  const ta = $('notesArea');
+  const collapsed = ta.style.display === 'none';
+  ta.style.display = collapsed ? 'block' : 'none';
+  $('notesArrow').textContent = collapsed ? '▾' : '▸';
+});
+
+window.addEventListener('resize', () => { if (currentFile) { currentDoc ? renderPage() : null; } });
+
+// ---------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------
+window.addEventListener('load', () => {
+  const check = setInterval(() => {
+    if (window.google && google.accounts) { clearInterval(check); initAuth(); }
+  }, 100);
+});
+</script>
+</body>
+</html>
