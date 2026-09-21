@@ -11,7 +11,7 @@
 <script>
   const CONFIG = {
     // Aus Google Cloud Console → APIs & Dienste → Anmeldedaten → OAuth-Client-ID (Typ "Webanwendung")
-    CLIENT_ID: '159994249880-flb4nhh2aq51tspov0d7nv787hir84e5.apps.googleusercontent.com',
+    CLIENT_ID: '871728667732-0mevk8giflbkkpcegt5l26v3o2bjlpam.apps.googleusercontent.com',
     // Name des Drive-Ordners, in dem alles abgelegt wird (wird automatisch angelegt, falls nicht vorhanden)
     FOLDER_NAME: 'Gesangs-App Lyrics',
     // Minimal nötiger Scope: die App sieht/verwaltet nur Dateien, die sie selbst anlegt
@@ -47,6 +47,7 @@
   #status.saving{color:var(--accent);}
   #status.error{color:var(--danger);}
   #status.ok{color:var(--ok);}
+  #status.error{cursor:pointer; text-decoration:underline dotted;}
 
   #app{flex:1; display:flex; min-height:0; position:relative;}
 
@@ -140,6 +141,8 @@
     <div id="signedOut">
       <p>Melde dich mit Google an, um deine Lyric-Blätter zu sehen und zu bearbeiten. Dateien werden in deinem eigenen Google Drive gespeichert.</p>
       <button class="primary" id="authBtn2">Mit Google anmelden</button>
+      <p id="authError" style="color:var(--danger); font-size:13px; max-width:340px; display:none;"></p>
+      <p id="diag" style="font-size:11px; word-break:break-all;"></p>
     </div>
 
     <div id="mainViewer" style="display:none; flex:1; flex-direction:column; min-height:0;">
@@ -293,9 +296,37 @@ function setStatus(text, cls) {
   statusEl.className = cls || '';
 }
 
+// Verständliche Fehlertexte – auf dem Handy gibt es keine Konsole, daher: Status antippen zeigt die Details
+let lastErrorDetail = '';
+function explainError(e) {
+  const m = String((e && e.message) || e);
+  if (/accessNotConfigured|SERVICE_DISABLED|has not been used|is disabled/i.test(m))
+    return 'Die Google Drive API ist im Cloud-Projekt dieser Client-ID nicht aktiviert (Cloud Console → APIs & Dienste → Bibliothek → «Google Drive API» → Aktivieren).';
+  if (/access_denied/.test(m))
+    return 'Zugriff verweigert – ist dein Google-Konto im OAuth-Zustimmungsbildschirm als Testnutzer eingetragen?';
+  if (/popup_closed|popup_failed/.test(m))
+    return 'Das Anmelde-Popup wurde geschlossen oder vom Browser blockiert.';
+  if (/unauthorized/.test(m)) return 'Sitzung abgelaufen – bitte anmelden.';
+  if (/insufficientPermissions|insufficient/i.test(m)) return 'Fehlende Berechtigung – bitte neu anmelden und den Zugriff auf Drive erlauben.';
+  return m;
+}
+function fail(prefix, e) {
+  console.error(e);
+  const raw = String((e && e.message) || e);
+  lastErrorDetail = prefix + '\n\n' + explainError(e) + (explainError(e) !== raw ? '\n\n(Technisch: ' + raw.slice(0, 400) + ')' : '');
+  setStatus(prefix, 'error');
+}
+function showAuthError(text) {
+  const el = $('authError');
+  el.textContent = text || '';
+  el.style.display = text ? 'block' : 'none';
+}
+statusEl.addEventListener('click', () => { if (statusEl.className === 'error' && lastErrorDetail) alert(lastErrorDetail); });
+
 // ---------------------------------------------------------------
 // Auth (Google Identity Services – Token-Client, rein clientseitig)
-// Token läuft nach ~1 h ab: wird vor jedem Request geprüft und still erneuert.
+// Das Token gilt ~1 h. Es wird im Browser zwischengespeichert (Neuladen innerhalb der Stunde bleibt angemeldet).
+// Ein Erneuern ohne Klick klappt nur, wenn der Browser das Google-Popup zulässt – sonst genügt ein Tipp auf «Neu anmelden».
 // ---------------------------------------------------------------
 function requestToken() {
   return new Promise((resolve, reject) => {
@@ -306,6 +337,17 @@ function requestToken() {
   });
 }
 
+function saveToken() { lsSet('gapp_token', JSON.stringify({ t: accessToken, exp: tokenExpiry })); }
+function loadStoredToken() {
+  try {
+    const o = JSON.parse(lsGet('gapp_token') || 'null');
+    if (o && o.t && o.exp > Date.now() + 60000) { accessToken = o.t; tokenExpiry = o.exp; return true; }
+  } catch (e) {}
+  lsDel('gapp_token');
+  return false;
+}
+function dropToken() { accessToken = null; tokenExpiry = 0; lsDel('gapp_token'); }
+
 function initAuth() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.CLIENT_ID,
@@ -315,7 +357,7 @@ function initAuth() {
       if (resp.error || !resp.access_token) { w.forEach(x => x.reject(new Error(resp.error || 'no_token'))); return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + ((Number(resp.expires_in) || 3600) - 60) * 1000;
-      lsSet('gapp_signedin', '1');
+      saveToken();
       w.forEach(x => x.resolve(accessToken));
     },
     error_callback: (err) => {
@@ -323,8 +365,8 @@ function initAuth() {
       w.forEach(x => x.reject(new Error((err && err.type) || 'auth_error')));
     }
   });
-  // Früher angemeldet? Dann versuchen, ohne Klick wieder einzusteigen.
-  if (lsGet('gapp_signedin') === '1') signIn(true);
+  // Noch gültiges Token vom letzten Besuch? Dann direkt weitermachen, ohne erneutes Login.
+  if (loadStoredToken()) afterSignIn().catch(e => { fail('Verbindung zu Drive fehlgeschlagen', e); showAuthError(explainError(e)); });
 }
 
 async function ensureToken() {
@@ -332,38 +374,48 @@ async function ensureToken() {
   if (!tokenClient) throw new Error('unauthorized');
   try { return await requestToken(); }
   catch (e) {
-    accessToken = null;
+    dropToken();
     authBtn.textContent = 'Neu anmelden';
-    setStatus('Sitzung abgelaufen – bitte neu anmelden', 'error');
+    setStatus('Sitzung abgelaufen – bitte «Neu anmelden» tippen', 'error');
     throw new Error('unauthorized');
   }
 }
 
 async function afterSignIn() {
+  await ensureFolder();
+  await loadFileList();
   authBtn.textContent = 'Angemeldet';
+  showAuthError('');
   signedOutEl.style.display = 'none';
   if (!currentFile) emptyEl.style.display = 'flex';
   if (statusEl.className === 'error') setStatus('');
-  await ensureFolder();
-  await loadFileList();
   if (dirty) saveNow();       // ungespeicherte Änderungen nach erneutem Login nachliefern
 }
 
-async function signIn(silent) {
+async function signIn() {
   if (!tokenClient || String(CONFIG.CLIENT_ID).startsWith('DEINE_')) {
-    if (!silent) alert('CLIENT_ID in der Konfiguration am Dateianfang eintragen.');
+    alert('CLIENT_ID in der Konfiguration am Dateianfang eintragen.');
     return;
   }
   try {
     await requestToken();
     await afterSignIn();
   } catch (e) {
-    if (!silent) setStatus('Anmeldung fehlgeschlagen', 'error');
-    console.warn('Anmeldung:', e);
+    // Bei «origin_mismatch» erscheint der Fehler auf der Google-Seite im Popup; hier kommt nur «popup_closed» o. ä. an.
+    fail('Anmeldung fehlgeschlagen', e);
+    showAuthError(explainError(e));
   }
 }
-authBtn.addEventListener('click', () => signIn(false));
-authBtn2.addEventListener('click', () => signIn(false));
+authBtn.addEventListener('click', signIn);
+authBtn2.addEventListener('click', signIn);
+
+// Diagnose: Diese Angaben müssen zur Google Cloud Console passen
+(function showDiag() {
+  const el = $('diag');
+  const id = String(CONFIG.CLIENT_ID);
+  el.textContent = `Diese Seite läuft auf: ${location.origin}` + (location.protocol === 'file:' ? ' (lokale Datei – Google-Login funktioniert nur über die gehostete https-Adresse)' : '')
+    + ` · Client-ID: ${id.length > 24 ? id.slice(0, 12) + '…' + id.slice(-27) : id}`;
+})();
 
 // ---------------------------------------------------------------
 // Drive helpers
@@ -376,10 +428,10 @@ async function driveFetch(url, opts = {}, retry = true) {
   const headers = Object.assign({ Authorization: 'Bearer ' + accessToken }, opts.headers || {});
   const res = await fetch(url, Object.assign({}, opts, { headers }));
   if (res.status === 401) {
-    accessToken = null; tokenExpiry = 0;
+    dropToken();
     if (retry) return driveFetch(url, opts, false);
     authBtn.textContent = 'Neu anmelden';
-    setStatus('Sitzung abgelaufen – bitte neu anmelden', 'error');
+    setStatus('Sitzung abgelaufen – bitte «Neu anmelden» tippen', 'error');
     throw new Error('unauthorized');
   }
   if (!res.ok) { const t = await res.text(); throw new Error('Drive-Fehler: ' + res.status + ' ' + t); }
@@ -478,33 +530,104 @@ async function trashFile(f) {
   await loadFileList();
 }
 
+// Upload per XMLHttpRequest: liefert Fortschritt und Zeitlimit (fetch kann beides nicht) – bei Handy-Fotos sonst «hängt» die Anzeige
+const MAX_IMG_DIM = 3000;          // Fotos werden vor dem Upload auf max. 3000 px (lange Seite) verkleinert
+const RESUMABLE_FROM = 5 * 1024 * 1024;   // Drive: Multipart nur bis ca. 5 MB empfohlen
+
+function xhrSend(method, url, headers, body, onProgress, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open(method, url);
+    for (const [k, v] of Object.entries(headers)) x.setRequestHeader(k, v);
+    x.timeout = timeoutMs;
+    x.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total); };
+    x.onload = () => resolve(x);
+    x.onerror = () => reject(new Error('Netzwerkfehler'));
+    x.ontimeout = () => reject(new Error('Zeitüberschreitung'));
+    x.send(body);
+  });
+}
+
+async function driveUpload(method, url, headers, body, onProgress) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await ensureToken();
+    const x = await xhrSend(method, url, Object.assign({ Authorization: 'Bearer ' + accessToken }, headers), body, onProgress, 300000);
+    if (x.status === 401 && attempt === 0) { dropToken(); continue; }
+    if (x.status === 401) throw new Error('unauthorized');
+    if (x.status < 200 || x.status >= 300) throw new Error('Drive-Fehler ' + x.status + ' ' + x.responseText.slice(0, 200));
+    return x;
+  }
+  throw new Error('unauthorized');
+}
+
+async function prepareUpload(file) {
+  if (!file.type.startsWith('image/') || /gif|svg/.test(file.type)) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const s = Math.min(1, MAX_IMG_DIM / Math.max(bmp.width, bmp.height));
+    if (s === 1 && file.size <= 1.5e6) { if (bmp.close) bmp.close(); return file; }
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(bmp, 0, 0, c.width, c.height);
+    if (bmp.close) bmp.close();
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+    if (!blob || (s === 1 && blob.size >= file.size)) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch (e) { return file; }      // z. B. HEIC ohne Browser-Unterstützung: Original hochladen
+}
+
+async function uploadMultipart(file, metadata, onProgress) {
+  const boundary = 'gappboundary' + Date.now();
+  const head = new TextEncoder().encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`);
+  const tail = new TextEncoder().encode(`\r\n--${boundary}--`);
+  const x = await driveUpload('POST', `${DRIVE_UPLOAD}?uploadType=multipart&fields=id,name,mimeType`,
+    { 'Content-Type': `multipart/related; boundary=${boundary}` }, new Blob([head, file, tail]), onProgress);
+  return JSON.parse(x.responseText);
+}
+
+async function uploadResumable(file, metadata, onProgress) {
+  const init = await driveUpload('POST', `${DRIVE_UPLOAD}?uploadType=resumable&fields=id,name,mimeType`, {
+    'Content-Type': 'application/json; charset=UTF-8',
+    'X-Upload-Content-Type': file.type || 'application/octet-stream',
+    'X-Upload-Content-Length': String(file.size)
+  }, JSON.stringify(metadata));
+  const loc = init.getResponseHeader('Location');
+  if (!loc) throw new Error('kein Upload-Link');
+  const x = await driveUpload('PUT', loc, { 'Content-Type': file.type || 'application/octet-stream' }, file, onProgress);
+  return JSON.parse(x.responseText);
+}
+
 async function uploadFiles(fileListRaw) {
   const list = Array.from(fileListRaw);
-  for (const file of list) {
-    setStatus('Lade hoch …', 'saving');
+  let firstId = null;
+  for (let i = 0; i < list.length; i++) {
+    const label = list.length > 1 ? ` (${i + 1}/${list.length})` : '';
     try {
+      setStatus('Bereite vor …' + label, 'saving');
+      const file = await prepareUpload(list[i]);
+      const prog = (f) => setStatus(`Lade hoch … ${Math.round(f * 100)} %${label}`, 'saving');
+      prog(0);
       const metadata = { name: file.name, parents: [folderId] };
-      const boundary = 'gappboundary' + Date.now();
-      const metaPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
-      const closeDelim = `\r\n--${boundary}--`;
-      const fileBuf = await file.arrayBuffer();
-      const head = new TextEncoder().encode(`${metaPart}--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`);
-      const tail = new TextEncoder().encode(closeDelim);
-      const body = new Blob([head, fileBuf, tail]);
-      await driveFetch(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id,name,mimeType`, {
-        method: 'POST',
-        headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-        body
-      });
+      let created = null;
+      if (file.size > RESUMABLE_FROM) {
+        try { created = await uploadResumable(file, metadata, prog); }
+        catch (e) { if (e.message === 'unauthorized') throw e; console.warn('Resumable-Upload fehlgeschlagen, versuche Multipart:', e); }
+      }
+      if (!created) created = await uploadMultipart(file, metadata, prog);
+      if (!firstId) firstId = created.id;
     } catch (e) {
-      setStatus('Upload fehlgeschlagen: ' + file.name, 'error');
-      console.error(e);
+      fail(e.message === 'unauthorized' ? 'Sitzung abgelaufen – bitte «Neu anmelden» tippen' : `Upload fehlgeschlagen: ${list[i].name}`, e);
       await loadFileList().catch(() => {});
       return;
     }
   }
   setStatus('Hochgeladen', 'ok');
   await loadFileList();
+  const f = files.find(x => x.id === firstId);
+  if (f) openFile(f);                                  // hochgeladenes Blatt direkt anzeigen
 }
 
 // ---------------------------------------------------------------
@@ -683,8 +806,7 @@ async function openFile(f) {
     await renderPage();
     if (seq === openSeq) setStatus('');
   } catch (e) {
-    if (seq === openSeq) { setStatus(e.message === 'unauthorized' ? 'Sitzung abgelaufen – bitte neu anmelden' : 'Fehler beim Laden', 'error'); }
-    console.error(e);
+    if (seq === openSeq) fail(e.message === 'unauthorized' ? 'Sitzung abgelaufen – bitte «Neu anmelden» tippen' : 'Fehler beim Laden', e);
   }
 }
 
@@ -1093,7 +1215,22 @@ $('notesArrow').addEventListener('click', () => {
 // ---------------------------------------------------------------
 // Upload / Sidebar / Resize
 // ---------------------------------------------------------------
-$('uploadBtn').addEventListener('click', () => { if (folderId) $('fileInput').click(); });
+$('uploadBtn').addEventListener('click', () => {
+  const tokenOk = accessToken && Date.now() < tokenExpiry;
+  if (!tokenOk) {
+    setStatus('Bitte zuerst anmelden', 'error');
+    lastErrorDetail = 'Nicht angemeldet – bitte anmelden, danach «Blatt hinzufügen» erneut tippen.';
+    if (tokenClient) signIn();                        // Klick zählt als Nutzeraktion → Popup erlaubt
+    return;
+  }
+  if (!folderId) {                                    // angemeldet, aber Drive-Ordner nicht ermittelt → erneut versuchen und Fehler zeigen
+    setStatus('Verbinde mit Drive …', 'saving');
+    afterSignIn().then(() => setStatus('Bereit – «Blatt hinzufügen» erneut tippen', 'ok'))
+      .catch(e => { fail('Verbindung zu Drive fehlgeschlagen', e); showAuthError(explainError(e)); signedOutEl.style.display = 'flex'; });
+    return;
+  }
+  $('fileInput').click();
+});
 $('fileInput').addEventListener('change', (e) => { if (e.target.files.length) uploadFiles(e.target.files); e.target.value = ''; });
 $('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
 
