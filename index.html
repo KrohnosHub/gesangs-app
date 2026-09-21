@@ -2,7 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#6b4f3b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Gesangs-App – Lyric-Blätter</title>
 
 <!-- ============================================================
@@ -22,73 +28,123 @@
 <style>
   :root{
     --bg:#faf9f7; --panel:#ffffff; --border:#e2ddd6; --text:#2a2622; --muted:#8a8178;
-    --accent:#6b4f3b; --accent-light:#ede6dd; --danger:#b3452f; --ok:#4a7a58;
+    --accent:#6b4f3b; --accent-light:#ede6dd; --danger:#b3452f; --ok:#4a7a58; --warn:#b07a1a;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
     margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     background:var(--bg); color:var(--text); display:flex; flex-direction:column; overflow:hidden;
+    -webkit-text-size-adjust:100%;
   }
   header{
-    display:flex; align-items:center; gap:12px; padding:10px 14px;
+    display:flex; align-items:center; gap:10px; padding:8px 12px; padding-top:max(8px, env(safe-area-inset-top));
     background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0; z-index:20;
   }
-  header h1{font-size:16px; margin:0; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  button{
+  header h1{font-size:16px; margin:0; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+  button, select, input[type=search], input[type=text]{
     font:inherit; border:1px solid var(--border); background:var(--panel); color:var(--text);
-    padding:8px 12px; border-radius:8px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    padding:8px 12px; border-radius:8px; -webkit-tap-highlight-color:transparent;
   }
+  button{cursor:pointer;}
   button:active{background:var(--accent-light);}
   button:disabled{opacity:.4; cursor:default;}
   button.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
-  button.icon{padding:8px; width:38px; height:38px; display:flex; align-items:center; justify-content:center;}
-  #status{font-size:12px; color:var(--muted); min-width:90px; text-align:right;}
+  button.icon{padding:8px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  button.on{background:var(--accent-light); border-color:var(--accent);}
+  #status{font-size:12px; color:var(--muted); max-width:36vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right;}
   #status.saving{color:var(--accent);}
-  #status.error{color:var(--danger);}
+  #status.error{color:var(--danger); cursor:pointer; text-decoration:underline dotted;}
   #status.ok{color:var(--ok);}
-  #status.error{cursor:pointer; text-decoration:underline dotted;}
+  #syncState{font-size:12px; color:var(--muted); white-space:nowrap; cursor:pointer; border:1px solid var(--border); border-radius:999px; padding:3px 9px;}
+  #syncState.warn{color:var(--warn); border-color:var(--warn);}
+  #syncState.ok{color:var(--ok);}
 
   #app{flex:1; display:flex; min-height:0; position:relative;}
 
+  /* ---------- Seitenleiste ---------- */
   #sidebar{
-    width:260px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; transition:transform .2s ease; z-index:15;
+    width:310px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; transition:transform .2s ease; z-index:15; min-height:0;
   }
-  #sidebar-header{padding:10px; border-bottom:1px solid var(--border); display:flex; gap:8px;}
-  #fileInput{display:none;}
-  #fileList{flex:1; overflow-y:auto; padding:6px;}
-  .file-item{
-    display:flex; align-items:center; gap:8px; padding:10px 8px; border-radius:8px; cursor:pointer;
-    font-size:14px;
-  }
+  #sbTabs{display:flex; border-bottom:1px solid var(--border);}
+  #sbTabs button{flex:1; border:none; border-radius:0; background:none; padding:10px; color:var(--muted); border-bottom:2px solid transparent;}
+  #sbTabs button.active{color:var(--text); font-weight:600; border-bottom-color:var(--accent);}
+  .sb-pane{flex:1; display:flex; flex-direction:column; min-height:0;}
+  #sbActions{display:flex; gap:6px; padding:8px;}
+  #sbActions button{flex:1; padding:8px 6px; font-size:13px;}
+  #sbSearch{padding:0 8px 6px; display:flex; flex-direction:column; gap:6px;}
+  #sbSearch input{width:100%;}
+  #sbSearch .row{display:flex; gap:6px;}
+  #sbSearch select{flex:1; min-width:0; padding:7px 6px; font-size:13px;}
+  #sbSearch button{padding:7px 10px;}
+  #crumbs{padding:2px 10px 6px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:2px 4px; align-items:center;}
+  #crumbs a{cursor:pointer; color:var(--accent); text-decoration:none; padding:2px 3px; border-radius:4px;}
+  #crumbs a:hover{background:var(--accent-light);}
+  #fileInput, #scanInput, #scanInputGal{display:none;}
+  #fileList, #setlistList{flex:1; overflow-y:auto; padding:4px 6px; min-height:0;}
+  .file-item{display:flex; align-items:center; gap:6px; padding:8px 6px; border-radius:8px; cursor:pointer; font-size:14px;}
   .file-item:hover, .file-item.active{background:var(--accent-light);}
-  .file-item .name{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .file-item .del{opacity:.5; border:none; background:none; padding:4px;}
-  .file-item .del:hover{opacity:1; color:var(--danger);}
-  .file-item .type-icon{width:20px; text-align:center; color:var(--muted); font-size:12px; flex-shrink:0;}
+  .file-item .fav{border:none; background:none; padding:2px 4px; font-size:16px; color:#c8bfb4; line-height:1;}
+  .file-item .fav.on{color:#d49a06;}
+  .file-item .mid{flex:1; min-width:0;}
+  .file-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-item .sub{font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-item .type-icon{width:22px; text-align:center; color:var(--muted); font-size:11px; flex-shrink:0;}
+  .file-item .more{border:none; background:none; padding:4px 8px; font-size:18px; line-height:1; color:var(--muted);}
+  .file-item .off{font-size:10px; color:var(--ok);}
+  .folder-item .type-icon{font-size:16px;}
+  .empty-note{padding:16px; color:var(--muted); font-size:13px;}
+  #sbFooter{padding:8px; border-top:1px solid var(--border); display:flex; gap:6px; align-items:center; font-size:12px; color:var(--muted);}
+  #sbFooter button{flex:1; padding:7px; font-size:12px;}
+  #setHead{display:flex; align-items:center; gap:6px; padding:8px; border-bottom:1px solid var(--border);}
+  #setHead .t{flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .set-item .idx{width:20px; text-align:center; color:var(--muted); font-size:12px;}
 
+  /* ---------- Betrachter ---------- */
   #viewer{flex:1; display:flex; flex-direction:column; min-width:0; position:relative;}
   #toolbar{
-    display:flex; align-items:center; gap:6px; padding:8px; background:var(--panel);
+    display:flex; align-items:center; gap:5px; padding:6px 8px; background:var(--panel);
     border-bottom:1px solid var(--border); flex-wrap:wrap; flex-shrink:0;
   }
-  #toolbar .sep{width:1px; height:24px; background:var(--border); margin:0 4px;}
-  .swatch{width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0;}
+  #toolbar .sep{width:1px; height:24px; background:var(--border); margin:0 3px;}
+  #toolbar button.tool{padding:7px 9px; font-size:13px;}
+  .swatch{width:24px; height:24px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0;}
   .swatch.active{border-color:var(--text);}
-  #widthRange{width:80px;}
-  #pageNav, #zoomNav{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted);}
-  #zoomLabel{min-width:42px; text-align:center;}
-  #fingerBtn{font-size:13px; padding:8px 10px;}
+  #widthRange{width:70px;}
+  #pageNav, #zoomNav{display:flex; align-items:center; gap:5px; font-size:13px; color:var(--muted);}
+  #zoomLabel{min-width:40px; text-align:center;}
+  #stampBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:#f5f1ea; border-bottom:1px solid var(--border);}
+  #stampBar.show{display:flex;}
+  #stampBar button{padding:5px 9px; font-size:14px; min-width:38px;}
+  #stampBar button.on{background:var(--accent); color:#fff; border-color:var(--accent);}
 
-  /* margin:auto statt justify-content:center, damit gezoomte Seiten links nicht abgeschnitten werden */
+  #canvasArea{flex:1; position:relative; display:flex; min-height:0; min-width:0;}
   #canvasWrap{
-    flex:1; overflow:auto; position:relative; display:flex;
+    flex:1; min-width:0; overflow:auto; position:relative; display:flex;
     background:#ded7cc; padding:16px; overscroll-behavior:contain;
   }
   #canvasStack{position:relative; margin:auto; flex:none; box-shadow:0 2px 10px rgba(0,0,0,.15); background:#fff; touch-action:none;}
   #baseCanvas, #inkCanvas{position:absolute; top:0; left:0;}
-  #inkCanvas{touch-action:none;}
+  #inkCanvas{touch-action:none; mix-blend-mode:multiply;}
+
+  #selBar{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%); z-index:12;
+    display:none; gap:6px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:6px; box-shadow:0 4px 14px rgba(0,0,0,.2);
+  }
+  #selBar.show{display:flex;}
+  #selBar button{padding:7px 10px; font-size:13px;}
+
+  .popover{
+    position:absolute; z-index:30; background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:10px 12px; box-shadow:0 6px 20px rgba(0,0,0,.22); min-width:230px; display:none;
+  }
+  .popover.show{display:block;}
+  .popover h4{margin:0 0 8px; font-size:13px;}
+  .popover .rowp{display:flex; align-items:center; gap:8px; margin:6px 0; font-size:13px;}
+  .popover input[type=range]{flex:1;}
+  .popover .layer-row{display:flex; align-items:center; gap:8px; padding:4px 0; font-size:13px;}
+  .popover .layer-row .ln{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 
   #notesPanel{
     border-top:1px solid var(--border); background:var(--panel); flex-shrink:0;
@@ -110,13 +166,65 @@
   #signedOut{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:20px;}
   #signedOut p{color:var(--muted); max-width:340px; font-size:14px;}
 
+  @media (max-width: 1100px){
+    #toolbar{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin;}
+    #toolbar > *{flex-shrink:0;}
+    #stampBar{flex-wrap:nowrap; overflow-x:auto;}
+    #stampBar button{flex-shrink:0;}
+  }
+  @media (max-width: 600px){
+    #status{display:none;}
+    header{gap:6px; padding:6px 8px; padding-top:max(6px, env(safe-area-inset-top));}
+    header h1{font-size:14px;}
+    #authBtn{padding:6px 10px; font-size:13px;}
+    #syncState{font-size:11px; padding:2px 7px;}
+    #notesPanel{max-height:22vh;}
+  }
   #sidebarToggle{display:none;}
-  @media (max-width: 760px){
+  @media (max-width: 800px){
     #sidebarToggle{display:flex;}
-    #sidebar{position:absolute; top:0; bottom:0; left:0; transform:translateX(-100%); box-shadow:4px 0 12px rgba(0,0,0,.15);}
+    #sidebar{position:absolute; top:0; bottom:0; left:0; width:min(88vw,340px); transform:translateX(-100%); box-shadow:4px 0 12px rgba(0,0,0,.15);}
     #sidebar.open{transform:translateX(0);}
     #app{position:relative;}
   }
+
+  /* ---------- Dialoge ---------- */
+  .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; display:flex; align-items:center; justify-content:center; padding:12px;}
+  .modal{background:var(--panel); border-radius:14px; width:min(440px,100%); max-height:88vh; display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.35);}
+  .modal.wide{width:min(720px,100%);}
+  .modal h3{margin:0; padding:14px 16px 6px; font-size:16px;}
+  .modal .body{padding:6px 16px; overflow-y:auto; min-height:0; flex:1;}
+  .modal .btns{display:flex; gap:8px; justify-content:flex-end; padding:10px 16px 14px; flex-wrap:wrap;}
+  .menu-item{display:block; width:100%; text-align:left; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:12px 6px; background:none;}
+  .menu-item:last-child{border-bottom:none;}
+  .menu-item.danger{color:var(--danger);}
+  .pick-row{display:flex; align-items:center; gap:8px; padding:9px 6px; border-bottom:1px solid var(--border); cursor:pointer;}
+  .pick-row:hover{background:var(--accent-light);}
+  .chip{display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid var(--border); margin:3px 4px 3px 0; font-size:13px; cursor:pointer; background:var(--panel);}
+  .chip.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .tagchip{display:inline-block; font-size:10px; padding:1px 6px; border-radius:999px; background:var(--accent-light); color:var(--accent); margin-right:3px;}
+  #toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:rgba(30,26,22,.92); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; z-index:200; display:none; max-width:86vw; text-align:center;}
+
+  /* ---------- Scan ---------- */
+  #scanCv{max-width:100%; touch-action:none; background:#222; border-radius:8px; display:block; margin:0 auto;}
+  .scan-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0;}
+
+  /* ---------- Auftrittsmodus ---------- */
+  body.perf header, body.perf #sidebar, body.perf #toolbar, body.perf #notesPanel, body.perf #stampBar, body.perf #selBar{display:none !important;}
+  body.perf #canvasWrap{padding:0; background:#000; overflow:hidden;}
+  body.perf #canvasStack{box-shadow:none;}
+  body.perf .popover{top:64px !important;}
+  #perfUI{position:fixed; inset:0; pointer-events:none; display:none; z-index:60;}
+  body.perf #perfUI{display:block;}
+  #perfBar{
+    pointer-events:auto; position:absolute; top:0; left:0; right:0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 12px; padding-top:max(10px, env(safe-area-inset-top)); background:rgba(20,16,12,.82); color:#fff; transform:translateY(-110%); transition:transform .2s;
+  }
+  #perfUI.show #perfBar{transform:none;}
+  #perfBar button{background:rgba(255,255,255,.14); color:#fff; border-color:rgba(255,255,255,.3);}
+  #perfBar .ttl{flex:1; min-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;}
+  #perfBar input[type=range]{width:110px;}
+  #perfPage{position:absolute; right:10px; bottom:calc(8px + env(safe-area-inset-bottom)); background:rgba(0,0,0,.55); color:#fff; font-size:12px; padding:3px 9px; border-radius:999px;}
 </style>
 </head>
 <body>
@@ -124,22 +232,57 @@
 <header>
   <button id="sidebarToggle" class="icon" title="Liste">☰</button>
   <h1 id="currentTitle">Gesangs-App – Lyric-Blätter</h1>
+  <button id="renameBtn" class="icon" title="Blatt umbenennen" style="display:none;">✎</button>
+  <button id="perfBtn" class="icon" title="Auftritts-/Übungsmodus" style="display:none;">⛶</button>
+  <span id="syncState" title="Synchronisierung – antippen zum Synchronisieren">…</span>
   <span id="status"></span>
   <button id="authBtn" class="primary">Anmelden</button>
 </header>
 
 <div id="app">
   <div id="sidebar">
-    <div id="sidebar-header">
-      <button id="uploadBtn" style="flex:1;">+ Blatt hinzufügen</button>
-      <input type="file" id="fileInput" accept="application/pdf,image/*" multiple>
+    <div id="sbTabs">
+      <button data-tab="sheets" class="active">Blätter</button>
+      <button data-tab="sets">Setlisten</button>
     </div>
-    <div id="fileList"></div>
+
+    <div id="sbSheets" class="sb-pane">
+      <div id="sbActions">
+        <button id="uploadBtn">+ Blatt</button>
+        <button id="scanBtn">📷 Scan</button>
+        <button id="newFolderBtn" title="Neuer Ordner">📁＋</button>
+      </div>
+      <div id="sbSearch">
+        <input id="searchInput" type="search" placeholder="Suchen (Name, Tag) …">
+        <div class="row">
+          <select id="sortSel" title="Sortierung">
+            <option value="name">Name A–Z</option>
+            <option value="opened">Zuletzt geöffnet</option>
+            <option value="added">Zuletzt hinzugefügt</option>
+          </select>
+          <select id="tagFilter" title="Nach Tag filtern"><option value="">Alle Tags</option></select>
+          <button id="favFilter" title="Nur Favoriten">★</button>
+        </div>
+      </div>
+      <div id="crumbs"></div>
+      <div id="fileList"></div>
+      <div id="sbFooter">
+        <button id="offlineAllBtn">⇩ Alle offline speichern</button>
+      </div>
+    </div>
+
+    <div id="sbSets" class="sb-pane" style="display:none;">
+      <div id="sbSetActions" style="padding:8px; display:flex; gap:6px;">
+        <button id="newSetBtn" style="flex:1;">+ Neue Setliste</button>
+      </div>
+      <div id="setHead" style="display:none;"></div>
+      <div id="setlistList"></div>
+    </div>
   </div>
 
   <div id="viewer">
     <div id="signedOut">
-      <p>Melde dich mit Google an, um deine Lyric-Blätter zu sehen und zu bearbeiten. Dateien werden in deinem eigenen Google Drive gespeichert.</p>
+      <p>Melde dich mit Google an, um deine Lyric-Blätter zu sehen und zu bearbeiten. Dateien werden in deinem eigenen Google Drive gespeichert und lassen sich danach auch offline nutzen.</p>
       <button class="primary" id="authBtn2">Mit Google anmelden</button>
       <p id="authError" style="color:var(--danger); font-size:13px; max-width:340px; display:none;"></p>
       <p id="diag" style="font-size:11px; word-break:break-all;"></p>
@@ -147,15 +290,27 @@
 
     <div id="mainViewer" style="display:none; flex:1; flex-direction:column; min-height:0;">
       <div id="toolbar">
+        <button class="tool" data-tool="pen" title="Stift">✎ Stift</button>
+        <button class="tool" data-tool="hl" title="Textmarker">▬ Marker</button>
+        <button class="tool" data-tool="eraser" title="Radiergummi (löscht ganze Objekte)">⌫ Radierer</button>
+        <button class="tool" data-tool="text" title="Textfeld">T Text</button>
+        <button class="tool" data-tool="stamp" title="Symbole (Atem, Crescendo, Fermate …)">♪ Symbole</button>
+        <button class="tool" data-tool="select" title="Auswählen / verschieben">➤ Auswahl</button>
+        <div class="sep"></div>
         <div class="swatch active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
         <div class="swatch" data-color="#c0392b" style="background:#c0392b"></div>
         <div class="swatch" data-color="#2471a3" style="background:#2471a3"></div>
         <div class="swatch" data-color="#27633f" style="background:#27633f"></div>
-        <input type="range" id="widthRange" min="1" max="10" value="3">
+        <div class="swatch" data-color="#8e44ad" style="background:#8e44ad"></div>
+        <div class="swatch" data-color="#f1c40f" style="background:#f1c40f"></div>
+        <div class="swatch" data-color="#e67e22" style="background:#e67e22"></div>
+        <input type="range" id="widthRange" min="1" max="10" value="3" title="Strichstärke / Grösse">
         <div class="sep"></div>
-        <button id="eraserBtn" class="icon" title="Radiergummi (löscht ganze Striche)">⌫</button>
         <button id="undoBtn" class="icon" title="Rückgängig (Strg+Z)">↶</button>
         <button id="clearBtn" class="icon" title="Seite leeren">🗑</button>
+        <div class="sep"></div>
+        <button id="layerBtn" class="tool" title="Ebenen">▤ Ebenen</button>
+        <button id="dispBtn" class="tool" title="Helligkeit / Kontrast des Blatts">☀ Anzeige</button>
         <div class="sep"></div>
         <div id="zoomNav">
           <button id="zoomOut" class="icon" title="Verkleinern">−</button>
@@ -163,7 +318,8 @@
           <button id="zoomIn" class="icon" title="Vergrössern">+</button>
           <button id="zoomFit" class="icon" title="Auf Breite einpassen">⤢</button>
         </div>
-        <button id="fingerBtn" title="Finger: Auto = Finger zeichnet nur, solange noch kein Stift erkannt wurde">✋ Auto</button>
+        <button id="fingerBtn" class="tool" title="Finger: Auto = Finger zeichnet nur, solange noch kein Stift erkannt wurde">✋ Auto</button>
+        <button id="wakeBtn" class="tool" title="Display eingeschaltet lassen">☼ Display an</button>
         <div class="sep"></div>
         <div id="pageNav">
           <button id="prevPage" class="icon">‹</button>
@@ -171,13 +327,25 @@
           <button id="nextPage" class="icon">›</button>
         </div>
         <div style="flex:1"></div>
+        <button id="exportBtn" title="Als PDF mit Annotationen exportieren">⤓ PDF</button>
         <button id="saveBtn">Speichern</button>
       </div>
+      <div id="stampBar"></div>
 
-      <div id="canvasWrap">
-        <div id="canvasStack">
-          <canvas id="baseCanvas"></canvas>
-          <canvas id="inkCanvas"></canvas>
+      <div id="canvasArea">
+        <div id="canvasWrap">
+          <div id="canvasStack">
+            <canvas id="baseCanvas"></canvas>
+            <canvas id="inkCanvas"></canvas>
+          </div>
+        </div>
+        <div id="selBar"></div>
+        <div id="layerPop" class="popover" style="top:8px; right:8px;"></div>
+        <div id="dispPop" class="popover" style="top:8px; right:8px;">
+          <h4>Anzeige dieses Blatts</h4>
+          <div class="rowp"><span style="width:70px;">Helligkeit</span><input type="range" id="briRange" min="40" max="200" value="100"><span id="briVal" style="width:38px; text-align:right;">100%</span></div>
+          <div class="rowp"><span style="width:70px;">Kontrast</span><input type="range" id="conRange" min="40" max="220" value="100"><span id="conVal" style="width:38px; text-align:right;">100%</span></div>
+          <div class="rowp"><button id="dispReset" style="flex:1;">Zurücksetzen</button><button id="dispClose" style="flex:1;">Schliessen</button></div>
         </div>
       </div>
 
@@ -197,87 +365,339 @@
   </div>
 </div>
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<div id="perfUI">
+  <div id="perfBar">
+    <button id="perfExit">✕ Beenden</button>
+    <span class="ttl" id="perfTitle"></span>
+    <span style="font-size:12px;">☀</span><input type="range" id="perfBri" min="40" max="200" value="100" title="Helligkeit">
+    <button id="perfLayers">▤</button>
+    <button id="perfFull" title="Vollbild">⛶ Vollbild</button>
+  </div>
+  <div id="perfPage"></div>
+</div>
 
-<script type="module">
+<input type="file" id="fileInput" accept="application/pdf,image/*" multiple>
+<input type="file" id="scanInput" accept="image/*" capture="environment">
+<input type="file" id="scanInputGal" accept="image/*">
+<div id="toast"></div>
+<div id="modalRoot"></div>
+
+
+<script>
+'use strict';
 // Polyfill für neue JS-Funktionen, die pdf.js 6.x voraussetzt (ältere Tablet-Browser kennen sie noch nicht)
 for (const C of [Map, WeakMap]) {
   if (!C.prototype.getOrInsert) C.prototype.getOrInsert = function (k, v) { if (!this.has(k)) this.set(k, v); return this.get(k); };
   if (!C.prototype.getOrInsertComputed) C.prototype.getOrInsertComputed = function (k, f) { if (!this.has(k)) this.set(k, f(k)); return this.get(k); };
 }
 
-// pdf.js wird erst beim ersten Öffnen einer PDF geladen (App startet auch, wenn das CDN nicht erreichbar ist)
-let pdfjsLib = null;
-async function getPdfjs() {
-  if (pdfjsLib) return pdfjsLib;
-  const m = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/pdf.min.mjs');
-  m.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/pdf.worker.min.mjs';
-  pdfjsLib = m;
-  return m;
-}
-
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const REF_W = 900;              // Referenzbreite: Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
+const APP_VERSION = '2.0';
+const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
-const MIN_POINT_DIST = 0.0008;  // in Seitenbreiten; ignoriert Punkte, die praktisch aufeinander liegen
+const MIN_POINT_DIST = 0.0008;  // in Seitenbreiten
+const DEFAULT_TAGS = ['Sopran', 'Alt', 'Tenor', 'Bass', 'Pop', 'Klassik', 'Jazz', 'Musical', 'Gospel', 'Lehrer-Aufgabe', 'Aufwärmen', 'Auftritt'];
 
+const $ = (id) => document.getElementById(id);
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k === 'style') e.style.cssText = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return e;
+}
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const lsDel = (k) => { try { localStorage.removeItem(k); } catch (e) {} };
 const r5 = (v) => Math.round(v * 1e5) / 1e5;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const escQ = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-const emptyAnnot = () => ({ version: 2, notes: '', pageNotes: {}, pages: {} });
+const uid = (p) => p + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
+const hash = (str) => { let x = 5381; for (let i = 0; i < str.length; i++) x = ((x << 5) + x + str.charCodeAt(i)) | 0; return (x >>> 0).toString(36); };
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const isOnline = () => navigator.onLine !== false;
+
+function toast(msg, ms = 2600) {
+  const t = $('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.style.display = 'none'; }, ms);
+}
 
 // ---------------------------------------------------------------
-// State
+// Dialoge
 // ---------------------------------------------------------------
-let accessToken = null;
-let tokenExpiry = 0;
-let tokenClient = null;
-let tokenWaiters = [];
+function openModal({ title, body, buttons = [], wide = false }) {
+  const bg = h('div', { class: 'modal-bg' });
+  const box = h('div', { class: 'modal' + (wide ? ' wide' : '') });
+  if (title) box.append(h('h3', { text: title }));
+  const b = h('div', { class: 'body' });
+  if (body) b.append(...[].concat(body));
+  box.append(b);
+  const btns = h('div', { class: 'btns' });
+  box.append(btns);
+  const api = {
+    el: box, body: b, btns,
+    close() { if (!bg.isConnected) return; bg.remove(); document.removeEventListener('keydown', esc, true); if (api.onClose) api.onClose(); }
+  };
+  function esc(e) { if (e.key === 'Escape') { e.stopPropagation(); api.close(); } }
+  buttons.forEach(bt => btns.append(h('button', {
+    class: bt.primary ? 'primary' : '', text: bt.label,
+    onclick: () => { const r = bt.fn ? bt.fn(api) : undefined; if (r !== false) api.close(); }
+  })));
+  document.addEventListener('keydown', esc, true);
+  bg.addEventListener('pointerdown', (e) => { if (e.target === bg) api.close(); });
+  bg.append(box);
+  $('modalRoot').append(bg);
+  return api;
+}
+function menuSheet(title, items) {
+  const api = openModal({
+    title,
+    body: items.filter(Boolean).map(it => h('button', {
+      class: 'menu-item' + (it.danger ? ' danger' : ''), text: it.label,
+      onclick: () => { api.close(); setTimeout(it.fn, 0); }
+    })),
+    buttons: [{ label: 'Abbrechen' }]
+  });
+  return api;
+}
+
+// ---------------------------------------------------------------
+// Lokale Datenbank (IndexedDB): Blätter offline, Annotationen, Bibliothek
+// ---------------------------------------------------------------
+const IDB = {
+  db: null, ok: false,
+  async open() {
+    try {
+      await new Promise((res, rej) => {
+        const r = indexedDB.open('gesangs-app', 1);
+        r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('blobs'); d.createObjectStore('annots'); d.createObjectStore('kv'); };
+        r.onsuccess = () => { IDB.db = r.result; res(); };
+        r.onerror = () => rej(r.error);
+        r.onblocked = () => rej(new Error('blocked'));
+      });
+      IDB.ok = true;
+    } catch (e) { IDB.ok = false; console.warn('IndexedDB nicht verfügbar:', e); }
+    return IDB.ok;
+  },
+  tx(store, mode, fn) {
+    if (!IDB.ok) return Promise.resolve(undefined);
+    return new Promise((res, rej) => {
+      let out;
+      try {
+        const t = IDB.db.transaction(store, mode);
+        out = fn(t.objectStore(store));
+        t.oncomplete = () => res(out && 'result' in out ? out.result : undefined);
+        t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+      } catch (e) { rej(e); }
+    });
+  },
+  get(store, key) { return IDB.tx(store, 'readonly', s => s.get(key)); },
+  put(store, key, val) { return IDB.tx(store, 'readwrite', s => s.put(val, key)); },
+  del(store, key) { return IDB.tx(store, 'readwrite', s => s.delete(key)); },
+  keys(store) { return IDB.tx(store, 'readonly', s => s.getAllKeys()).then(r => r || []); },
+  all(store) { return IDB.tx(store, 'readonly', s => s.getAll()).then(r => r || []); }
+};
+// Fehler beim lokalen Speichern nie den Ablauf stören lassen
+const safe = (p) => Promise.resolve(p).catch(e => { console.warn('IDB:', e); });
+
+// ---------------------------------------------------------------
+// Annotationen (Format v3)
+//   { version:3, layers:[{id,n}], notes, pageNotes:{"1":".."},
+//     pages:{"1":[ Objekt, … ]} }
+//   Objekt: { id, l:Ebene, … }
+//     Strich:   { p:[[x,y,(druck)],…], c, w, hl?:1, er?:1 }
+//     Text:     { t:'x', x, y, s, z, c }
+//     Symbol:   { t:'m', k, x, y, z, c }
+//   Koordinaten in Seitenbreiten (1.0 = volle Breite, y ebenfalls in Breiten)
+// ---------------------------------------------------------------
+const defaultLayers = () => [{ id: 'e', n: 'Eigene Notizen' }, { id: 'u', n: 'Unterricht' }];
+const emptyAnnot = () => ({ version: 3, layers: defaultLayers(), notes: '', pageNotes: {}, pages: {} });
+
+function normalizeAnnot(d) {
+  if (!d || typeof d !== 'object') return emptyAnnot();
+  let out;
+  if (d.version >= 2) {
+    out = d;
+    out.pages = out.pages || {}; out.pageNotes = out.pageNotes || {}; out.notes = out.notes || '';
+  } else {
+    // Migration v1 (Pixelkoordinaten, Bezugsbreite unbekannt → Annahme LEGACY_REF_W)
+    out = emptyAnnot();
+    out.notes = d.notes || '';
+    for (const [k, arr] of Object.entries(d.pages || {})) {
+      out.pages[k] = (arr || []).filter(s => s && s.points && s.points.length).map(s => {
+        const o = { c: s.color || '#1a1a1a', w: (s.width || 3) / LEGACY_REF_W, p: s.points.map(q => [r5(q.x / LEGACY_REF_W), r5(q.y / LEGACY_REF_W)]) };
+        if (s.eraser) o.er = 1;
+        return o;
+      });
+    }
+  }
+  out.version = 3;
+  if (!Array.isArray(out.layers) || !out.layers.length) out.layers = defaultLayers();
+  // Stabile IDs (inhaltsbasiert, damit alle Geräte dieselbe ID für ältere Striche vergeben)
+  for (const arr of Object.values(out.pages)) {
+    const seen = {};
+    arr.forEach(o => {
+      if (!o.id) { const b = 'h' + hash(JSON.stringify(o)); seen[b] = (seen[b] || 0) + 1; o.id = seen[b] > 1 ? b + '_' + seen[b] : b; }
+    });
+  }
+  return out;
+}
+function hasContent(a) {
+  return !!(a.notes || Object.values(a.pageNotes || {}).some(Boolean) || Object.values(a.pages || {}).some(x => x && x.length));
+}
+
+// --- 3-Wege-Merge (Basis = letzter gemeinsamer Stand) ---------------
+function mergeStr3(b, l, r) {
+  b = b || ''; l = l || ''; r = r || '';
+  if (l === r) return l;
+  if (l === b) return r;
+  if (r === b) return l;
+  return l + '\n\n— Änderung von anderem Gerät —\n' + r;
+}
+function mergeObjs(B, L, R) {
+  const bm = new Map(B.map(o => [o.id, o])), lm = new Map(L.map(o => [o.id, o])), rm = new Map(R.map(o => [o.id, o]));
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const out = [];
+  for (const o of L) {
+    const b = bm.get(o.id), r = rm.get(o.id);
+    if (b && !r) { if (!same(o, b)) out.push(o); continue; }            // anderswo gelöscht (lokal geändert → behalten)
+    if (r && b && same(o, b)) out.push(r); else out.push(o);           // nur anderswo geändert → übernehmen
+  }
+  for (const o of R) {
+    if (lm.has(o.id)) continue;
+    const b = bm.get(o.id);
+    if (b) { if (!same(o, b)) out.push(o); continue; }                 // lokal gelöscht (anderswo geändert → behalten)
+    out.push(o);                                                       // anderswo neu
+  }
+  return out;
+}
+function mergeAnnot(base, local, remote) {
+  const out = { version: 3, layers: [], notes: mergeStr3(base.notes, local.notes, remote.notes), pageNotes: {}, pages: {} };
+  const bl = new Map((base.layers || []).map(x => [x.id, x])), rl = new Map((remote.layers || []).map(x => [x.id, x]));
+  const seen = new Set();
+  for (const L of (local.layers || [])) {
+    seen.add(L.id);
+    const R = rl.get(L.id), B = bl.get(L.id);
+    out.layers.push({ id: L.id, n: (R && B && L.n === B.n) ? R.n : L.n });
+  }
+  for (const R of (remote.layers || [])) if (!seen.has(R.id)) out.layers.push({ id: R.id, n: R.n });
+  const pk = new Set([...Object.keys(base.pageNotes || {}), ...Object.keys(local.pageNotes || {}), ...Object.keys(remote.pageNotes || {})]);
+  for (const k of pk) { const v = mergeStr3((base.pageNotes || {})[k], (local.pageNotes || {})[k], (remote.pageNotes || {})[k]); if (v) out.pageNotes[k] = v; }
+  const ok = new Set([...Object.keys(base.pages || {}), ...Object.keys(local.pages || {}), ...Object.keys(remote.pages || {})]);
+  for (const k of ok) out.pages[k] = mergeObjs((base.pages || {})[k] || [], (local.pages || {})[k] || [], (remote.pages || {})[k] || []);
+  return out;
+}
+
+// ---------------------------------------------------------------
+// Bibliothek: Ordner, Tags, Favoriten, Setlisten, Anzeige – liegt als library.json in Drive
+//   folders:{id:{n,p,u,d?}}  files:{fileId:{f,tg,fv,lo,bri,con,u}}  setlists:{id:{n,it:[fileId],u,d?}}
+// ---------------------------------------------------------------
+const emptyLib = () => ({ version: 1, folders: {}, files: {}, setlists: {} });
+let lib = emptyLib();
+let libDirty = false, libRemoteId = null, libRemoteTime = null, libVer = 0;
+
+const newFmeta = () => ({ f: null, tg: [], fv: 0, lo: 0, bri: 1, con: 1, u: 0 });
+const fget = (id) => lib.files[id] || newFmeta();
+function fset(id, patch) {
+  const m = lib.files[id] || (lib.files[id] = newFmeta());
+  Object.assign(m, patch); m.u = Date.now();
+  libChanged();
+}
+function touchOpened(id) {
+  const m = lib.files[id] || (lib.files[id] = newFmeta());
+  m.lo = Date.now();
+  libDirty = true; libVer++; libPersist(); scheduleLibSync(); renderSidebar();
+}
+function libChanged() { libDirty = true; libVer++; libPersist(); scheduleLibSync(); renderSidebar(); updateSyncState(); }
+
+const folderAlive = (id) => !!(id && lib.folders[id] && !lib.folders[id].d);
+const effParent = (f) => (f && f.p && folderAlive(f.p)) ? f.p : null;
+const effFolder = (fid) => { const m = lib.files[fid]; return m && folderAlive(m.f) ? m.f : null; };
+function childFolders(parent) {
+  return Object.entries(lib.folders).filter(([id, f]) => !f.d && effParent(f) === (parent || null))
+    .map(([id, f]) => ({ id, ...f })).sort((a, b) => a.n.localeCompare(b.n, 'de', { numeric: true }));
+}
+function folderPath(id) {           // Liste [{id,n}] vom Hauptordner bis id (mit Schutz gegen Zyklen)
+  const out = [], seen = new Set();
+  while (id && folderAlive(id) && !seen.has(id)) { seen.add(id); out.unshift({ id, n: lib.folders[id].n }); id = effParent(lib.folders[id]); }
+  return out;
+}
+function isDescendant(id, ancestor) {
+  const seen = new Set();
+  while (id && !seen.has(id)) { if (id === ancestor) return true; seen.add(id); id = effParent(lib.folders[id]); }
+  return false;
+}
+function allTags() {
+  const s = new Set();
+  Object.values(lib.files).forEach(m => (m.tg || []).forEach(t => s.add(t)));
+  return [...s].sort((a, b) => a.localeCompare(b, 'de'));
+}
+const aliveSetlists = () => Object.entries(lib.setlists).filter(([id, s]) => !s.d).map(([id, s]) => ({ id, ...s })).sort((a, b) => a.n.localeCompare(b.n, 'de', { numeric: true }));
+
+function mergeLib(a, b) {
+  const out = emptyLib();
+  for (const key of ['folders', 'files', 'setlists']) {
+    const ids = new Set([...Object.keys(a[key] || {}), ...Object.keys(b[key] || {})]);
+    for (const id of ids) {
+      const x = (a[key] || {})[id], y = (b[key] || {})[id];
+      if (x && y) {
+        const win = (y.u || 0) > (x.u || 0) ? y : x;
+        out[key][id] = JSON.parse(JSON.stringify(win));
+        if (key === 'files') out[key][id].lo = Math.max(x.lo || 0, y.lo || 0);
+      } else out[key][id] = JSON.parse(JSON.stringify(x || y));
+    }
+  }
+  return out;
+}
+
+
+// ---------------------------------------------------------------
+// Globaler Zustand
+// ---------------------------------------------------------------
+let accessToken = null, tokenExpiry = 0, tokenClient = null, tokenWaiters = [];
 let folderId = lsGet('gapp_folderId') || null;
 
-let files = [];
+let files = [];                 // Blätter (aus Drive bzw. lokalem Cache): {id,name,mimeType,modifiedTime}
+const cachedIds = new Set();    // Blätter, die offline verfügbar sind
+const dirtyIds = new Set();     // Blätter mit noch nicht synchronisierten Annotationen
 let currentFile = null;
-let currentDoc = null;        // pdf.js-Dokument
-let currentImg = null;        // HTMLImageElement (Bilddatei)
+let currentDoc = null;          // pdf.js-Dokument
+let currentImg = null;          // HTMLImageElement (Bilddatei)
 let currentImgUrl = null;
-let currentPage = 1;
-let totalPages = 1;
-let annotFileId = null;
+let currentBlob = null;         // Original-Blatt (für Export)
+let currentPage = 1, totalPages = 1;
 let annotData = emptyAnnot();
-let ready = false;            // Datei + Annotationen vollständig geladen
-let pageReady = false;        // aktuelle Seite gerendert (Zeichnen erlaubt)
-let history = [];             // Undo-Verlauf (nur diese Sitzung)
+let annotRec = { aid: null, aTime: null, base: null };   // Sync-Zustand des geöffneten Blatts
+let ready = false;              // Datei + Annotationen geladen
+let pageReady = false;          // aktuelle Seite gerendert
+let undoStack = [];
 
-let zoom = 1;
-let pageAspect = 1.414;       // Höhe/Breite der aktuellen Seite
-let renderSeq = 0, renderTask = null, renderTimer = null;
-let openSeq = 0;
+let zoom = 1, pageAspect = 1.414, fitMode = 'width';
+let renderSeq = 0, renderTask = null, renderTimer = null, openSeq = 0;
+let prefetched = null;
 
 let dirty = false;
-let saveTimer = null;
-let saving = Promise.resolve();
-let notesScope = 'file';      // 'file' | 'page'
+let saveTimer = null, persistTimer = null;
+let notesScope = 'file';
+let perfCtx = null;             // {setId, idx} wenn aus einer Setliste geöffnet
+let perf = false;               // Auftritts-/Übungsmodus aktiv
+let wakeWanted = lsGet('gapp_wake') === '1';
+let syncChain = Promise.resolve();
+let syncing = 0;
 
-let tool = { color: '#1a1a1a', width: 3, eraser: false };
-let fingerMode = lsGet('gapp_fingerMode') || 'auto';   // auto | draw | pan
-let penSeen = false, penDown = false;
-let drawing = false, strokeErasing = false, strokePointer = null;
-let currentStroke = null, erasedItems = null;
-const touches = new Map();
-let panState = null, pinchState = null, gestureLock = false;
-
-// ---------------------------------------------------------------
-// DOM refs
-// ---------------------------------------------------------------
-const $ = (id) => document.getElementById(id);
-const authBtn = $('authBtn'), authBtn2 = $('authBtn2');
 const statusEl = $('status');
+const authBtn = $('authBtn'), authBtn2 = $('authBtn2');
 const fileListEl = $('fileList');
 const sidebar = $('sidebar');
 const signedOutEl = $('signedOut');
@@ -294,6 +714,7 @@ const pageLabel = $('pageLabel');
 function setStatus(text, cls) {
   statusEl.textContent = text;
   statusEl.className = cls || '';
+  statusEl.title = text;
 }
 
 // Verständliche Fehlertexte – auf dem Handy gibt es keine Konsole, daher: Status antippen zeigt die Details
@@ -302,11 +723,10 @@ function explainError(e) {
   const m = String((e && e.message) || e);
   if (/accessNotConfigured|SERVICE_DISABLED|has not been used|is disabled/i.test(m))
     return 'Die Google Drive API ist im Cloud-Projekt dieser Client-ID nicht aktiviert (Cloud Console → APIs & Dienste → Bibliothek → «Google Drive API» → Aktivieren).';
-  if (/access_denied/.test(m))
-    return 'Zugriff verweigert – ist dein Google-Konto im OAuth-Zustimmungsbildschirm als Testnutzer eingetragen?';
-  if (/popup_closed|popup_failed/.test(m))
-    return 'Das Anmelde-Popup wurde geschlossen oder vom Browser blockiert.';
+  if (/access_denied/.test(m)) return 'Zugriff verweigert – ist dein Google-Konto im OAuth-Zustimmungsbildschirm als Testnutzer eingetragen?';
+  if (/popup_closed|popup_failed/.test(m)) return 'Das Anmelde-Popup wurde geschlossen oder vom Browser blockiert.';
   if (/unauthorized/.test(m)) return 'Sitzung abgelaufen – bitte anmelden.';
+  if (/^offline$/.test(m)) return 'Keine Internetverbindung.';
   if (/insufficientPermissions|insufficient/i.test(m)) return 'Fehlende Berechtigung – bitte neu anmelden und den Zugriff auf Drive erlauben.';
   return m;
 }
@@ -325,18 +745,20 @@ statusEl.addEventListener('click', () => { if (statusEl.className === 'error' &&
 
 // ---------------------------------------------------------------
 // Auth (Google Identity Services – Token-Client, rein clientseitig)
-// Das Token gilt ~1 h. Es wird im Browser zwischengespeichert (Neuladen innerhalb der Stunde bleibt angemeldet).
-// Ein Erneuern ohne Klick klappt nur, wenn der Browser das Google-Popup zulässt – sonst genügt ein Tipp auf «Neu anmelden».
+// Das Token gilt ~1 h und wird im Browser zwischengespeichert. Erneuern ohne Klick klappt nur, wenn der Browser
+// das Google-Popup zulässt – sonst genügt ein Tipp auf «Anmelden». Ohne Anmeldung/Netz bleibt die App voll
+// nutzbar (lokale Kopie); Änderungen werden später automatisch synchronisiert.
 // ---------------------------------------------------------------
+const tokenValid = () => !!(accessToken && Date.now() < tokenExpiry);
+
 function requestToken() {
   return new Promise((resolve, reject) => {
     tokenWaiters.push({ resolve, reject });
-    if (tokenWaiters.length > 1) return;            // Anfrage läuft bereits
+    if (tokenWaiters.length > 1) return;
     try { tokenClient.requestAccessToken({ prompt: '' }); }
     catch (e) { const w = tokenWaiters; tokenWaiters = []; w.forEach(x => x.reject(e)); }
   });
 }
-
 function saveToken() { lsSet('gapp_token', JSON.stringify({ t: accessToken, exp: tokenExpiry })); }
 function loadStoredToken() {
   try {
@@ -346,7 +768,8 @@ function loadStoredToken() {
   lsDel('gapp_token');
   return false;
 }
-function dropToken() { accessToken = null; tokenExpiry = 0; lsDel('gapp_token'); }
+function dropToken() { accessToken = null; tokenExpiry = 0; lsDel('gapp_token'); updateAuthBtn(); }
+function updateAuthBtn() { authBtn.textContent = tokenValid() ? 'Angemeldet' : 'Anmelden'; }
 
 function initAuth() {
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -357,7 +780,7 @@ function initAuth() {
       if (resp.error || !resp.access_token) { w.forEach(x => x.reject(new Error(resp.error || 'no_token'))); return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + ((Number(resp.expires_in) || 3600) - 60) * 1000;
-      saveToken();
+      saveToken(); updateAuthBtn();
       w.forEach(x => x.resolve(accessToken));
     },
     error_callback: (err) => {
@@ -365,43 +788,28 @@ function initAuth() {
       w.forEach(x => x.reject(new Error((err && err.type) || 'auth_error')));
     }
   });
-  // Noch gültiges Token vom letzten Besuch? Dann direkt weitermachen, ohne erneutes Login.
-  if (loadStoredToken()) afterSignIn().catch(e => { fail('Verbindung zu Drive fehlgeschlagen', e); showAuthError(explainError(e)); });
 }
 
 async function ensureToken() {
-  if (accessToken && Date.now() < tokenExpiry) return accessToken;
+  if (tokenValid()) return accessToken;
   if (!tokenClient) throw new Error('unauthorized');
   try { return await requestToken(); }
   catch (e) {
     dropToken();
-    authBtn.textContent = 'Neu anmelden';
-    setStatus('Sitzung abgelaufen – bitte «Neu anmelden» tippen', 'error');
+    setStatus('Sitzung abgelaufen – bitte «Anmelden» tippen', 'error');
     throw new Error('unauthorized');
   }
 }
 
-async function afterSignIn() {
-  await ensureFolder();
-  await loadFileList();
-  authBtn.textContent = 'Angemeldet';
-  showAuthError('');
-  signedOutEl.style.display = 'none';
-  if (!currentFile) emptyEl.style.display = 'flex';
-  if (statusEl.className === 'error') setStatus('');
-  if (dirty) saveNow();       // ungespeicherte Änderungen nach erneutem Login nachliefern
-}
-
 async function signIn() {
   if (!tokenClient || String(CONFIG.CLIENT_ID).startsWith('DEINE_')) {
-    alert('CLIENT_ID in der Konfiguration am Dateianfang eintragen.');
+    alert(tokenClient ? 'CLIENT_ID in der Konfiguration am Dateianfang eintragen.' : 'Google-Anmeldung nicht erreichbar (offline?). Die App läuft mit der lokalen Kopie weiter.');
     return;
   }
   try {
     await requestToken();
     await afterSignIn();
   } catch (e) {
-    // Bei «origin_mismatch» erscheint der Fehler auf der Google-Seite im Popup; hier kommt nur «popup_closed» o. ä. an.
     fail('Anmeldung fehlgeschlagen', e);
     showAuthError(explainError(e));
   }
@@ -411,342 +819,461 @@ authBtn2.addEventListener('click', signIn);
 
 // Diagnose: Diese Angaben müssen zur Google Cloud Console passen
 (function showDiag() {
-  const el = $('diag');
   const id = String(CONFIG.CLIENT_ID);
-  el.textContent = `Diese Seite läuft auf: ${location.origin}` + (location.protocol === 'file:' ? ' (lokale Datei – Google-Login funktioniert nur über die gehostete https-Adresse)' : '')
+  $('diag').textContent = `Diese Seite läuft auf: ${location.origin}` + (location.protocol === 'file:' ? ' (lokale Datei – Google-Login funktioniert nur über die gehostete https-Adresse)' : '')
     + ` · Client-ID: ${id.length > 24 ? id.slice(0, 12) + '…' + id.slice(-27) : id}`;
 })();
 
 // ---------------------------------------------------------------
-// Drive helpers
+// Drive
 // ---------------------------------------------------------------
 const DRIVE_FILES = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 
-async function driveFetch(url, opts = {}, retry = true) {
-  await ensureToken();
+// interactive=false: nie ein Anmelde-Popup öffnen (Hintergrund-Synchronisierung)
+async function driveFetch(url, opts = {}, retry = true, interactive = true) {
+  if (!isOnline()) throw new Error('offline');
+  if (interactive) await ensureToken(); else if (!tokenValid()) throw new Error('unauthorized');
   const headers = Object.assign({ Authorization: 'Bearer ' + accessToken }, opts.headers || {});
-  const res = await fetch(url, Object.assign({}, opts, { headers }));
+  let res;
+  try { res = await fetch(url, Object.assign({}, opts, { headers })); }
+  catch (e) { throw new Error('offline'); }
   if (res.status === 401) {
     dropToken();
-    if (retry) return driveFetch(url, opts, false);
-    authBtn.textContent = 'Neu anmelden';
-    setStatus('Sitzung abgelaufen – bitte «Neu anmelden» tippen', 'error');
+    if (retry && interactive) return driveFetch(url, opts, false, true);
+    setStatus('Sitzung abgelaufen – bitte «Anmelden» tippen', 'error');
     throw new Error('unauthorized');
   }
   if (!res.ok) { const t = await res.text(); throw new Error('Drive-Fehler: ' + res.status + ' ' + t); }
   return res;
 }
+const bg = (url, opts) => driveFetch(url, opts, true, false);   // Hintergrund-Variante ohne Popup
 
-async function ensureFolder() {
+async function ensureFolder(interactive = true) {
   if (folderId) {
-    // Gecachte Ordner-ID prüfen (Ordner evtl. gelöscht oder anderes Konto)
     try {
-      const chk = await driveFetch(`${DRIVE_FILES}/${folderId}?fields=id,trashed`);
+      const chk = await driveFetch(`${DRIVE_FILES}/${folderId}?fields=id,trashed`, {}, true, interactive);
       const info = await chk.json();
       if (info && !info.trashed) return folderId;
-    } catch (e) { if (e.message === 'unauthorized') throw e; }
+    } catch (e) { if (e.message === 'unauthorized' || e.message === 'offline') throw e; }
     folderId = null; lsDel('gapp_folderId');
   }
   const q = encodeURIComponent(`name='${escQ(CONFIG.FOLDER_NAME)}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&fields=files(id,name)`);
+  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&fields=files(id,name)`, {}, true, interactive);
   const data = await res.json();
-  if (data.files && data.files.length) {
-    folderId = data.files[0].id;
-  } else {
+  if (data.files && data.files.length) folderId = data.files[0].id;
+  else {
     const createRes = await driveFetch(DRIVE_FILES, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: CONFIG.FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
-    });
-    const created = await createRes.json();
-    folderId = created.id;
+    }, true, interactive);
+    folderId = (await createRes.json()).id;
   }
   lsSet('gapp_folderId', folderId);
   return folderId;
 }
 
-async function loadFileList() {
+async function findByName(name, interactive = false) {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and name='${escQ(name)}'`);
+  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&fields=files(id,name,modifiedTime)`, {}, true, interactive);
+  const data = await res.json();
+  return data.files && data.files.length ? data.files[0] : null;
+}
+
+async function loadFileList(interactive = true) {
   const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and (mimeType='application/pdf' or mimeType contains 'image/') and not name contains '.annotations.json'`);
   let all = [], token = null;
   do {
-    const url = `${DRIVE_FILES}?q=${q}&orderBy=name&pageSize=200&fields=nextPageToken,files(id,name,mimeType,modifiedTime)` + (token ? `&pageToken=${encodeURIComponent(token)}` : '');
-    const res = await driveFetch(url);
+    const url = `${DRIVE_FILES}?q=${q}&orderBy=name&pageSize=200&fields=nextPageToken,files(id,name,mimeType,modifiedTime,createdTime,md5Checksum)` + (token ? `&pageToken=${encodeURIComponent(token)}` : '');
+    const res = await driveFetch(url, {}, true, interactive);
     const data = await res.json();
     all = all.concat(data.files || []);
     token = data.nextPageToken || null;
   } while (token);
   files = all;
-  renderFileList();
+  safe(IDB.put('kv', 'files', files));
+  // Lokale Kopien von Blättern entfernen, die es in Drive nicht mehr gibt
+  const ids = new Set(files.map(f => f.id));
+  for (const id of [...cachedIds]) if (!ids.has(id)) { cachedIds.delete(id); safe(IDB.del('blobs', id)); }
+  renderSidebar();
 }
 
-function renderFileList() {
-  fileListEl.innerHTML = '';
-  if (!files.length) {
-    const p = document.createElement('div');
-    p.style.cssText = 'padding:16px;color:var(--muted);font-size:13px;';
-    p.textContent = 'Noch keine Blätter. Oben hochladen.';
-    fileListEl.appendChild(p);
+
+// ---------------------------------------------------------------
+// Lokale Persistenz (IndexedDB)
+// ---------------------------------------------------------------
+function libPersist() { safe(IDB.put('kv', 'lib', { lib, libDirty, libRemoteId, libRemoteTime })); }
+function persistDirtyIds() { safe(IDB.put('kv', 'dirtyIds', [...dirtyIds])); }
+
+async function loadLocalState() {
+  if (!IDB.ok) return;
+  const l = await safe(IDB.get('kv', 'lib'));
+  if (l) { lib = l.lib || emptyLib(); libDirty = !!l.libDirty; libRemoteId = l.libRemoteId || null; libRemoteTime = l.libRemoteTime || null; }
+  const f = await safe(IDB.get('kv', 'files'));
+  if (Array.isArray(f)) files = f;
+  const keys = await safe(IDB.keys('blobs'));
+  (keys || []).forEach(k => cachedIds.add(k));
+  const d = await safe(IDB.get('kv', 'dirtyIds'));
+  (d || []).forEach(k => dirtyIds.add(k));
+}
+
+// ---------------------------------------------------------------
+// Seitenleiste: Blätter (Ordner, Suche, Tags, Favoriten, Sortierung)
+// ---------------------------------------------------------------
+let sbTab = 'sheets', currentFolder = null, searchQ = '', tagSel = '', favOnly = false, setView = null;
+let sortMode = lsGet('gapp_sort') || 'name';
+$('sortSel').value = sortMode;
+
+function sortFiles(arr) {
+  const byName = (a, b) => a.name.localeCompare(b.name, 'de', { numeric: true });
+  const added = (f) => f.createdTime || f.modifiedTime || '';
+  return arr.sort((a, b) => {
+    if (sortMode === 'opened') return (fget(b.id).lo - fget(a.id).lo) || byName(a, b);
+    if (sortMode === 'added') return added(b).localeCompare(added(a)) || byName(a, b);
+    return byName(a, b);
+  });
+}
+
+function pathLabel(fileId) {
+  const p = folderPath(effFolder(fileId));
+  return p.length ? p.map(x => x.n).join(' › ') : '';
+}
+
+function renderSidebar() {
+  document.querySelectorAll('#sbTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === sbTab));
+  $('sbSheets').style.display = sbTab === 'sheets' ? 'flex' : 'none';
+  $('sbSets').style.display = sbTab === 'sets' ? 'flex' : 'none';
+  if (sbTab === 'sheets') renderSheets(); else renderSets();
+}
+
+function renderSheets() {
+  // Tag-Filter
+  const tags = allTags(), tf = $('tagFilter'), sig = tags.join('|') + '||' + tagSel;
+  if (tf.dataset.sig !== sig) {
+    tf.innerHTML = '';
+    tf.append(h('option', { value: '', text: 'Alle Tags' }), ...tags.map(t => h('option', { value: t, text: t })));
+    if (tagSel && !tags.includes(tagSel)) tagSel = '';
+    tf.value = tagSel; tf.dataset.sig = tags.join('|') + '||' + tagSel;
+  }
+  $('favFilter').classList.toggle('on', favOnly);
+  if (currentFolder && !folderAlive(currentFolder)) currentFolder = null;
+
+  const q = searchQ.trim().toLowerCase();
+  const global = !!(q || favOnly || tagSel);
+
+  // Pfad-Anzeige
+  const cr = $('crumbs'); cr.innerHTML = '';
+  if (global) {
+    cr.append(h('span', { text: 'Gefiltert über alle Ordner · ' }), h('a', { text: 'Filter zurücksetzen', onclick: () => resetFilters() }));
+  } else {
+    cr.append(h('a', { text: 'Alle Blätter', onclick: () => { currentFolder = null; renderSidebar(); } }));
+    folderPath(currentFolder).forEach(seg => cr.append(h('span', { text: '›' }), h('a', { text: seg.n, onclick: () => { currentFolder = seg.id; renderSidebar(); } })));
+  }
+
+  const list = fileListEl; list.innerHTML = '';
+  let arr = files.slice();
+  if (global) {
+    if (q) arr = arr.filter(f => f.name.toLowerCase().includes(q) || (fget(f.id).tg || []).some(t => t.toLowerCase().includes(q)) || pathLabel(f.id).toLowerCase().includes(q));
+    if (favOnly) arr = arr.filter(f => fget(f.id).fv);
+    if (tagSel) arr = arr.filter(f => (fget(f.id).tg || []).includes(tagSel));
+  } else {
+    arr = arr.filter(f => effFolder(f.id) === currentFolder);
+    childFolders(currentFolder).forEach(fo => list.append(folderItem(fo)));
+  }
+  sortFiles(arr);
+  arr.forEach(f => list.append(fileItem(f, global)));
+  if (!list.children.length) list.append(h('div', { class: 'empty-note', text: global ? 'Keine Treffer.' : (files.length ? 'Dieser Ordner ist leer.' : 'Noch keine Blätter. Oben «+ Blatt» oder «📷 Scan».') }));
+  $('offlineAllBtn').textContent = `⇩ Alle offline speichern (${cachedIds.size}/${files.length})`;
+}
+function resetFilters() {
+  searchQ = ''; tagSel = ''; favOnly = false; $('searchInput').value = '';
+  renderSidebar();
+}
+
+function folderItem(fo) {
+  const n = files.filter(f => effFolder(f.id) === fo.id).length + childFolders(fo.id).length;
+  return h('div', { class: 'file-item folder-item', onclick: () => { currentFolder = fo.id; renderSidebar(); } },
+    h('span', { class: 'type-icon', text: '📁' }),
+    h('div', { class: 'mid' }, h('div', { class: 'name', text: fo.n }), h('div', { class: 'sub', text: n + ' Einträge' })),
+    h('button', { class: 'more', text: '⋯', title: 'Ordner-Menü', onclick: (e) => { e.stopPropagation(); folderMenu(fo); } }));
+}
+
+function fileItem(f, global) {
+  const m = fget(f.id);
+  const path = global ? pathLabel(f.id) : '';
+  const sub = h('div', { class: 'sub' }, (m.tg || []).map(t => h('span', { class: 'tagchip', text: t })), path ? h('span', { text: '📁 ' + path }) : null);
+  return h('div', { class: 'file-item' + (currentFile && currentFile.id === f.id ? ' active' : ''), onclick: () => openFromList(f) },
+    h('button', { class: 'fav' + (m.fv ? ' on' : ''), text: m.fv ? '★' : '☆', title: 'Favorit', onclick: (e) => { e.stopPropagation(); fset(f.id, { fv: m.fv ? 0 : 1 }); } }),
+    h('span', { class: 'type-icon', text: f.mimeType === 'application/pdf' ? 'PDF' : 'IMG' }),
+    h('div', { class: 'mid' }, h('div', { class: 'name', text: f.name }), (m.tg || []).length || path ? sub : null),
+    cachedIds.has(f.id) ? h('span', { class: 'off', title: 'offline verfügbar', text: '●' }) : null,
+    h('button', { class: 'more', text: '⋯', title: 'Menü', onclick: (e) => { e.stopPropagation(); fileMenu(f); } }));
+}
+
+function openFromList(f) { perfCtx = null; openFile(f); }
+
+function fileMenu(f) {
+  const m = fget(f.id), cached = cachedIds.has(f.id);
+  menuSheet(f.name, [
+    { label: 'Öffnen', fn: () => openFromList(f) },
+    { label: m.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => fset(f.id, { fv: m.fv ? 0 : 1 }) },
+    { label: '✎ Umbenennen', fn: () => renameFile(f) },
+    { label: '📁 In Ordner verschieben …', fn: () => moveFile(f) },
+    { label: '🏷 Tags bearbeiten …', fn: () => editTags(f.id) },
+    { label: '♫ Zur Setliste hinzufügen …', fn: () => addToSetlist(f.id) },
+    { label: cached ? '⇧ Offline-Kopie entfernen' : '⇩ Offline speichern', fn: () => toggleOffline(f) },
+    { label: '⤓ Als PDF mit Annotationen exportieren', fn: async () => { await openFile(f); exportPdf(); } },
+    { label: '🗑 In den Papierkorb', fn: () => trashFile(f), danger: true }
+  ]);
+}
+
+async function moveFile(f) {
+  const target = await pickFolder({ title: 'Verschieben nach …' });
+  if (target === undefined) return;
+  fset(f.id, { f: target });
+  toast(target ? 'Verschoben nach «' + lib.folders[target].n + '»' : 'Verschoben in den Hauptordner');
+}
+
+function editTags(id) {
+  const cur = new Set(fget(id).tg || []);
+  const chips = h('div');
+  const input = h('input', { type: 'text', placeholder: 'Neuer Tag (Enter) …', style: 'width:100%; margin-top:8px;' });
+  function draw() {
+    chips.innerHTML = '';
+    const all = [...new Set([...DEFAULT_TAGS, ...allTags(), ...cur])].sort((a, b) => a.localeCompare(b, 'de'));
+    all.forEach(t => chips.append(h('span', { class: 'chip' + (cur.has(t) ? ' on' : ''), text: t, onclick: () => { cur.has(t) ? cur.delete(t) : cur.add(t); draw(); } })));
+  }
+  draw();
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = input.value.trim(); if (v) { cur.add(v); input.value = ''; draw(); } } });
+  openModal({
+    title: 'Tags (Stimmlage, Genre, Aufgabe …)', body: [chips, input],
+    buttons: [{ label: 'Abbrechen' }, { label: 'Speichern', primary: true, fn: () => { const v = input.value.trim(); if (v) cur.add(v); fset(id, { tg: [...cur] }); } }]
+  });
+}
+
+// --- Ordner ----------------------------------------------------------
+function pickFolder({ title = 'Ordner wählen', exclude = new Set() } = {}) {
+  return new Promise((resolve) => {
+    let done = false;
+    const body = h('div');
+    const choose = (id) => { done = true; api.close(); resolve(id); };
+    body.append(h('div', { class: 'pick-row', onclick: () => choose(null) }, h('span', { text: '🏠' }), h('span', { text: 'Hauptordner' })));
+    const walk = (parent, depth) => childFolders(parent).forEach(fo => {
+      if (exclude.has(fo.id)) return;
+      body.append(h('div', { class: 'pick-row', style: `padding-left:${8 + depth * 18}px`, onclick: () => choose(fo.id) }, h('span', { text: '📁' }), h('span', { text: fo.n })));
+      walk(fo.id, depth + 1);
+    });
+    walk(null, 1);
+    body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => {
+      const n = (prompt('Name des neuen Ordners:') || '').trim();
+      if (!n) return;
+      const id = newFolderRaw(n, null);
+      choose(id);
+    } }, h('span', { text: '＋' }), h('span', { text: 'Neuen Ordner im Hauptordner anlegen …' })));
+    const api = openModal({ title, body, buttons: [{ label: 'Abbrechen' }] });
+    api.onClose = () => { if (!done) resolve(undefined); };
+  });
+}
+function newFolderRaw(name, parent) {
+  const id = uid('f');
+  lib.folders[id] = { n: name.replace(/[\\/]+/g, '-'), p: parent || null, u: Date.now() };
+  libChanged();
+  return id;
+}
+function newFolder(parent) {
+  const n = (prompt('Name des neuen Ordners:') || '').trim();
+  if (!n) return;
+  newFolderRaw(n, parent);
+}
+function renameFolder(id) {
+  const n = (prompt('Neuer Name des Ordners:', lib.folders[id].n) || '').trim();
+  if (!n || n === lib.folders[id].n) return;
+  lib.folders[id].n = n.replace(/[\\/]+/g, '-'); lib.folders[id].u = Date.now();
+  libChanged();
+}
+async function moveFolderTo(id) {
+  const exclude = new Set([id]);
+  Object.keys(lib.folders).forEach(k => { if (isDescendant(k, id)) exclude.add(k); });
+  const target = await pickFolder({ title: 'Ordner verschieben nach …', exclude });
+  if (target === undefined) return;
+  lib.folders[id].p = target; lib.folders[id].u = Date.now();
+  libChanged();
+}
+function deleteFolder(id) {
+  const f = lib.folders[id], kids = childFolders(id), n = files.filter(x => effFolder(x.id) === id).length;
+  if (!confirm(`Ordner «${f.n}» löschen?\nDie ${n} Blätter und ${kids.length} Unterordner darin werden in den übergeordneten Ordner verschoben – es wird nichts gelöscht.`)) return;
+  const parent = effParent(f), now = Date.now();
+  kids.forEach(k => { lib.folders[k.id].p = parent; lib.folders[k.id].u = now; });
+  Object.values(lib.files).forEach(m => { if (m.f === id) { m.f = parent; m.u = now; } });
+  f.d = 1; f.u = now;
+  if (currentFolder === id) currentFolder = parent;
+  libChanged();
+}
+function folderMenu(fo) {
+  menuSheet('📁 ' + fo.n, [
+    { label: '📁＋ Unterordner anlegen …', fn: () => newFolder(fo.id) },
+    { label: '✎ Umbenennen', fn: () => renameFolder(fo.id) },
+    { label: '↪ Verschieben …', fn: () => moveFolderTo(fo.id) },
+    { label: '🗑 Löschen (Inhalt bleibt erhalten)', fn: () => deleteFolder(fo.id), danger: true }
+  ]);
+}
+
+// --- Setlisten -----------------------------------------------------------
+function newSetlistRaw(name) {
+  const id = uid('s');
+  lib.setlists[id] = { n: name, it: [], u: Date.now() };
+  libChanged();
+  return id;
+}
+function setTouch(id, fn) { const s = lib.setlists[id]; fn(s); s.u = Date.now(); libChanged(); }
+
+async function addToSetlist(fileId) {
+  const sets = aliveSetlists();
+  const body = h('div');
+  const api = openModal({ title: 'Zur Setliste hinzufügen', body, buttons: [{ label: 'Abbrechen' }] });
+  const add = (id) => { setTouch(id, s => { if (!s.it.includes(fileId)) s.it.push(fileId); }); api.close(); toast('Zur Setliste «' + lib.setlists[id].n + '» hinzugefügt'); };
+  sets.forEach(s => body.append(h('div', { class: 'pick-row', onclick: () => add(s.id) }, h('span', { text: '♫' }), h('span', { text: s.n + ' (' + s.it.length + ')' }))));
+  body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => {
+    const n = (prompt('Name der neuen Setliste:') || '').trim();
+    if (n) add(newSetlistRaw(n));
+  } }, h('span', { text: '＋' }), h('span', { text: 'Neue Setliste …' })));
+}
+
+function renderSets() {
+  const list = $('setlistList'), head = $('setHead');
+  list.innerHTML = '';
+  if (!setView || !lib.setlists[setView] || lib.setlists[setView].d) {
+    setView = null;
+    head.style.display = 'none'; $('sbSetActions').style.display = 'flex';
+    const sets = aliveSetlists();
+    if (!sets.length) list.append(h('div', { class: 'empty-note', text: 'Noch keine Setliste. Mit «+ Neue Setliste» anlegen; Blätter fügst du über ihr ⋯-Menü hinzu.' }));
+    sets.forEach(s => list.append(h('div', { class: 'file-item', onclick: () => { setView = s.id; renderSidebar(); } },
+      h('span', { class: 'type-icon', text: '♫' }),
+      h('div', { class: 'mid' }, h('div', { class: 'name', text: s.n }), h('div', { class: 'sub', text: s.it.length + ' Lieder' })),
+      h('button', { class: 'more', text: '⋯', onclick: (e) => { e.stopPropagation(); setMenu(s.id); } }))));
     return;
   }
-  files.forEach(f => {
-    const item = document.createElement('div');
-    item.className = 'file-item' + (currentFile && currentFile.id === f.id ? ' active' : '');
-    const icon = document.createElement('span');
-    icon.className = 'type-icon';
-    icon.textContent = f.mimeType === 'application/pdf' ? 'PDF' : 'IMG';
-    const name = document.createElement('span');
-    name.className = 'name';
-    name.textContent = f.name;                       // textContent statt innerHTML (Dateinamen können < > enthalten)
-    const del = document.createElement('button');
-    del.className = 'del'; del.title = 'In Papierkorb'; del.textContent = '🗑';
-    name.addEventListener('click', () => openFile(f));
-    icon.addEventListener('click', () => openFile(f));
-    del.addEventListener('click', (e) => { e.stopPropagation(); trashFile(f); });
-    item.append(icon, name, del);
-    fileListEl.appendChild(item);
+  const s = lib.setlists[setView];
+  $('sbSetActions').style.display = 'none';
+  head.style.display = 'flex'; head.innerHTML = '';
+  head.append(
+    h('button', { class: 'icon', text: '‹', title: 'Zurück', onclick: () => { setView = null; renderSidebar(); } }),
+    h('span', { class: 't', text: s.n }),
+    h('button', { text: '▶ Auftritt', title: 'Setliste im Auftrittsmodus durchspielen', onclick: () => startSetlist(setView) }),
+    h('button', { class: 'icon', text: '⋯', onclick: () => setMenu(setView) }));
+  if (!s.it.length) list.append(h('div', { class: 'empty-note', text: 'Leer. Füge Blätter über ihr ⋯-Menü («Zur Setliste hinzufügen») hinzu.' }));
+  s.it.forEach((fid, i) => {
+    const f = files.find(x => x.id === fid);
+    list.append(h('div', { class: 'file-item set-item', onclick: () => { if (f) openFromSet(setView, i); } },
+      h('span', { class: 'idx', text: String(i + 1) }),
+      h('div', { class: 'mid' }, h('div', { class: 'name', text: f ? f.name : '(Blatt nicht mehr vorhanden)' })),
+      f && cachedIds.has(fid) ? h('span', { class: 'off', text: '●', title: 'offline verfügbar' }) : null,
+      h('button', { class: 'more', text: '▲', title: 'Nach oben', disabled: i === 0 ? true : null, onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { [x.it[i - 1], x.it[i]] = [x.it[i], x.it[i - 1]]; }); } }),
+      h('button', { class: 'more', text: '▼', title: 'Nach unten', disabled: i === s.it.length - 1 ? true : null, onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { [x.it[i + 1], x.it[i]] = [x.it[i], x.it[i + 1]]; }); } }),
+      h('button', { class: 'more', text: '✕', title: 'Aus Setliste entfernen', onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { x.it.splice(i, 1); }); } })));
   });
 }
-
-async function trashFile(f) {
-  if (!confirm(`"${f.name}" in den Papierkorb verschieben?`)) return;
-  const isCur = currentFile && currentFile.id === f.id;
-  try {
-    await driveFetch(`${DRIVE_FILES}/${f.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trashed: true })
-    });
-  } catch (e) { setStatus('Fehler beim Löschen', 'error'); console.error(e); return; }
-  if (isCur) {
-    openSeq++;
-    clearTimeout(saveTimer); dirty = false;
-    await saving;
-    closeCurrent();
-    currentTitleEl.textContent = 'Gesangs-App – Lyric-Blätter';
-    mainViewerEl.style.display = 'none';
-    emptyEl.style.display = 'flex';
-  }
-  await loadFileList();
+function setMenu(id) {
+  const s = lib.setlists[id];
+  menuSheet('♫ ' + s.n, [
+    { label: '▶ Im Auftrittsmodus starten', fn: () => startSetlist(id) },
+    { label: '⇩ Alle Blätter offline speichern', fn: () => cacheMany(s.it.map(fid => files.find(f => f.id === fid)).filter(Boolean)) },
+    { label: '✎ Umbenennen', fn: () => { const n = (prompt('Neuer Name der Setliste:', s.n) || '').trim(); if (n) setTouch(id, x => { x.n = n; }); } },
+    { label: '🗑 Setliste löschen', danger: true, fn: () => { if (confirm('Setliste «' + s.n + '» löschen? (Die Blätter bleiben erhalten.)')) { setTouch(id, x => { x.d = 1; }); if (setView === id) setView = null; renderSidebar(); } } }
+  ]);
+}
+function openFromSet(setId, idx) {
+  const s = lib.setlists[setId];
+  const f = files.find(x => x.id === s.it[idx]);
+  if (!f) return;
+  perfCtx = { setId, idx };
+  sidebar.classList.remove('open');
+  return openFile(f);
 }
 
-// Upload per XMLHttpRequest: liefert Fortschritt und Zeitlimit (fetch kann beides nicht) – bei Handy-Fotos sonst «hängt» die Anzeige
-const MAX_IMG_DIM = 3000;          // Fotos werden vor dem Upload auf max. 3000 px (lange Seite) verkleinert
-const RESUMABLE_FROM = 5 * 1024 * 1024;   // Drive: Multipart nur bis ca. 5 MB empfohlen
+// --- Verdrahtung -------------------------------------------------------------
+document.querySelectorAll('#sbTabs button').forEach(b => b.addEventListener('click', () => { sbTab = b.dataset.tab; renderSidebar(); }));
+$('searchInput').addEventListener('input', (e) => { searchQ = e.target.value; renderSidebar(); });
+$('sortSel').addEventListener('change', (e) => { sortMode = e.target.value; lsSet('gapp_sort', sortMode); renderSidebar(); });
+$('tagFilter').addEventListener('change', (e) => { tagSel = e.target.value; renderSidebar(); });
+$('favFilter').addEventListener('click', () => { favOnly = !favOnly; renderSidebar(); });
+$('newFolderBtn').addEventListener('click', () => newFolder(currentFolder));
+$('newSetBtn').addEventListener('click', () => { const n = (prompt('Name der neuen Setliste:') || '').trim(); if (n) { setView = newSetlistRaw(n); renderSidebar(); } });
+$('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
 
-function xhrSend(method, url, headers, body, onProgress, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    const x = new XMLHttpRequest();
-    x.open(method, url);
-    for (const [k, v] of Object.entries(headers)) x.setRequestHeader(k, v);
-    x.timeout = timeoutMs;
-    x.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total); };
-    x.onload = () => resolve(x);
-    x.onerror = () => reject(new Error('Netzwerkfehler'));
-    x.ontimeout = () => reject(new Error('Zeitüberschreitung'));
-    x.send(body);
-  });
-}
-
-async function driveUpload(method, url, headers, body, onProgress) {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    await ensureToken();
-    const x = await xhrSend(method, url, Object.assign({ Authorization: 'Bearer ' + accessToken }, headers), body, onProgress, 300000);
-    if (x.status === 401 && attempt === 0) { dropToken(); continue; }
-    if (x.status === 401) throw new Error('unauthorized');
-    if (x.status < 200 || x.status >= 300) throw new Error('Drive-Fehler ' + x.status + ' ' + x.responseText.slice(0, 200));
-    return x;
-  }
-  throw new Error('unauthorized');
-}
-
-async function prepareUpload(file) {
-  if (!file.type.startsWith('image/') || /gif|svg/.test(file.type)) return file;
-  try {
-    const bmp = await createImageBitmap(file);
-    const s = Math.min(1, MAX_IMG_DIM / Math.max(bmp.width, bmp.height));
-    if (s === 1 && file.size <= 1.5e6) { if (bmp.close) bmp.close(); return file; }
-    const c = document.createElement('canvas');
-    c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
-    const g = c.getContext('2d');
-    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
-    g.imageSmoothingQuality = 'high';
-    g.drawImage(bmp, 0, 0, c.width, c.height);
-    if (bmp.close) bmp.close();
-    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
-    if (!blob || (s === 1 && blob.size >= file.size)) return file;
-    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
-  } catch (e) { return file; }      // z. B. HEIC ohne Browser-Unterstützung: Original hochladen
-}
-
-async function uploadMultipart(file, metadata, onProgress) {
-  const boundary = 'gappboundary' + Date.now();
-  const head = new TextEncoder().encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`);
-  const tail = new TextEncoder().encode(`\r\n--${boundary}--`);
-  const x = await driveUpload('POST', `${DRIVE_UPLOAD}?uploadType=multipart&fields=id,name,mimeType`,
-    { 'Content-Type': `multipart/related; boundary=${boundary}` }, new Blob([head, file, tail]), onProgress);
-  return JSON.parse(x.responseText);
-}
-
-async function uploadResumable(file, metadata, onProgress) {
-  const init = await driveUpload('POST', `${DRIVE_UPLOAD}?uploadType=resumable&fields=id,name,mimeType`, {
-    'Content-Type': 'application/json; charset=UTF-8',
-    'X-Upload-Content-Type': file.type || 'application/octet-stream',
-    'X-Upload-Content-Length': String(file.size)
-  }, JSON.stringify(metadata));
-  const loc = init.getResponseHeader('Location');
-  if (!loc) throw new Error('kein Upload-Link');
-  const x = await driveUpload('PUT', loc, { 'Content-Type': file.type || 'application/octet-stream' }, file, onProgress);
-  return JSON.parse(x.responseText);
-}
-
-async function uploadFiles(fileListRaw) {
-  const list = Array.from(fileListRaw);
-  let firstId = null;
-  for (let i = 0; i < list.length; i++) {
-    const label = list.length > 1 ? ` (${i + 1}/${list.length})` : '';
-    try {
-      setStatus('Bereite vor …' + label, 'saving');
-      const file = await prepareUpload(list[i]);
-      const prog = (f) => setStatus(`Lade hoch … ${Math.round(f * 100)} %${label}`, 'saving');
-      prog(0);
-      const metadata = { name: file.name, parents: [folderId] };
-      let created = null;
-      if (file.size > RESUMABLE_FROM) {
-        try { created = await uploadResumable(file, metadata, prog); }
-        catch (e) { if (e.message === 'unauthorized') throw e; console.warn('Resumable-Upload fehlgeschlagen, versuche Multipart:', e); }
-      }
-      if (!created) created = await uploadMultipart(file, metadata, prog);
-      if (!firstId) firstId = created.id;
-    } catch (e) {
-      fail(e.message === 'unauthorized' ? 'Sitzung abgelaufen – bitte «Neu anmelden» tippen' : `Upload fehlgeschlagen: ${list[i].name}`, e);
-      await loadFileList().catch(() => {});
-      return;
-    }
-  }
-  setStatus('Hochgeladen', 'ok');
-  await loadFileList();
-  const f = files.find(x => x.id === firstId);
-  if (f) openFile(f);                                  // hochgeladenes Blatt direkt anzeigen
-}
 
 // ---------------------------------------------------------------
-// Annotationen (Format v2: Koordinaten in Seitenbreiten, geräteunabhängig)
-//   { version:2, notes, pageNotes:{"1":".."}, pages:{"1":[ {c, w, p:[[x,y,(druck)],...], er?} ]} }
-//   x,y: 1.0 = volle Seitenbreite (y ebenfalls in Seitenbreiten); w: Strichstärke in Seitenbreiten
+// pdf.js (lokal aus ./vendor – funktioniert auch offline)
 // ---------------------------------------------------------------
-function normalizeAnnot(d) {
-  if (!d || typeof d !== 'object') return emptyAnnot();
-  if (d.version >= 2) {
-    d.pages = d.pages || {}; d.pageNotes = d.pageNotes || {}; d.notes = d.notes || '';
-    return d;
-  }
-  // Migration v1 (Pixelkoordinaten, Bezugsbreite unbekannt → Annahme LEGACY_REF_W)
-  const out = emptyAnnot();
-  out.notes = d.notes || '';
-  out.migrated = { from: 1, refWidth: LEGACY_REF_W };
-  for (const [k, arr] of Object.entries(d.pages || {})) {
-    out.pages[k] = (arr || []).filter(s => s && s.points && s.points.length).map(s => {
-      const o = {
-        c: s.color || '#1a1a1a',
-        w: (s.width || 3) / LEGACY_REF_W,
-        p: s.points.map(q => [r5(q.x / LEGACY_REF_W), r5(q.y / LEGACY_REF_W)])
-      };
-      if (s.eraser) o.er = 1;
-      return o;
-    });
-  }
-  return out;
+let pdfjsLib = null;
+async function getPdfjs() {
+  if (pdfjsLib) return pdfjsLib;
+  const m = await import('./vendor/pdf.min.mjs');
+  m.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.mjs', location.href).href;
+  pdfjsLib = m;
+  return m;
 }
-
-async function findAnnotationFile(baseId) {
-  const name = `${baseId}.annotations.json`;
-  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and name='${escQ(name)}'`);
-  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&fields=files(id,name)`);
-  const data = await res.json();
-  return data.files && data.files.length ? data.files[0].id : null;
-}
-
-async function loadAnnotations(baseId) {
-  const id = await findAnnotationFile(baseId);
-  if (!id) return { id: null, data: emptyAnnot() };
-  const res = await driveFetch(`${DRIVE_FILES}/${id}?alt=media`);
-  return { id, data: normalizeAnnot(await res.json()) };
-}
-
-// Speichern: serialisiert (nie zwei Uploads gleichzeitig → keine doppelten Annotationsdateien)
-function queueSave() {
-  if (!ready) return;
-  dirty = true;
-  setStatus('Ungespeicherte Änderung', '');
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveNow, 2000);
-}
-function saveNow() {
-  clearTimeout(saveTimer);
-  saving = saving.then(doSave);
-  return saving;
-}
-async function flushSave() {
-  clearTimeout(saveTimer);
-  if (dirty) await saveNow(); else await saving;
-}
-
-async function doSave() {
-  if (!dirty || !currentFile || !ready) return;
-  const file = currentFile;
-  const snapshot = JSON.stringify(annotData);
-  const fid = annotFileId;
-  dirty = false;                                   // Änderungen während des Uploads setzen es erneut
-  setStatus('Speichert …', 'saving');
-  try {
-    const metadata = fid ? {} : { name: `${file.id}.annotations.json`, parents: [folderId] };
-    const boundary = 'gappboundary' + Date.now();
-    const head = new TextEncoder().encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n`);
-    const tail = new TextEncoder().encode(`\r\n--${boundary}--`);
-    const body = new Blob([head, snapshot, tail]);
-    const headers = { 'Content-Type': `multipart/related; boundary=${boundary}` };
-    if (fid) {
-      await driveFetch(`${DRIVE_UPLOAD}/${fid}?uploadType=multipart`, { method: 'PATCH', headers, body });
-    } else {
-      const res = await driveFetch(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id`, { method: 'POST', headers, body });
-      const created = await res.json();
-      if (currentFile === file) annotFileId = created.id;
-    }
-    if (dirty) setStatus('Ungespeicherte Änderung', ''); else setStatus('Gespeichert', 'ok');
-  } catch (e) {
-    dirty = true;
-    console.error(e);
-    if (e.message !== 'unauthorized') {
-      setStatus('Fehler beim Speichern – neuer Versuch folgt', 'error');
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveNow, 10000);
-    }
-  }
-}
-
-// Nichts verlieren beim Schliessen / App-Wechsel
-window.addEventListener('beforeunload', (e) => {
-  if (dirty) { flushSave(); e.preventDefault(); e.returnValue = ''; }
-});
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && dirty) flushSave(); });
-window.addEventListener('pagehide', () => { if (dirty) flushSave(); });
+const PDF_OPTS = { wasmUrl: new URL('./vendor/wasm/', location.href).href, standardFontDataUrl: new URL('./vendor/standard_fonts/', location.href).href };
 
 // ---------------------------------------------------------------
-// Viewer
+// Blätter offline verfügbar machen (IndexedDB)
 // ---------------------------------------------------------------
+async function getBlobRec(id) { return IDB.ok ? await safe(IDB.get('blobs', id)) : null; }
+async function storeBlob(f, blob) {
+  if (!IDB.ok) return;
+  const buf = await blob.arrayBuffer();
+  await safe(IDB.put('blobs', f.id, { buf, mime: blob.type || f.mimeType, md5: f.md5Checksum || null, name: f.name }));
+  cachedIds.add(f.id);
+  renderSidebar();
+}
+async function loadBlob(f) {
+  const rec = await getBlobRec(f.id);
+  const fresh = rec && (!rec.md5 || !f.md5Checksum || rec.md5 === f.md5Checksum);
+  if (rec && (fresh || !isOnline() || !tokenValid())) return new Blob([rec.buf], { type: rec.mime });
+  if (!isOnline()) throw new Error('offline_uncached');
+  const res = await driveFetch(`${DRIVE_FILES}/${f.id}?alt=media`);
+  const blob = await res.blob();
+  storeBlob(f, blob).catch(() => {});
+  return blob;
+}
+async function cacheSheet(f) {
+  if (cachedIds.has(f.id) && !isOnline()) return;
+  const res = await driveFetch(`${DRIVE_FILES}/${f.id}?alt=media`);
+  await storeBlob(f, await res.blob());
+}
+async function cacheMany(list) {
+  let n = 0;
+  for (const f of list) {
+    if (cachedIds.has(f.id)) { n++; continue; }
+    try { setStatus(`Offline speichern … ${n + 1}/${list.length}`, 'saving'); await cacheSheet(f); n++; }
+    catch (e) { fail('Offline speichern fehlgeschlagen: ' + f.name, e); return; }
+  }
+  setStatus(`${n} Blätter offline verfügbar`, 'ok');
+}
+async function toggleOffline(f) {
+  if (cachedIds.has(f.id)) { cachedIds.delete(f.id); await safe(IDB.del('blobs', f.id)); renderSidebar(); toast('Offline-Kopie entfernt'); return; }
+  try { setStatus('Speichere offline …', 'saving'); await cacheSheet(f); setStatus('Offline gespeichert', 'ok'); }
+  catch (e) { fail('Offline speichern fehlgeschlagen', e); }
+}
+$('offlineAllBtn').addEventListener('click', () => cacheMany(files));
+
+// ---------------------------------------------------------------
+// Blatt öffnen
+// ---------------------------------------------------------------
+function destroyDoc(doc) { try { (doc._task || doc).destroy(); } catch (e) {} }
 function closeCurrent() {
   ready = false; pageReady = false;
-  cancelStroke();
+  cancelStroke && cancelStroke();
   clearTimeout(renderTimer);
   renderSeq++;
   if (renderTask) { try { renderTask.cancel(); } catch (e) {} renderTask = null; }
-  if (currentDoc) { try { currentDoc.destroy(); } catch (e) {} currentDoc = null; }
+  if (currentDoc) { destroyDoc(currentDoc); currentDoc = null; }
   if (currentImgUrl) { URL.revokeObjectURL(currentImgUrl); currentImgUrl = null; }
-  currentImg = null;
-  currentFile = null; annotFileId = null; annotData = emptyAnnot();
-  history = []; zoom = 1; currentPage = 1; totalPages = 1; notesScope = 'file';
-  renderFileList();
+  currentImg = null; currentBlob = null; prefetched = null;
+  currentFile = null; annotRec = { aid: null, aTime: null, base: null }; annotData = emptyAnnot();
+  undoStack = []; zoom = 1; currentPage = 1; totalPages = 1; notesScope = 'file'; selId = null; dirty = false;
+  updateSelBar && updateSelBar();
+  renderSidebar();
 }
 
 function loadImage(blob) {
@@ -759,67 +1286,86 @@ function loadImage(blob) {
   });
 }
 
-async function openFile(f) {
+async function openFile(f, opts = {}) {
   const seq = ++openSeq;
-  // Erst offene Änderungen des bisherigen Blatts sichern – sonst gehen sie beim Wechsel verloren
   await flushSave();
   if (seq !== openSeq) return;
-  if (dirty && !confirm('Letzte Änderungen konnten nicht gespeichert werden. Trotzdem wechseln (Änderungen gehen verloren)?')) return;
-  dirty = false;
+  if (dirty && !IDB.ok && !confirm('Letzte Änderungen konnten nicht gespeichert werden. Trotzdem wechseln (Änderungen gehen verloren)?')) return;
 
   closeCurrent();
   currentFile = f;
   currentTitleEl.textContent = f.name;
-  emptyEl.style.display = 'none';
+  $('renameBtn').style.display = ''; $('perfBtn').style.display = '';
+  emptyEl.style.display = 'none'; signedOutEl.style.display = 'none';
   mainViewerEl.style.display = 'flex';
   sidebar.classList.remove('open');
-  renderFileList();
   baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
   inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
-  updateZoomLabel(); updatePageNav(); bindNotes();
+  updateZoomLabel(); updatePageNav(); bindNotes(); applyDisplay();
   setStatus('Lädt …', 'saving');
+  touchOpened(f.id);
 
   try {
-    const ann = await loadAnnotations(f.id);
+    const blob = await loadBlob(f);
     if (seq !== openSeq) return;
-    const res = await driveFetch(`${DRIVE_FILES}/${f.id}?alt=media`);
-    const blob = await res.blob();
+    currentBlob = blob;
+
+    // Lokale Annotationen; beim ersten Öffnen auf diesem Gerät zuerst aus Drive holen
+    const loc = await safe(IDB.get('annots', f.id));
     if (seq !== openSeq) return;
+    let a = null;
+    if (loc && loc.json) {
+      try { a = normalizeAnnot(JSON.parse(loc.json)); } catch (e) { a = null; }
+      annotRec = { aid: loc.aid || null, aTime: loc.aTime || null, base: loc.base || null };
+    } else if (canSyncNow()) {
+      setStatus('Lädt Notizen …', 'saving');
+      try { a = await pullAnnotFirst(f.id); } catch (e) { console.warn('Erstes Laden der Notizen:', e); }
+      if (seq !== openSeq) return;
+    }
 
     if (f.mimeType === 'application/pdf') {
-      const lib = await getPdfjs();
+      const lib_ = await getPdfjs();
       const buf = await blob.arrayBuffer();
-      const doc = await lib.getDocument({ data: buf }).promise;
-      if (seq !== openSeq) { doc.destroy(); return; }
-      currentDoc = doc;
-      totalPages = doc.numPages;
+      const task = lib_.getDocument(Object.assign({ data: buf }, PDF_OPTS));
+      const doc = await task.promise; doc._task = task;
+      if (seq !== openSeq) { destroyDoc(doc); return; }
+      currentDoc = doc; totalPages = doc.numPages;
     } else {
       const img = await loadImage(blob);
       if (seq !== openSeq) { URL.revokeObjectURL(currentImgUrl); currentImgUrl = null; return; }
-      currentImg = img;
-      totalPages = 1;
+      currentImg = img; totalPages = 1;
     }
-    annotFileId = ann.id;
-    annotData = ann.data;
+    annotData = a || emptyAnnot();
+    if (dirtyIds.has(f.id)) dirty = true;
+    if (opts.page === 'last') currentPage = totalPages;
     ready = true;
-    bindNotes(); updatePageNav();
+    bindNotes(); updatePageNav(); applyDisplay(); renderLayerPop();
     await renderPage();
-    if (seq === openSeq) setStatus('');
+    if (seq === openSeq) { setStatus(''); updateSyncState(); }
+    if (perf) { $('perfTitle').textContent = f.name; updatePerfPage(); }
+    if (canSyncNow()) enqueue(() => syncAnnot(f.id));
   } catch (e) {
-    if (seq === openSeq) fail(e.message === 'unauthorized' ? 'Sitzung abgelaufen – bitte «Neu anmelden» tippen' : 'Fehler beim Laden', e);
+    if (seq === openSeq) {
+      if (e.message === 'offline_uncached') { fail('Nicht offline verfügbar', new Error('Dieses Blatt wurde noch nicht auf dieses Gerät geladen. Bitte einmal mit Internet öffnen oder «Offline speichern» wählen.')); toast('Dieses Blatt ist nicht offline verfügbar.'); }
+      else fail(e.message === 'unauthorized' ? 'Sitzung abgelaufen – bitte «Anmelden» tippen' : 'Fehler beim Laden', e);
+    }
   }
 }
 
-// --- Layout / Rendering ---------------------------------------
-function fitWidth() { return Math.max(200, Math.min(canvasWrap.clientWidth - 32, 1400)); }
-
-function applyCssSize() {
-  const w = Math.round(fitWidth() * zoom), h = Math.round(w * pageAspect);
-  stack.style.width = w + 'px'; stack.style.height = h + 'px';
-  [baseCanvas, inkCanvas].forEach(c => { c.style.width = w + 'px'; c.style.height = h + 'px'; });
+// ---------------------------------------------------------------
+// Layout / Rendering
+// ---------------------------------------------------------------
+function fitWidth() {
+  const cw = canvasWrap.clientWidth, ch = canvasWrap.clientHeight, pad = perf ? 0 : 32;
+  let w = cw - pad;
+  if (fitMode === 'page') w = Math.min(w, (ch - pad) / pageAspect);
+  return Math.max(200, Math.min(w, perf ? 4000 : 1400));
 }
-
-// Pixelbreite der Zeichenfläche: Retina-scharf (devicePixelRatio), aber mit Obergrenze für den Speicher
+function applyCssSize() {
+  const w = Math.round(fitWidth() * zoom), h_ = Math.round(w * pageAspect);
+  stack.style.width = w + 'px'; stack.style.height = h_ + 'px';
+  [baseCanvas, inkCanvas].forEach(c => { c.style.width = w + 'px'; c.style.height = h_ + 'px'; });
+}
 function targetPixelWidth() {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   let px = Math.min(Math.round(fitWidth() * zoom * dpr), 4096);
@@ -827,7 +1373,6 @@ function targetPixelWidth() {
   if (px * px * pageAspect > maxArea) px = Math.floor(Math.sqrt(maxArea / pageAspect));
   return Math.max(px, 100);
 }
-
 function commitCanvas(off) {
   [baseCanvas, inkCanvas].forEach(c => { c.width = off.width; c.height = off.height; });
   baseCtx.drawImage(off, 0, 0);
@@ -836,14 +1381,18 @@ function commitCanvas(off) {
   pageReady = true;
 }
 
-// Rendert offscreen und übernimmt nur das jeweils neueste Ergebnis → keine Render-Kollisionen beim schnellen Blättern/Zoomen
+// Rendert offscreen und übernimmt nur das jeweils neueste Ergebnis (keine Render-Kollisionen beim schnellen Blättern/Zoomen)
 async function renderPage() {
   if (!ready) return;
   const seq = ++renderSeq;
   if (renderTask) { try { renderTask.cancel(); } catch (e) {} renderTask = null; }
-
   if (currentDoc) {
-    const page = await currentDoc.getPage(currentPage);
+    const pageNo = currentPage;
+    if (prefetched && prefetched.page === pageNo && Math.abs(prefetched.px - targetPixelWidthFor(prefetched.aspect)) <= 2) {
+      pageAspect = prefetched.aspect; const off = prefetched.canvas; prefetched = null;
+      commitCanvas(off); schedulePrefetch(); return;
+    }
+    const page = await currentDoc.getPage(pageNo);
     if (seq !== renderSeq) return;
     const vp1 = page.getViewport({ scale: 1 });
     pageAspect = vp1.height / vp1.width;
@@ -858,6 +1407,7 @@ async function renderPage() {
     if (seq !== renderSeq) return;
     renderTask = null;
     commitCanvas(off);
+    schedulePrefetch();
   } else if (currentImg) {
     pageAspect = currentImg.naturalHeight / currentImg.naturalWidth;
     const px = targetPixelWidth();
@@ -865,9 +1415,32 @@ async function renderPage() {
     off.width = px; off.height = Math.round(px * pageAspect);
     const octx = off.getContext('2d');
     octx.imageSmoothingQuality = 'high';
-    octx.drawImage(currentImg, 0, 0, off.width, off.height);   // auf Zielgrösse skaliert (vorher: unskaliert → Ausschnitt)
+    octx.drawImage(currentImg, 0, 0, off.width, off.height);
     commitCanvas(off);
   }
+}
+function targetPixelWidthFor(aspect) { const keep = pageAspect; pageAspect = aspect; const px = targetPixelWidth(); pageAspect = keep; return px; }
+
+// Nächste Seite vorab rendern (im Auftrittsmodus wichtig: Umblättern ohne Wartezeit)
+let prefetchTimer = null;
+function schedulePrefetch() {
+  clearTimeout(prefetchTimer);
+  if (!perf || !currentDoc || currentPage >= totalPages) return;
+  prefetchTimer = setTimeout(async () => {
+    const doc = currentDoc, n = currentPage + 1;
+    if (!doc || !perf) return;
+    try {
+      const page = await doc.getPage(n);
+      const vp1 = page.getViewport({ scale: 1 });
+      const aspect = vp1.height / vp1.width;
+      const px = targetPixelWidthFor(aspect);
+      const vp = page.getViewport({ scale: px / vp1.width });
+      const off = document.createElement('canvas');
+      off.width = Math.ceil(vp.width); off.height = Math.ceil(vp.height);
+      await page.render({ canvasContext: off.getContext('2d'), viewport: vp }).promise;
+      if (doc === currentDoc && perf) prefetched = { page: n, px, aspect, canvas: off };
+    } catch (e) { /* egal */ }
+  }, 250);
 }
 
 function scheduleRender(ms) {
@@ -879,12 +1452,12 @@ function updatePageNav() {
   pageLabel.textContent = `${currentPage} / ${totalPages}`;
   $('prevPage').disabled = currentPage <= 1;
   $('nextPage').disabled = currentPage >= totalPages;
+  if (typeof updatePerfPage === 'function') updatePerfPage();
 }
-
 async function goPage(p) {
   if (!ready || p < 1 || p > totalPages || p === currentPage) return;
   cancelStroke();
-  currentPage = p;
+  currentPage = p; selId = null; updateSelBar();
   pageReady = false;
   inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
   updatePageNav(); bindNotes();
@@ -895,12 +1468,11 @@ async function goPage(p) {
 $('prevPage').addEventListener('click', () => goPage(currentPage - 1));
 $('nextPage').addEventListener('click', () => goPage(currentPage + 1));
 
-// --- Zoom ------------------------------------------------------
+// --- Zoom ------------------------------------------------------------
 function updateZoomLabel() { $('zoomLabel').textContent = Math.round(zoom * 100) + '%'; }
-
 function setZoom(z) {
   zoom = clamp(z, MIN_ZOOM, MAX_ZOOM);
-  applyCssSize(); updateZoomLabel(); scheduleRender(250);   // sofort per CSS skalieren, scharf nachrendern
+  applyCssSize(); updateZoomLabel(); scheduleRender(250);
 }
 function anchorAt(fx, fy, cx, cy) {
   const r = stack.getBoundingClientRect();
@@ -918,272 +1490,38 @@ $('zoomIn').addEventListener('click', () => { if (ready) zoomAt(zoom * 1.25, ...
 $('zoomOut').addEventListener('click', () => { if (ready) zoomAt(zoom / 1.25, ...wrapCenter()); });
 $('zoomFit').addEventListener('click', () => { if (!ready) return; setZoom(1); canvasWrap.scrollLeft = 0; });
 canvasWrap.addEventListener('wheel', (e) => {
-  if (!e.ctrlKey || !ready) return;
+  if (!e.ctrlKey || !ready || perf) return;
   e.preventDefault();
   zoomAt(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
 }, { passive: false });
-
-function startPinch() {
-  const [a, b] = [...touches.values()];
-  const r = stack.getBoundingClientRect();
-  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-  pinchState = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: zoom, fx: (mx - r.left) / r.width, fy: (my - r.top) / r.height };
-  gestureLock = true;
-}
-function updatePinch() {
-  const arr = [...touches.values()];
-  if (arr.length < 2 || !pinchState) return;
-  const [a, b] = arr;
-  const d = Math.hypot(a.x - b.x, a.y - b.y);
-  setZoom(pinchState.z0 * d / pinchState.d0);
-  anchorAt(pinchState.fx, pinchState.fy, (a.x + b.x) / 2, (a.y + b.y) / 2);
-}
+window.addEventListener('resize', () => { if (ready) { applyCssSize(); scheduleRender(200); } });
 
 // ---------------------------------------------------------------
-// Ink / Annotationen
+// Helligkeit / Kontrast des Blatts (pro Blatt gespeichert, synchronisiert)
 // ---------------------------------------------------------------
-function getStrokes() {
-  const key = String(currentPage);
-  if (!annotData.pages[key]) annotData.pages[key] = [];
-  return annotData.pages[key];
+function applyDisplay() {
+  const m = currentFile ? fget(currentFile.id) : { bri: 1, con: 1 };
+  baseCanvas.style.filter = (m.bri === 1 && m.con === 1) ? '' : `brightness(${m.bri}) contrast(${m.con})`;
+  const b = Math.round((m.bri || 1) * 100), c = Math.round((m.con || 1) * 100);
+  $('briRange').value = b; $('briVal').textContent = b + '%';
+  $('conRange').value = c; $('conVal').textContent = c + '%';
+  $('perfBri').value = b;
+  $('dispBtn').classList.toggle('on', b !== 100 || c !== 100);
 }
-
-function redrawInk() {
-  inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
-  for (const s of getStrokes()) drawStroke(s);
-  if (drawing && currentStroke) drawStroke(currentStroke);
+function previewDisplay(bri, con) {
+  baseCanvas.style.filter = (bri === 1 && con === 1) ? '' : `brightness(${bri}) contrast(${con})`;
+  $('briVal').textContent = Math.round(bri * 100) + '%'; $('conVal').textContent = Math.round(con * 100) + '%';
 }
-
-const pw = (s, i) => { const pr = s.p[i][2]; return pr == null ? 1 : 0.35 + pr * 1.3; };
-function applyStyle(ctx, s) {
-  ctx.globalCompositeOperation = s.er ? 'destination-out' : 'source-over';
-  ctx.strokeStyle = s.c; ctx.fillStyle = s.c;
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-}
-// Einzelsegmente: Kopf (Linie), Mitte (quadratische Kurve über Mittelpunkte = glatt), Ende (Linie), Punkt
-function seg(ctx, s, W, kind, i) {
-  const P = s.p, n = P.length;
-  const X = k => P[k][0] * W, Y = k => P[k][1] * W;
-  const mx = (a, b) => (X(a) + X(b)) / 2, my = (a, b) => (Y(a) + Y(b)) / 2;
-  ctx.beginPath();
-  if (kind === 'dot') {
-    ctx.arc(X(0), Y(0), Math.max(0.5, s.w * W * pw(s, 0)) / 2, 0, Math.PI * 2);
-    ctx.fill();
-    return;
-  }
-  ctx.lineWidth = Math.max(0.5, s.w * W * pw(s, i));
-  if (kind === 'head') { ctx.moveTo(X(0), Y(0)); ctx.lineTo(mx(0, 1), my(0, 1)); }
-  else if (kind === 'mid') { ctx.moveTo(mx(i - 1, i), my(i - 1, i)); ctx.quadraticCurveTo(X(i), Y(i), mx(i, i + 1), my(i, i + 1)); }
-  else { ctx.moveTo(mx(n - 2, n - 1), my(n - 2, n - 1)); ctx.lineTo(X(n - 1), Y(n - 1)); }
-  ctx.stroke();
-}
-function drawStroke(s) {
-  const n = s.p.length;
-  if (!n) return;
-  const W = inkCanvas.width;
-  inkCtx.save();
-  applyStyle(inkCtx, s);
-  if (n === 1) seg(inkCtx, s, W, 'dot', 0);
-  else {
-    seg(inkCtx, s, W, 'head', 0);
-    for (let i = 1; i <= n - 2; i++) seg(inkCtx, s, W, 'mid', i);
-    seg(inkCtx, s, W, 'tail', n - 1);
-  }
-  inkCtx.restore();
-}
-function drawIncremental(s) {
-  const n = s.p.length, W = inkCanvas.width;
-  inkCtx.save();
-  applyStyle(inkCtx, s);
-  if (n === 1) seg(inkCtx, s, W, 'dot', 0);
-  else if (n === 2) seg(inkCtx, s, W, 'head', 0);
-  else seg(inkCtx, s, W, 'mid', n - 2);
-  inkCtx.restore();
-}
-
-function normPoint(e) {
-  const rect = inkCanvas.getBoundingClientRect();
-  const x = r5((e.clientX - rect.left) / rect.width);
-  const y = r5((e.clientY - rect.top) / rect.width);          // in Seitenbreiten
-  if (e.pointerType === 'pen' && e.pressure > 0) return [x, y, Math.round(e.pressure * 100) / 100];
-  return [x, y];
-}
-
-// --- Radierer: entfernt ganze Striche (statt Radier-Striche zu speichern) ---
-function segDist(pt, a, b) {
-  const dx = b[0] - a[0], dy = b[1] - a[1];
-  const l2 = dx * dx + dy * dy;
-  let t = l2 ? ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dy) / l2 : 0;
-  t = clamp(t, 0, 1);
-  return Math.hypot(pt[0] - (a[0] + t * dx), pt[1] - (a[1] + t * dy));
-}
-function strokeHit(s, pt, r) {
-  const P = s.p;
-  if (P.length === 1) return Math.hypot(P[0][0] - pt[0], P[0][1] - pt[1]) <= r;
-  for (let i = 1; i < P.length; i++) if (segDist(pt, P[i - 1], P[i]) <= r) return true;
-  return false;
-}
-function eraseAt(pt) {
-  const r = Math.max(0.006, tool.width * 3 / REF_W);
-  const strokes = getStrokes();
-  let changed = false;
-  for (let i = strokes.length - 1; i >= 0; i--) {
-    const s = strokes[i];
-    if (s.er) continue;
-    if (strokeHit(s, pt, r + s.w / 2)) { strokes.splice(i, 1); erasedItems.push({ stroke: s, index: i }); changed = true; }
-  }
-  if (changed) redrawInk();
-}
-
-// --- Undo -------------------------------------------------------
-function pushHistory(a) { history.push(a); if (history.length > 300) history.shift(); }
-function undo() {
-  if (!ready || !pageReady) return;
-  const strokes = getStrokes();
-  for (let i = history.length - 1; i >= 0; i--) {
-    const a = history[i];
-    if (a.page !== currentPage) continue;
-    history.splice(i, 1);
-    if (a.type === 'add') { const k = strokes.indexOf(a.stroke); if (k >= 0) strokes.splice(k, 1); }
-    else if (a.type === 'erase') { for (let j = a.items.length - 1; j >= 0; j--) strokes.splice(Math.min(a.items[j].index, strokes.length), 0, a.items[j].stroke); }
-    else if (a.type === 'clear') { annotData.pages[String(currentPage)] = a.strokes; }
-    redrawInk(); queueSave();
-    return;
-  }
-  if (strokes.length) { strokes.pop(); redrawInk(); queueSave(); }   // Strich aus früherer Sitzung
-}
-
-// --- Zeigereingabe ------------------------------------------------
-function touchDraws() { return fingerMode === 'draw' || (fingerMode === 'auto' && !penSeen); }
-
-function beginStroke(e) {
-  drawing = true; strokePointer = e.pointerId;
-  strokeErasing = tool.eraser || (e.buttons & 32) !== 0;          // Stift-Radierertaste
-  const pt = normPoint(e);
-  if (strokeErasing) { currentStroke = null; erasedItems = []; eraseAt(pt); return; }
-  currentStroke = { c: tool.color, w: tool.width / REF_W, p: [pt] };
-  drawIncremental(currentStroke);
-}
-function addPoint(ev) {
-  const pt = normPoint(ev);
-  if (strokeErasing) { eraseAt(pt); return; }
-  const last = currentStroke.p[currentStroke.p.length - 1];
-  if (Math.hypot(pt[0] - last[0], pt[1] - last[1]) < MIN_POINT_DIST) return;
-  currentStroke.p.push(pt);
-  drawIncremental(currentStroke);
-}
-function endStroke() {
-  if (!drawing) return;
-  drawing = false;
-  if (strokeErasing) {
-    if (erasedItems && erasedItems.length) { pushHistory({ type: 'erase', page: currentPage, items: erasedItems }); queueSave(); }
-    erasedItems = null;
-  } else if (currentStroke) {
-    const s = currentStroke;
-    currentStroke = null;
-    if (s.p.length > 1) { getStrokes().push(s); pushHistory({ type: 'add', page: currentPage, stroke: s }); queueSave(); }
-    redrawInk();
-  }
-  currentStroke = null; strokePointer = null;
-}
-function cancelStroke() {
-  if (!drawing) return;
-  drawing = false; currentStroke = null; strokePointer = null;
-  if (strokeErasing && erasedItems && erasedItems.length) { pushHistory({ type: 'erase', page: currentPage, items: erasedItems }); queueSave(); }
-  erasedItems = null;
-  redrawInk();
-}
-
-inkCanvas.addEventListener('pointerdown', (e) => {
-  if (!ready || !pageReady) return;
-  if (e.pointerType === 'mouse' && e.button !== 0) return;
-  if (e.pointerType === 'pen') { penSeen = true; updateFingerBtn(); }
-  try { inkCanvas.setPointerCapture(e.pointerId); } catch (err) {}
-  if (e.pointerType === 'touch') {
-    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (touches.size >= 2) { cancelStroke(); panState = null; if (!pinchState) startPinch(); return; }   // zwei Finger: zoomen/verschieben
-    if (gestureLock || penDown) return;                                                                 // Handballen ignorieren
-    if (!touchDraws()) { panState = { id: e.pointerId, x: e.clientX, y: e.clientY }; return; }           // Finger scrollt
-  } else if (e.pointerType === 'pen') {
-    penDown = true;
-  }
-  beginStroke(e);
-});
-
-inkCanvas.addEventListener('pointermove', (e) => {
-  if (e.pointerType === 'touch') {
-    if (!touches.has(e.pointerId)) return;
-    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pinchState) { updatePinch(); return; }
-    if (panState && panState.id === e.pointerId) {
-      canvasWrap.scrollLeft -= e.clientX - panState.x;
-      canvasWrap.scrollTop -= e.clientY - panState.y;
-      panState.x = e.clientX; panState.y = e.clientY;
-      return;
-    }
-  }
-  if (drawing && e.pointerId === strokePointer) {
-    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
-    (evs.length ? evs : [e]).forEach(addPoint);
-  }
-});
-
-function onPointerEnd(e) {
-  if (e.pointerType === 'touch') {
-    touches.delete(e.pointerId);
-    if (panState && panState.id === e.pointerId) panState = null;
-    if (pinchState && touches.size < 2) pinchState = null;
-    if (touches.size === 0) gestureLock = false;
-  }
-  if (e.pointerType === 'pen') penDown = false;
-  if (drawing && e.pointerId === strokePointer) endStroke();
-}
-inkCanvas.addEventListener('pointerup', onPointerEnd);
-inkCanvas.addEventListener('pointercancel', onPointerEnd);
-
-// --- Toolbar ---------------------------------------------------------
-document.querySelectorAll('.swatch').forEach(sw => {
-  sw.addEventListener('click', () => {
-    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-    sw.classList.add('active');
-    tool.color = sw.dataset.color;
-    tool.eraser = false;
-    $('eraserBtn').style.background = '';
-  });
-});
-$('widthRange').addEventListener('input', (e) => { tool.width = Number(e.target.value); });
-$('eraserBtn').addEventListener('click', () => {
-  tool.eraser = !tool.eraser;
-  $('eraserBtn').style.background = tool.eraser ? 'var(--accent-light)' : '';
-});
-$('undoBtn').addEventListener('click', undo);
-$('clearBtn').addEventListener('click', () => {
-  if (!ready || !pageReady) return;
-  const old = getStrokes();
-  if (!old.length) return;
-  if (!confirm('Alle Notizen/Zeichnungen dieser Seite löschen?')) return;
-  pushHistory({ type: 'clear', page: currentPage, strokes: old });
-  annotData.pages[String(currentPage)] = [];
-  redrawInk();
-  queueSave();
-});
-$('saveBtn').addEventListener('click', () => { if (ready) { dirty = true; saveNow(); } });
-document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && document.activeElement !== notesArea) {
-    e.preventDefault(); undo();
-  }
-});
-
-function updateFingerBtn() {
-  const label = { auto: penSeen ? '✋ Auto: scrollt' : '✋ Auto: zeichnet', draw: '✋ zeichnet', pan: '✋ scrollt' }[fingerMode];
-  $('fingerBtn').textContent = label;
-}
-$('fingerBtn').addEventListener('click', () => {
-  fingerMode = { auto: 'draw', draw: 'pan', pan: 'auto' }[fingerMode];
-  lsSet('gapp_fingerMode', fingerMode);
-  updateFingerBtn();
-});
-updateFingerBtn();
+function commitDisplay(bri, con) { if (currentFile) fset(currentFile.id, { bri, con }); }
+$('briRange').addEventListener('input', (e) => previewDisplay(e.target.value / 100, $('conRange').value / 100));
+$('conRange').addEventListener('input', (e) => previewDisplay($('briRange').value / 100, e.target.value / 100));
+$('briRange').addEventListener('change', () => commitDisplay($('briRange').value / 100, $('conRange').value / 100));
+$('conRange').addEventListener('change', () => commitDisplay($('briRange').value / 100, $('conRange').value / 100));
+$('dispReset').addEventListener('click', () => { commitDisplay(1, 1); applyDisplay(); });
+$('dispClose').addEventListener('click', () => $('dispPop').classList.remove('show'));
+$('dispBtn').addEventListener('click', () => { $('layerPop').classList.remove('show'); $('dispPop').classList.toggle('show'); });
+$('perfBri').addEventListener('input', (e) => previewDisplay(e.target.value / 100, fget(currentFile.id).con || 1));
+$('perfBri').addEventListener('change', (e) => commitDisplay(e.target.value / 100, fget(currentFile.id).con || 1));
 
 // ---------------------------------------------------------------
 // Notizen (pro Blatt oder pro Seite)
@@ -1213,37 +1551,1555 @@ $('notesArrow').addEventListener('click', () => {
 });
 
 // ---------------------------------------------------------------
-// Upload / Sidebar / Resize
+// Umbenennen / Löschen
 // ---------------------------------------------------------------
-$('uploadBtn').addEventListener('click', () => {
-  const tokenOk = accessToken && Date.now() < tokenExpiry;
-  if (!tokenOk) {
+async function renameFile(f) {
+  const input = prompt('Neuer Name für das Blatt:', f.name);
+  if (input === null) return;
+  const newName = input.trim().replace(/[\\/]+/g, '-');
+  if (!newName || newName === f.name) return;
+  setStatus('Benenne um …', 'saving');
+  try {
+    await driveFetch(`${DRIVE_FILES}/${f.id}?fields=id,name`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }) });
+  } catch (e) { fail('Umbenennen fehlgeschlagen', e); return; }
+  f.name = newName;
+  if (currentFile && currentFile.id === f.id) { currentFile.name = newName; currentTitleEl.textContent = newName; }
+  safe(IDB.put('kv', 'files', files));
+  renderSidebar();
+  setStatus('Umbenannt', 'ok');
+}
+$('renameBtn').addEventListener('click', () => { if (currentFile) renameFile(currentFile); });
+
+async function trashFile(f) {
+  if (!confirm(`"${f.name}" in den Papierkorb verschieben?`)) return;
+  const isCur = currentFile && currentFile.id === f.id;
+  try {
+    await driveFetch(`${DRIVE_FILES}/${f.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) });
+  } catch (e) { fail('Löschen fehlgeschlagen', e); return; }
+  if (isCur) {
+    openSeq++;
+    clearTimeout(saveTimer);
+    await syncChain;
+    closeCurrent();
+    currentTitleEl.textContent = 'Gesangs-App – Lyric-Blätter';
+    $('renameBtn').style.display = 'none'; $('perfBtn').style.display = 'none';
+    mainViewerEl.style.display = 'none';
+    emptyEl.style.display = 'flex';
+  }
+  files = files.filter(x => x.id !== f.id);
+  cachedIds.delete(f.id); dirtyIds.delete(f.id); persistDirtyIds();
+  safe(IDB.del('blobs', f.id)); safe(IDB.del('annots', f.id)); safe(IDB.put('kv', 'files', files));
+  renderSidebar();
+}
+
+
+// ---------------------------------------------------------------
+// Werkzeuge: Stift, Textmarker, Radierer, Text, Symbole, Auswahl – Ebenen – Rückgängig
+// ---------------------------------------------------------------
+let tool = lsGet('gapp_tool') || 'pen';
+let color = lsGet('gapp_color') || '#1a1a1a';
+let widthVal = Number(lsGet('gapp_width')) || 3;
+let stampKind = lsGet('gapp_stamp') || 'breath';
+let fingerMode = lsGet('gapp_finger') || 'auto';       // auto | draw | pan
+let penSeen = lsGet('gapp_pen') === '1';
+let selId = null;
+let live = null;                                        // gerade gezeichneter Strich {o}
+let activeLayer = lsGet('gapp_layer') || 'e';
+let hiddenLayers = new Set((() => { try { return JSON.parse(lsGet('gapp_hidden') || '[]'); } catch (e) { return []; } })());
+
+const STAMPS = [
+  ['breath', '’', 'Atem (Komma)'], ['vee', '∨', 'Atemzeichen'], ['cresc', '<', 'Crescendo'], ['decresc', '>', 'Decrescendo'],
+  ['fermata', '⌒', 'Fermate'], ['caesura', '//', 'Zäsur / Pause'], ['slur', '‿', 'Bindebogen'], ['up', '↑', 'Höher / Ton hoch'], ['down', '↓', 'Tiefer / Ton runter'],
+  ['pp', 'pp', 'pianissimo'], ['p', 'p', 'piano'], ['mp', 'mp', 'mezzopiano'], ['mf', 'mf', 'mezzoforte'], ['f', 'f', 'forte'], ['ff', 'ff', 'fortissimo']
+];
+const DYN = { pp: 'pp', p: 'p', mp: 'mp', mf: 'mf', f: 'f', ff: 'ff' };
+const visLayer = (id) => !hiddenLayers.has(id || 'e');
+const pageArr = (p = currentPage) => annotData.pages[String(p)] || (annotData.pages[String(p)] = []);
+const pageArrRO = (p = currentPage) => annotData.pages[String(p)] || [];
+const objSize = () => widthVal;                          // Grösse für Text/Symbole aus dem Schieber (1–10)
+
+// ---------------------------------------------------------------
+// Zeichnen der Objekte (auch für den PDF-Export genutzt)
+// ---------------------------------------------------------------
+function drawStroke(ctx, o, W) {
+  const P = o.p; if (!P || !P.length) return;
+  ctx.save();
+  ctx.lineCap = o.hl ? 'butt' : 'round'; ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(o.w * W, 1);
+  ctx.strokeStyle = o.er ? '#000' : o.c; ctx.fillStyle = ctx.strokeStyle;
+  if (o.er) ctx.globalCompositeOperation = 'destination-out';
+  if (o.hl) ctx.globalAlpha = 0.38;
+  if (P.length === 1) {
+    ctx.beginPath(); ctx.arc(P[0][0] * W, P[0][1] * W, ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.moveTo(P[0][0] * W, P[0][1] * W);
+    for (let i = 1; i < P.length - 1; i++) {
+      const mx = (P[i][0] + P[i + 1][0]) / 2 * W, my = (P[i][1] + P[i + 1][1]) / 2 * W;
+      ctx.quadraticCurveTo(P[i][0] * W, P[i][1] * W, mx, my);
+    }
+    const L = P[P.length - 1]; ctx.lineTo(L[0] * W, L[1] * W);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+const TEXT_FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+function drawText(ctx, o, W) {
+  const s = o.z * W;
+  ctx.save();
+  ctx.fillStyle = o.c; ctx.font = `${s}px ${TEXT_FONT}`; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+  String(o.s || '').split('\n').forEach((line, i) => ctx.fillText(line, o.x * W, o.y * W + i * s * 1.25));
+  ctx.restore();
+}
+function drawStamp(ctx, o, W) {
+  const s = o.z * W;
+  ctx.save();
+  ctx.translate(o.x * W, o.y * W);
+  ctx.strokeStyle = o.c; ctx.fillStyle = o.c; ctx.lineWidth = Math.max(s * 0.11, 1.2); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  switch (o.k) {
+    case 'breath': ctx.moveTo(s * 0.18, -s * 0.5); ctx.quadraticCurveTo(s * 0.4, s * 0.05, -s * 0.2, s * 0.5); ctx.stroke(); break;
+    case 'vee': ctx.moveTo(-s * 0.4, -s * 0.35); ctx.lineTo(0, s * 0.35); ctx.lineTo(s * 0.4, -s * 0.35); ctx.stroke(); break;
+    case 'cresc': ctx.moveTo(s * 0.75, -s * 0.32); ctx.lineTo(-s * 0.75, 0); ctx.lineTo(s * 0.75, s * 0.32); ctx.stroke(); break;
+    case 'decresc': ctx.moveTo(-s * 0.75, -s * 0.32); ctx.lineTo(s * 0.75, 0); ctx.lineTo(-s * 0.75, s * 0.32); ctx.stroke(); break;
+    case 'fermata': ctx.arc(0, s * 0.2, s * 0.62, Math.PI, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(0, s * 0.18, s * 0.11, 0, Math.PI * 2); ctx.fill(); break;
+    case 'caesura': ctx.moveTo(-s * 0.28, s * 0.5); ctx.lineTo(s * 0.02, -s * 0.5); ctx.moveTo(-s * 0.02, s * 0.5); ctx.lineTo(s * 0.28, -s * 0.5); ctx.stroke(); break;
+    case 'slur': ctx.moveTo(-s * 0.8, -s * 0.15); ctx.quadraticCurveTo(0, s * 0.65, s * 0.8, -s * 0.15); ctx.stroke(); break;
+    case 'up': ctx.moveTo(0, s * 0.5); ctx.lineTo(0, -s * 0.5); ctx.moveTo(-s * 0.28, -s * 0.2); ctx.lineTo(0, -s * 0.5); ctx.lineTo(s * 0.28, -s * 0.2); ctx.stroke(); break;
+    case 'down': ctx.moveTo(0, -s * 0.5); ctx.lineTo(0, s * 0.5); ctx.moveTo(-s * 0.28, s * 0.2); ctx.lineTo(0, s * 0.5); ctx.lineTo(s * 0.28, s * 0.2); ctx.stroke(); break;
+    default:
+      if (DYN[o.k]) { ctx.font = `italic bold ${s * 1.05}px Georgia,"Times New Roman",serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(DYN[o.k], 0, 0); }
+  }
+  ctx.restore();
+}
+function drawObj(ctx, o, W) {
+  if (o.t === 'x') drawText(ctx, o, W);
+  else if (o.t === 'm') drawStamp(ctx, o, W);
+  else drawStroke(ctx, o, W);
+}
+function renderObjects(ctx, W, objs, visible = visLayer) {
+  for (const o of objs) if (visible(o.l)) drawObj(ctx, o, W);
+}
+
+// Geometrie / Treffer
+const measCtx = document.createElement('canvas').getContext('2d');
+function bbox(o) {
+  if (o.t === 'x') {
+    measCtx.font = `${o.z * 1000}px ${TEXT_FONT}`;
+    const lines = String(o.s || '').split('\n');
+    const w = Math.max(...lines.map(l => measCtx.measureText(l).width)) / 1000;
+    return { x0: o.x, y0: o.y, x1: o.x + Math.max(w, o.z), y1: o.y + lines.length * o.z * 1.25 };
+  }
+  if (o.t === 'm') return { x0: o.x - o.z * 0.9, y0: o.y - o.z * 0.7, x1: o.x + o.z * 0.9, y1: o.y + o.z * 0.7 };
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const q of o.p) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
+  return { x0: x0 - o.w / 2, y0: y0 - o.w / 2, x1: x1 + o.w / 2, y1: y1 + o.w / 2 };
+}
+function distSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0; t = clamp(t, 0, 1);
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+function hitObj(o, x, y, tol) {
+  if (o.er) return false;
+  if (o.t === 'x' || o.t === 'm') { const b = bbox(o); return x >= b.x0 - tol / 2 && x <= b.x1 + tol / 2 && y >= b.y0 - tol / 2 && y <= b.y1 + tol / 2; }
+  const P = o.p, r = o.w / 2 + tol;
+  if (P.length === 1) return Math.hypot(x - P[0][0], y - P[0][1]) <= r;
+  for (let i = 1; i < P.length; i++) if (distSeg(x, y, P[i - 1][0], P[i - 1][1], P[i][0], P[i][1]) <= r) return true;
+  return false;
+}
+function hitTest(x, y, tolPx = 10) {
+  const tol = tolPx / stack.getBoundingClientRect().width, arr = pageArrRO();
+  for (let i = arr.length - 1; i >= 0; i--) if (visLayer(arr[i].l) && hitObj(arr[i], x, y, tol)) return arr[i];
+  return null;
+}
+function translateObj(o, dx, dy) {
+  if (o.p) o.p = o.p.map(q => [r5(q[0] + dx), r5(q[1] + dy)]); else { o.x = r5(o.x + dx); o.y = r5(o.y + dy); }
+}
+const selObj = () => selId ? (pageArrRO().find(o => o.id === selId) || null) : null;
+
+// ---------------------------------------------------------------
+// Ink-Canvas: zwischengespeicherte Objekte + Live-Strich + Auswahlrahmen
+// ---------------------------------------------------------------
+let inkCache = null, inkCacheValid = false, inkKey = '', inkRaf = 0;
+const invalidateInk = () => { inkCacheValid = false; };
+function redrawInk() {
+  const W = inkCanvas.width, H = inkCanvas.height;
+  if (!W) return;
+  inkCtx.clearRect(0, 0, W, H);
+  if (!ready || !currentFile) return;
+  const key = currentFile.id + ':' + currentPage + ':' + [...hiddenLayers].join(',');
+  if (!inkCache || inkCache.width !== W || inkCache.height !== H || key !== inkKey) {
+    if (!inkCache || inkCache.width !== W || inkCache.height !== H) { inkCache = document.createElement('canvas'); inkCache.width = W; inkCache.height = H; }
+    inkKey = key; inkCacheValid = false;
+  }
+  if (!inkCacheValid) {
+    const c = inkCache.getContext('2d');
+    c.clearRect(0, 0, W, H);
+    renderObjects(c, W, pageArrRO());
+    inkCacheValid = true;
+  }
+  inkCtx.drawImage(inkCache, 0, 0);
+  if (live) drawObj(inkCtx, live.o, W);
+  const so = tool === 'select' ? selObj() : null;
+  if (so) {
+    const b = bbox(so), pad = 6;
+    inkCtx.save();
+    inkCtx.globalCompositeOperation = 'source-over';
+    inkCtx.strokeStyle = '#2471a3'; inkCtx.lineWidth = Math.max(1.5, W / 700); inkCtx.setLineDash([W / 150, W / 220]);
+    inkCtx.strokeRect(b.x0 * W - pad, b.y0 * W - pad, (b.x1 - b.x0) * W + pad * 2, (b.y1 - b.y0) * W + pad * 2);
+    inkCtx.restore();
+  }
+}
+function requestInk() { if (inkRaf) return; inkRaf = requestAnimationFrame(() => { inkRaf = 0; redrawInk(); }); }
+
+// ---------------------------------------------------------------
+// Verlauf (Rückgängig)
+// ---------------------------------------------------------------
+function updateUndoBtn() { $('undoBtn').disabled = !undoStack.length; }
+function pushHist(e) { undoStack.push(e); if (undoStack.length > 200) undoStack.shift(); updateUndoBtn(); }
+function commitChange() { invalidateInk(); requestInk(); updateSelBar(); updateUndoBtn(); queueSave(); }
+
+function undo() {
+  if (!ready) return;
+  const e = undoStack.pop(); updateUndoBtn();
+  if (!e) { toast('Nichts zum Rückgängigmachen'); return; }
+  const arr = pageArr(e.page);
+  if (e.t === 'add') { const i = arr.findIndex(o => o.id === e.id); if (i >= 0) arr.splice(i, 1); }
+  else if (e.t === 'erase') { [...e.items].sort((a, b) => a.idx - b.idx).forEach(it => arr.splice(Math.min(it.idx, arr.length), 0, it.o)); }
+  else if (e.t === 'edit') { const i = arr.findIndex(o => o.id === e.before.id); if (i >= 0) arr[i] = JSON.parse(JSON.stringify(e.before)); }
+  if (selId && !selObj()) selId = null;
+  if (e.page !== currentPage) { goPage(e.page).then(commitChange); return; }
+  commitChange();
+}
+$('undoBtn').addEventListener('click', undo);
+
+function addObject(o) {
+  pageArr().push(o);
+  pushHist({ t: 'add', page: currentPage, id: o.id });
+  commitChange();
+}
+function deleteObjects(objs, extra) {
+  const arr = pageArr(), items = [];
+  objs.forEach(o => { const i = arr.findIndex(x => x.id === o.id); if (i >= 0) items.push({ o: arr[i], idx: i }); });
+  items.sort((a, b) => b.idx - a.idx).forEach(it => arr.splice(it.idx, 1));
+  return items;
+}
+function editObject(o, fn) {
+  const before = JSON.parse(JSON.stringify(o));
+  fn(o);
+  pushHist({ t: 'edit', page: currentPage, before, after: JSON.parse(JSON.stringify(o)) });
+  commitChange();
+}
+
+$('clearBtn').addEventListener('click', () => {
+  if (!ready) return;
+  const L = annotData.layers.find(l => l.id === activeLayer) || annotData.layers[0];
+  const objs = pageArrRO().filter(o => (o.l || 'e') === L.id && !o.er);
+  if (!objs.length) { toast('Auf dieser Seite gibt es in «' + L.n + '» nichts zu löschen.'); return; }
+  if (!confirm(`Alle ${objs.length} Objekte der Ebene «${L.n}» auf dieser Seite löschen?\n(Mit ↶ rückgängig zu machen.)`)) return;
+  const items = deleteObjects(objs);
+  pushHist({ t: 'erase', page: currentPage, items });
+  selId = null; commitChange();
+});
+
+// ---------------------------------------------------------------
+// Ebenen
+// ---------------------------------------------------------------
+function saveHidden() { lsSet('gapp_hidden', JSON.stringify([...hiddenLayers])); }
+function setLayerVisible(id, vis) {
+  if (vis) hiddenLayers.delete(id); else hiddenLayers.add(id);
+  saveHidden(); invalidateInk(); requestInk(); renderLayerPop();
+}
+function renderLayerPop() {
+  const p = $('layerPop'); p.innerHTML = '';
+  if (!annotData.layers.find(l => l.id === activeLayer)) activeLayer = annotData.layers[0].id;
+  p.append(h('h4', { text: 'Ebenen' }));
+  annotData.layers.forEach(L => {
+    p.append(h('div', { class: 'layer-row' },
+      h('input', { type: 'checkbox', checked: visLayer(L.id) ? true : null, title: 'Ein-/ausblenden', onchange: (e) => setLayerVisible(L.id, e.target.checked) }),
+      h('span', { class: 'ln', text: L.n, title: 'Antippen zum Umbenennen', style: 'cursor:pointer', onclick: () => {
+        const n = (prompt('Name der Ebene:', L.n) || '').trim(); if (!n || n === L.n) return;
+        L.n = n; queueSave(); renderLayerPop();
+      } }),
+      h('button', { class: activeLayer === L.id ? 'on' : '', text: activeLayer === L.id ? '● schreibt hier' : '○ hier schreiben', onclick: () => {
+        activeLayer = L.id; lsSet('gapp_layer', L.id);
+        if (hiddenLayers.has(L.id)) setLayerVisible(L.id, true); else renderLayerPop();
+      } })));
+  });
+  p.append(h('div', { class: 'rowp' },
+    h('button', { text: '+ Ebene', style: 'flex:1', onclick: () => {
+      const n = (prompt('Name der neuen Ebene:') || '').trim(); if (!n) return;
+      annotData.layers.push({ id: uid('L'), n }); queueSave(); renderLayerPop();
+    } }),
+    h('button', { text: 'Schliessen', style: 'flex:1', onclick: () => p.classList.remove('show') })));
+  p.append(h('div', { style: 'font-size:11px; color:var(--muted);', text: 'Tipp: «Unterricht» für Anmerkungen der Lehrperson – so lassen sie sich zum Üben ausblenden.' }));
+  $('layerBtn').classList.toggle('on', hiddenLayers.size > 0);
+}
+$('layerBtn').addEventListener('click', () => { $('dispPop').classList.remove('show'); renderLayerPop(); $('layerPop').classList.toggle('show'); });
+
+// ---------------------------------------------------------------
+// Auswahl-Leiste
+// ---------------------------------------------------------------
+function updateSelBar() {
+  const bar = $('selBar'), o = tool === 'select' ? selObj() : null;
+  bar.innerHTML = '';
+  if (!o) { bar.classList.remove('show'); return; }
+  const btn = (t, fn, title) => h('button', { text: t, title, onclick: fn });
+  if (o.t === 'x') bar.append(btn('✎ Text', () => textDialog(o)));
+  bar.append(
+    btn('▤ Ebene', () => pickLayerFor(o), 'Ebene wechseln'),
+    btn('● Farbe', () => editObject(o, x => { x.c = color; }), 'Aktuelle Farbe übernehmen'),
+    btn('＋', () => resizeSel(o, 1.15), 'Grösser'),
+    btn('－', () => resizeSel(o, 1 / 1.15), 'Kleiner'),
+    btn('🗑', () => { const it = deleteObjects([o]); pushHist({ t: 'erase', page: currentPage, items: it }); selId = null; commitChange(); }, 'Löschen'));
+  bar.classList.add('show');
+}
+function resizeSel(o, f) {
+  editObject(o, x => { if (x.p) x.w = r5(clamp(x.w * f, 0.0005, 0.08)); else x.z = r5(clamp(x.z * f, 0.008, 0.2)); });
+}
+function pickLayerFor(o) {
+  menuSheet('Ebene wählen', annotData.layers.map(L => ({ label: (((o.l || 'e') === L.id) ? '● ' : '○ ') + L.n, fn: () => editObject(o, x => { x.l = L.id; }) })));
+}
+
+// ---------------------------------------------------------------
+// Text-Dialog
+// ---------------------------------------------------------------
+function textDialog(existing, pos) {
+  const ta = h('textarea', { rows: 4, style: 'width:100%; font:inherit; padding:8px; border:1px solid var(--border); border-radius:8px;', placeholder: 'Text …' });
+  if (existing) ta.value = existing.s;
+  const buttons = [{ label: 'Abbrechen' }];
+  if (existing) buttons.push({ label: 'Löschen', fn: () => { const it = deleteObjects([existing]); pushHist({ t: 'erase', page: currentPage, items: it }); selId = null; commitChange(); } });
+  buttons.push({
+    label: 'OK', primary: true, fn: () => {
+      const v = ta.value.replace(/\s+$/, '');
+      if (!v) return;
+      if (existing) { if (v !== existing.s) editObject(existing, x => { x.s = v; }); }
+      else addObject({ id: uid('o'), l: activeLayer, t: 'x', x: r5(pos.x), y: r5(pos.y), s: v, z: r5((10 + objSize() * 3) / REF_W), c: color });
+    }
+  });
+  openModal({ title: existing ? 'Text bearbeiten' : 'Text einfügen', body: [ta], buttons });
+  setTimeout(() => ta.focus(), 50);
+}
+
+// ---------------------------------------------------------------
+// Zeigerereignisse (Stift / Maus / Finger, Pinch-Zoom, Verschieben)
+// ---------------------------------------------------------------
+const pointers = new Map();
+let action = null;      // {kind:'stroke'|'erase'|'select-drag'|'pan', ...}
+let pinch = null;
+
+const fingerActs = () => fingerMode === 'draw' || (fingerMode === 'auto' && !penSeen);
+function pagePt(e) {
+  const r = stack.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.width };
+}
+function cancelStroke() {
+  live = null; action = null; pinch = null; pointers.clear();
+  if (typeof requestInk === 'function') requestInk();
+}
+
+stack.addEventListener('contextmenu', (e) => e.preventDefault());
+stack.addEventListener('pointerdown', (e) => {
+  if (!ready || perf) return;
+  if (e.pointerType === 'pen' && !penSeen) { penSeen = true; lsSet('gapp_pen', '1'); updateFingerBtn(); }
+  // Handballen-Erkennung: solange der Stift zeichnet, werden Finger ignoriert
+  if (e.pointerType === 'touch' && action && action.pen) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  $('layerPop').classList.remove('show'); $('dispPop').classList.remove('show');
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+  try { stack.setPointerCapture(e.pointerId); } catch (er) {}
+  e.preventDefault();
+
+  if (pointers.size === 2) {                       // Pinch
+    live = null; action = null;
+    const [a, b] = [...pointers.values()];
+    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2, r = stack.getBoundingClientRect();
+    pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: zoom, fx: (cx - r.left) / r.width, fy: (cy - r.top) / r.height };
+    requestInk();
+    return;
+  }
+  if (pointers.size > 2) return;
+
+  const fingerPan = e.pointerType === 'touch' && !fingerActs();
+  if (fingerPan) { action = { kind: 'pan', sx: e.clientX, sy: e.clientY, sl: canvasWrap.scrollLeft, st: canvasWrap.scrollTop, moved: false }; return; }
+  startTool(e);
+});
+
+function startTool(e) {
+  const pt = pagePt(e), pen = e.pointerType === 'pen';
+  if (tool === 'pen' || tool === 'hl') {
+    if (hiddenLayers.has(activeLayer)) setLayerVisible(activeLayer, true);
+    const hl = tool === 'hl';
+    live = { o: { id: uid('o'), l: activeLayer, p: [[r5(pt.x), r5(pt.y)]], c: color, w: r5((hl ? widthVal * 5 : widthVal) / REF_W) } };
+    if (hl) live.o.hl = 1;
+    action = { kind: 'stroke', pen };
+    requestInk();
+  } else if (tool === 'eraser') {
+    action = { kind: 'erase', pen, items: [] };
+    eraseAt(pt);
+  } else if (tool === 'select') {
+    const hit = hitTest(pt.x, pt.y, 12);
+    selId = hit ? hit.id : null;
+    updateSelBar(); requestInk();
+    if (hit) action = { kind: 'drag', pen, lx: pt.x, ly: pt.y, before: JSON.parse(JSON.stringify(hit)), moved: false, id: hit.id };
+    else action = { kind: 'tap', pen };
+  } else if (tool === 'text') {
+    action = { kind: 'place', pen, pt, sx: e.clientX, sy: e.clientY };
+  } else if (tool === 'stamp') {
+    action = { kind: 'place', pen, pt, sx: e.clientX, sy: e.clientY };
+  }
+}
+
+function eraseAt(pt) {
+  const tol = 10 / stack.getBoundingClientRect().width, arr = pageArr();
+  let hit = false;
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const o = arr[i];
+    if (visLayer(o.l) && hitObj(o, pt.x, pt.y, tol)) { action.items.push({ o, idx: i }); arr.splice(i, 1); hit = true; }
+  }
+  if (hit) { invalidateInk(); requestInk(); }
+}
+
+stack.addEventListener('pointermove', (e) => {
+  if (!pointers.has(e.pointerId)) return;
+  const p = pointers.get(e.pointerId); p.x = e.clientX; p.y = e.clientY;
+  if (pinch && pointers.size >= 2) {
+    const [a, b] = [...pointers.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y) || 1, cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    setZoom(pinch.z0 * d / pinch.d0);
+    anchorAt(pinch.fx, pinch.fy, cx, cy);
+    return;
+  }
+  if (!action) return;
+  if (action.kind === 'pan') {
+    const dx = e.clientX - action.sx, dy = e.clientY - action.sy;
+    if (Math.abs(dx) + Math.abs(dy) > 3) action.moved = true;
+    canvasWrap.scrollLeft = action.sl - dx; canvasWrap.scrollTop = action.st - dy;
+  } else if (action.kind === 'stroke' && live) {
+    const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+    const list = evs.length ? evs : [e], P = live.o.p;
+    for (const ev of list) {
+      const pt = pagePt(ev), L = P[P.length - 1];
+      if (Math.hypot(pt.x - L[0], pt.y - L[1]) >= MIN_POINT_DIST) P.push([r5(pt.x), r5(pt.y)]);
+    }
+    requestInk();
+  } else if (action.kind === 'erase') {
+    eraseAt(pagePt(e));
+  } else if (action.kind === 'drag') {
+    const pt = pagePt(e), o = pageArrRO().find(x => x.id === action.id);
+    if (o) { translateObj(o, pt.x - action.lx, pt.y - action.ly); action.lx = pt.x; action.ly = pt.y; action.moved = true; invalidateInk(); requestInk(); }
+  } else if (action.kind === 'place') {
+    if (Math.hypot(e.clientX - action.sx, e.clientY - action.sy) > 12) action.cancelled = true;
+  }
+});
+
+function endPointer(e, cancelled) {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.delete(e.pointerId);
+  try { stack.releasePointerCapture(e.pointerId); } catch (er) {}
+  if (pinch) { if (pointers.size < 2) { pinch = null; action = null; } return; }
+  const a = action; action = null;
+  if (!a || cancelled) { if (a && a.kind === 'stroke') { live = null; requestInk(); } if (a && a.kind === 'erase' && a.items.length) { a.items.sort((x, y) => x.idx - y.idx).forEach(it => pageArr().splice(it.idx, 0, it.o)); commitChange(); } return; }
+  if (a.kind === 'stroke' && live) {
+    const o = live.o; live = null;
+    addObject(o);
+  } else if (a.kind === 'erase') {
+    if (a.items.length) { pushHist({ t: 'erase', page: currentPage, items: a.items }); commitChange(); }
+  } else if (a.kind === 'drag') {
+    if (a.moved) {
+      const o = pageArrRO().find(x => x.id === a.id);
+      if (o) pushHist({ t: 'edit', page: currentPage, before: a.before, after: JSON.parse(JSON.stringify(o)) });
+      commitChange();
+    }
+  } else if (a.kind === 'place' && !a.cancelled) {
+    if (tool === 'text') {
+      const hit = hitTest(a.pt.x, a.pt.y, 8);
+      if (hit && hit.t === 'x') { selId = hit.id; textDialog(hit); }
+      else textDialog(null, a.pt);
+    } else {
+      addObject({ id: uid('o'), l: activeLayer, t: 'm', k: stampKind, x: r5(a.pt.x), y: r5(a.pt.y), z: r5((14 + objSize() * 4) / REF_W), c: color });
+    }
+  }
+}
+stack.addEventListener('pointerup', (e) => endPointer(e, false));
+stack.addEventListener('pointercancel', (e) => endPointer(e, true));
+
+// ---------------------------------------------------------------
+// Werkzeugleiste
+// ---------------------------------------------------------------
+function setTool(t) {
+  tool = t; lsSet('gapp_tool', t);
+  if (t !== 'select') selId = null;
+  document.querySelectorAll('#toolbar .tool[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  $('stampBar').classList.toggle('show', t === 'stamp');
+  stack.style.cursor = t === 'select' ? 'default' : (t === 'eraser' ? 'cell' : 'crosshair');
+  updateSelBar(); requestInk();
+}
+document.querySelectorAll('#toolbar .tool[data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+
+function setColor(c) {
+  color = c; lsSet('gapp_color', c);
+  document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.color === c));
+}
+document.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => setColor(s.dataset.color)));
+$('widthRange').value = widthVal;
+$('widthRange').addEventListener('input', (e) => { widthVal = Number(e.target.value); lsSet('gapp_width', widthVal); });
+
+(function buildStampBar() {
+  const bar = $('stampBar');
+  STAMPS.forEach(([k, lbl, title]) => bar.append(h('button', { 'data-k': k, text: lbl, title, onclick: () => { stampKind = k; lsSet('gapp_stamp', k); markStamp(); } })));
+  function markStamp() { bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === stampKind)); }
+  markStamp();
+})();
+
+function updateFingerBtn() {
+  const b = $('fingerBtn');
+  b.textContent = fingerMode === 'auto' ? (penSeen ? '✋ Auto (Stift)' : '✋ Auto') : fingerMode === 'draw' ? '✋ Zeichnen' : '✋ Scrollen';
+  b.classList.toggle('on', fingerMode !== 'auto');
+}
+$('fingerBtn').addEventListener('click', () => {
+  fingerMode = fingerMode === 'auto' ? 'draw' : fingerMode === 'draw' ? 'pan' : 'auto';
+  lsSet('gapp_finger', fingerMode); updateFingerBtn();
+  toast(fingerMode === 'auto' ? 'Finger: automatisch (zeichnet, bis ein Stift erkannt wird; danach nur Scrollen/Zoomen)' : fingerMode === 'draw' ? 'Finger zeichnet' : 'Finger scrollt und zoomt nur');
+});
+
+// Tastatur
+window.addEventListener('keydown', (e) => {
+  if (!ready || perf) return;
+  const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  if (typing || document.querySelector('.modal-bg')) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && selObj()) {
+    e.preventDefault(); const o = selObj(); const it = deleteObjects([o]); pushHist({ t: 'erase', page: currentPage, items: it }); selId = null; commitChange();
+  } else if (e.key === 'Escape') { selId = null; updateSelBar(); requestInk(); }
+});
+
+setTool(tool); setColor(color); updateFingerBtn(); updateUndoBtn();
+
+
+// ---------------------------------------------------------------
+// Speichern & Synchronisieren
+//   Lokal (IndexedDB) wird sofort gespeichert – Drive folgt, sobald Netz + Anmeldung da sind.
+//   Konflikte (zwei Geräte ändern dasselbe Blatt) werden über modifiedTime erkannt und per 3-Wege-Merge aufgelöst.
+// ---------------------------------------------------------------
+let editVer = 0;
+const canSyncNow = () => isOnline() && tokenValid() && !!folderId;
+
+function enqueue(fn) {
+  const run = syncChain.then(fn);
+  syncChain = run.catch(() => {});
+  return run;
+}
+
+function stableStr(o) {
+  if (Array.isArray(o)) return '[' + o.map(stableStr).join(',') + ']';
+  if (o && typeof o === 'object') return '{' + Object.keys(o).sort().map(k => JSON.stringify(k) + ':' + stableStr(o[k])).join(',') + '}';
+  return JSON.stringify(o);
+}
+function annotEqual(a, b) {
+  if (stableStr(a.layers) !== stableStr(b.layers) || (a.notes || '') !== (b.notes || '')) return false;
+  const pn = (x) => stableStr(Object.fromEntries(Object.entries(x.pageNotes || {}).filter(([k, v]) => v)));
+  if (pn(a) !== pn(b)) return false;
+  const keys = new Set([...Object.keys(a.pages || {}), ...Object.keys(b.pages || {})]);
+  for (const k of keys) {
+    const f = (x) => (x.pages[k] || []).map(o => o.id + '|' + stableStr(o)).sort().join('\n');
+    if (f(a) !== f(b)) return false;
+  }
+  return true;
+}
+
+// --- lokal speichern ----------------------------------------------
+function queueSave() {
+  if (!ready || !currentFile) return;
+  editVer++; dirty = true;
+  const id = currentFile.id;
+  dirtyIds.add(id); persistDirtyIds();
+  updateSyncState();
+  clearTimeout(persistTimer); persistTimer = setTimeout(() => { persistAnnot(); }, 300);
+  clearTimeout(saveTimer); saveTimer = setTimeout(() => { if (canSyncNow()) enqueue(() => syncAnnot(id)).catch(syncFail); }, 2000);
+}
+async function persistAnnot() {
+  if (!ready || !currentFile) return;
+  await safe(IDB.put('annots', currentFile.id, { json: JSON.stringify(annotData), aid: annotRec.aid, aTime: annotRec.aTime, base: annotRec.base, dirty }));
+}
+async function flushSave() {
+  clearTimeout(persistTimer); clearTimeout(saveTimer);
+  if (ready && currentFile && dirty) {
+    await persistAnnot();
+    if (canSyncNow()) {
+      const id = currentFile.id;
+      await Promise.race([enqueue(() => syncAnnot(id)).catch(syncFail), sleep(4000)]);
+    }
+  }
+}
+function syncFail(e) {
+  const m = String((e && e.message) || e);
+  if (m === 'offline' || m === 'unauthorized') { updateSyncState(); return; }
+  fail('Synchronisierung fehlgeschlagen', e);
+}
+
+// --- Drive-Helfer ----------------------------------------------------
+async function driveUploadJson(name, obj, existingId) {
+  const body = JSON.stringify(obj);
+  if (existingId) {
+    const r = await bg(`${DRIVE_UPLOAD}/${existingId}?uploadType=media&fields=id,modifiedTime`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+    return r.json();
+  }
+  const b = '-------gapp' + Date.now().toString(36);
+  const meta = { name, parents: [folderId], mimeType: 'application/json' };
+  const mp = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
+  const r = await bg(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id,modifiedTime`, { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: mp });
+  return r.json();
+}
+async function driveMeta(id) {          // null wenn gelöscht/nicht mehr da
+  try {
+    const m = await (await bg(`${DRIVE_FILES}/${id}?fields=id,modifiedTime,trashed`)).json();
+    return m.trashed ? null : m;
+  } catch (e) { if (/ 404 /.test(e.message)) return null; throw e; }
+}
+async function driveText(id) { return (await bg(`${DRIVE_FILES}/${id}?alt=media`)).text(); }
+
+// --- Annotationen eines Blatts abgleichen -------------------------------
+async function pullAnnotFirst(id) {
+  const meta = await findByName(id + '.annotations.json');
+  if (!meta) return null;
+  const obj = normalizeAnnot(JSON.parse(await driveText(meta.id)));
+  annotRec = { aid: meta.id, aTime: meta.modifiedTime, base: JSON.stringify(obj) };
+  await safe(IDB.put('annots', id, { json: JSON.stringify(obj), aid: annotRec.aid, aTime: annotRec.aTime, base: annotRec.base, dirty: false }));
+  return obj;
+}
+
+function applyMergedLive(m) {
+  annotData = m;
+  if (selId && !selObj()) selId = null;
+  invalidateInk(); requestInk(); renderLayerPop(); updateSelBar();
+  if (document.activeElement !== notesArea) bindNotes();
+}
+
+async function syncAnnot(id) {
+  if (!canSyncNow()) return;
+  const isCur = () => !!(currentFile && currentFile.id === id && ready);
+  const startedCur = isCur();
+  let rec0 = startedCur ? null : await safe(IDB.get('annots', id));
+  if (!startedCur && !rec0) return;
+  syncing++; updateSyncState();
+  try {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (!(startedCur && isCur()) && !rec0) { rec0 = await safe(IDB.get('annots', id)); if (!rec0) return; }
+      const R = () => (startedCur && isCur()) ? annotRec : rec0;
+      // 1) Stand in Drive
+      let meta = R().aid ? await driveMeta(R().aid) : null;
+      if (!meta) meta = await findByName(id + '.annotations.json');
+      // 2) nur laden, wenn sich etwas geändert hat
+      let remoteObj = null;
+      if (meta && (!R().aTime || meta.modifiedTime !== R().aTime || meta.id !== R().aid)) remoteObj = normalizeAnnot(JSON.parse(await driveText(meta.id)));
+      // 3) zusammenführen – synchron mit dem aktuellen lokalen Stand
+      const live = startedCur && isCur();
+      const ver = editVer;
+      const localObj = live ? annotData : normalizeAnnot(JSON.parse(rec0.json));
+      const snapshotJson = live ? JSON.stringify(localObj) : rec0.json;
+      const localDirty = dirtyIds.has(id);
+      let merged = localObj, byRemote = false;
+      if (remoteObj) {
+        merged = localDirty ? mergeAnnot(R().base ? normalizeAnnot(JSON.parse(R().base)) : emptyAnnot(), localObj, remoteObj) : remoteObj;
+        byRemote = !annotEqual(merged, localObj);
+        if (live && byRemote) { applyMergedLive(merged); toast('Änderungen von einem anderen Gerät übernommen'); }
+      }
+      // 4) hochladen
+      let needUp = remoteObj ? (localDirty && !annotEqual(merged, remoteObj)) : (localDirty && (meta ? true : hasContent(merged)));
+      let up = null;
+      if (needUp) {
+        if (meta && attempt < 2) { const chk = await driveMeta(meta.id); if (chk && chk.modifiedTime !== meta.modifiedTime) continue; }   // inzwischen von anderem Gerät geändert → erneut zusammenführen
+        up = await driveUploadJson(id + '.annotations.json', merged, meta ? meta.id : null);
+      }
+      // 5) Zustand festhalten
+      const baseObj = up ? merged : (remoteObj || null);
+      const newRec = {
+        aid: up ? up.id : (meta ? meta.id : null),
+        aTime: up ? up.modifiedTime : (meta ? meta.modifiedTime : null),
+        base: baseObj ? JSON.stringify(baseObj) : R().base || null
+      };
+      if (live && isCur()) {
+        annotRec = newRec;
+        if (editVer === ver) { dirty = false; dirtyIds.delete(id); }
+        await persistAnnot();
+      } else {
+        const latest = await safe(IDB.get('annots', id));
+        const unchanged = !latest || latest.json === snapshotJson;
+        await safe(IDB.put('annots', id, { json: unchanged ? JSON.stringify(merged) : latest.json, aid: newRec.aid, aTime: newRec.aTime, base: newRec.base, dirty: !unchanged }));
+        if (unchanged) dirtyIds.delete(id); else dirtyIds.add(id);
+      }
+      persistDirtyIds();
+      return;
+    }
+  } finally { syncing--; updateSyncState(); }
+}
+
+// --- Bibliothek (Ordner, Tags, Setlisten …) abgleichen --------------------
+let libTimer = null;
+function scheduleLibSync() {
+  clearTimeout(libTimer);
+  libTimer = setTimeout(() => { if (canSyncNow()) enqueue(syncLibrary).catch(syncFail); }, 2000);
+}
+const libHasData = (l) => Object.keys(l.folders).length || Object.keys(l.files).length || Object.keys(l.setlists).length;
+async function syncLibrary() {
+  if (!canSyncNow()) return;
+  syncing++; updateSyncState();
+  try {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let meta = libRemoteId ? await driveMeta(libRemoteId) : null;
+      if (!meta) meta = await findByName('library.json');
+      let remote = null;
+      if (meta && (meta.modifiedTime !== libRemoteTime || meta.id !== libRemoteId)) {
+        try { remote = JSON.parse(await driveText(meta.id)); } catch (e) { remote = emptyLib(); }
+        remote.folders = remote.folders || {}; remote.files = remote.files || {}; remote.setlists = remote.setlists || {};
+      }
+      const ver = libVer;
+      let merged = lib;
+      if (remote) { merged = mergeLib(lib, remote); if (stableStr(merged) !== stableStr(lib)) { lib = merged; renderSidebar(); } }
+      const needUp = remote ? stableStr(merged) !== stableStr(remote) : (libDirty && (meta || libHasData(lib)));
+      let up = null;
+      if (needUp) {
+        if (meta && attempt < 2) { const chk = await driveMeta(meta.id); if (chk && chk.modifiedTime !== meta.modifiedTime) continue; }
+        up = await driveUploadJson('library.json', merged, meta ? meta.id : null);
+      }
+      libRemoteId = up ? up.id : (meta ? meta.id : null);
+      libRemoteTime = up ? up.modifiedTime : (meta ? meta.modifiedTime : null);
+      if (libVer === ver) libDirty = false;
+      libPersist();
+      return;
+    }
+  } finally { syncing--; updateSyncState(); }
+}
+
+// --- alles abgleichen -------------------------------------------------------
+let lastSyncAll = 0;
+async function syncAll(force) {
+  if (!canSyncNow()) { updateSyncState(); return; }
+  if (!force && Date.now() - lastSyncAll < 15000) return;
+  lastSyncAll = Date.now();
+  try {
+    await enqueue(async () => {
+      await loadFileList(false);
+      await syncLibrary();
+      const ids = new Set(dirtyIds); if (currentFile) ids.add(currentFile.id);
+      for (const id of ids) { if (files.some(f => f.id === id)) await syncAnnot(id); }
+    });
+    if (statusEl.className !== 'error') setStatus('');
+  } catch (e) { syncFail(e); }
+  updateSyncState();
+}
+
+function pendingCount() { return dirtyIds.size + (libDirty ? 1 : 0); }
+function updateSyncState() {
+  const el = $('syncState'), n = pendingCount();
+  let t, c = '';
+  if (syncing > 0) t = '⟳ Synchronisiere …';
+  else if (!isOnline()) { t = '⚠ Offline' + (n ? ` · ${n} offen` : ''); c = 'warn'; }
+  else if (!tokenValid()) { t = 'Nicht angemeldet' + (n ? ` · ${n} offen` : ''); c = 'warn'; }
+  else if (n) { t = `● ${n} ausstehend`; c = 'warn'; }
+  else { t = '✓ Synchronisiert'; c = 'ok'; }
+  el.textContent = t; el.className = c;
+  el.title = 'Alles ist lokal gespeichert. ' + (c === 'ok' ? 'Drive ist auf dem neuesten Stand.' : 'Antippen zum Synchronisieren.');
+}
+$('syncState').addEventListener('click', async () => {
+  if (!isOnline()) { toast('Offline – alles wird lokal gespeichert und später abgeglichen.'); return; }
+  if (!tokenValid()) { signIn(); return; }
+  await flushSave(); await syncAll(true);
+  toast(pendingCount() ? 'Noch nicht alles synchronisiert' : 'Synchronisiert');
+});
+
+$('saveBtn').addEventListener('click', async () => {
+  if (!ready) return;
+  await persistAnnot();
+  if (!isOnline()) { toast('Lokal gespeichert – wird synchronisiert, sobald du wieder online bist.'); return; }
+  if (!tokenValid()) { toast('Lokal gespeichert – zum Synchronisieren bitte anmelden.'); signIn(); return; }
+  setStatus('Speichert …', 'saving');
+  await flushSave(); await syncAll(true);
+  if (statusEl.className !== 'error') setStatus('Gespeichert', 'ok');
+});
+
+// Nach Anmeldung: Ordner suchen, Liste laden, alles abgleichen
+async function afterSignIn() {
+  showAuthError('');
+  await ensureFolder(); await loadFileList();
+  showShell();
+  updateAuthBtn(); updateSyncState();
+  await syncAll(true);
+}
+function showShell() {
+  signedOutEl.style.display = 'none';
+  if (currentFile) { mainViewerEl.style.display = 'flex'; emptyEl.style.display = 'none'; }
+  else { mainViewerEl.style.display = 'none'; emptyEl.style.display = 'flex'; }
+}
+
+// Trigger
+window.addEventListener('online', () => { updateSyncState(); syncAll(true); });
+window.addEventListener('offline', updateSyncState);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { clearTimeout(persistTimer); persistAnnot(); libPersist(); }
+  else { updateAuthBtn(); updateSyncState(); syncAll(); }
+});
+window.addEventListener('pagehide', () => { persistAnnot(); libPersist(); });
+setInterval(() => { updateAuthBtn(); if (document.visibilityState === 'visible') { updateSyncState(); syncAll(); } }, 60000);
+
+
+// ---------------------------------------------------------------
+// Display wachhalten (Wake Lock)
+// ---------------------------------------------------------------
+let wakeSentinel = null;
+async function updateWake() {
+  const want = (wakeWanted || perf) && document.visibilityState === 'visible';
+  if (want && !wakeSentinel && 'wakeLock' in navigator) {
+    try {
+      wakeSentinel = await navigator.wakeLock.request('screen');
+      wakeSentinel.addEventListener('release', () => { wakeSentinel = null; });
+    } catch (e) { wakeSentinel = null; }
+  } else if (!want && wakeSentinel) {
+    try { await wakeSentinel.release(); } catch (e) {}
+    wakeSentinel = null;
+  }
+  $('wakeBtn').classList.toggle('on', wakeWanted);
+}
+$('wakeBtn').addEventListener('click', () => {
+  wakeWanted = !wakeWanted; lsSet('gapp_wake', wakeWanted ? '1' : '0');
+  if (wakeWanted && !('wakeLock' in navigator)) toast('Dieser Browser kann das Display nicht wachhalten.');
+  else toast(wakeWanted ? 'Display bleibt an' : 'Display darf sich wieder ausschalten');
+  updateWake();
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') updateWake(); });
+
+// ---------------------------------------------------------------
+// Auftritts-/Übungsmodus: Vollbild, keine Werkzeuge, Umblättern per Tipp an den Rand / Wischen / Pedal
+// ---------------------------------------------------------------
+let perfBarTimer = null;
+function setPerfBar(show) {
+  $('perfUI').classList.toggle('show', show);
+  clearTimeout(perfBarTimer);
+  if (show) perfBarTimer = setTimeout(() => { $('perfUI').classList.remove('show'); $('layerPop').classList.remove('show'); }, 5000);
+}
+function updatePerfPage() {
+  if (!perf) return;
+  let t = `${currentPage} / ${totalPages}`;
+  if (perfCtx && lib.setlists[perfCtx.setId]) t += ` · Lied ${perfCtx.idx + 1}/${lib.setlists[perfCtx.setId].it.length}`;
+  $('perfPage').textContent = t;
+}
+function enterPerf() {
+  if (!ready || perf) return;
+  cancelStroke();
+  perf = true; document.body.classList.add('perf');
+  fitMode = 'page'; zoom = 1; selId = null; updateSelBar();
+  sidebar.classList.remove('open'); $('layerPop').classList.remove('show'); $('dispPop').classList.remove('show');
+  $('perfTitle').textContent = currentFile.name; updatePerfPage();
+  setPerfBar(true);
+  try { const el = document.documentElement; if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => {}); } catch (e) {}
+  updateWake();
+  canvasWrap.scrollTop = 0; canvasWrap.scrollLeft = 0;
+  applyCssSize(); updateZoomLabel(); scheduleRender(30);
+}
+function exitPerf() {
+  if (!perf) return;
+  perf = false; document.body.classList.remove('perf');
+  fitMode = 'width'; zoom = 1; prefetched = null;
+  setPerfBar(false);
+  try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
+  updateWake();
+  if (ready) { applyCssSize(); updateZoomLabel(); scheduleRender(30); }
+}
+$('perfBtn').addEventListener('click', enterPerf);
+$('perfExit').addEventListener('click', exitPerf);
+$('perfLayers').addEventListener('click', () => { renderLayerPop(); $('layerPop').classList.toggle('show'); setPerfBar(true); });
+$('perfFull').addEventListener('click', () => {
+  try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { toast('Vollbild wird von diesem Browser nicht unterstützt.'); }
+  setPerfBar(true);
+});
+$('perfBar').addEventListener('pointerdown', () => setPerfBar(true));
+$('perfBar').addEventListener('input', () => setPerfBar(true));
+
+// --- Setlisten im Auftrittsmodus -------------------------------------------
+async function stepSong(dir, page) {
+  if (!perfCtx || !lib.setlists[perfCtx.setId]) return false;
+  const s = lib.setlists[perfCtx.setId];
+  let i = perfCtx.idx + dir;
+  while (i >= 0 && i < s.it.length && !files.find(f => f.id === s.it[i])) i += dir;
+  if (i < 0 || i >= s.it.length) return false;
+  perfCtx.idx = i;
+  await openFile(files.find(f => f.id === s.it[i]), page ? { page } : {});
+  return true;
+}
+async function perfNext() {
+  if (!ready) return;
+  if (currentPage < totalPages) { await goPage(currentPage + 1); return; }
+  if (await stepSong(1)) return;
+  toast(perfCtx ? 'Ende der Setliste' : 'Letzte Seite', 1200);
+}
+async function perfPrev() {
+  if (!ready) return;
+  if (currentPage > 1) { await goPage(currentPage - 1); return; }
+  if (await stepSong(-1, 'last')) return;
+}
+async function startSetlist(setId) {
+  const s = lib.setlists[setId];
+  const i = s.it.findIndex(fid => files.some(f => f.id === fid));
+  if (i < 0) { toast('Die Setliste enthält keine verfügbaren Blätter.'); return; }
+  perfCtx = { setId, idx: i };
+  sidebar.classList.remove('open');
+  await openFile(files.find(f => f.id === s.it[i]));
+  enterPerf();
+}
+
+// --- Eingaben im Auftrittsmodus ---------------------------------------------
+let tap = null;
+canvasWrap.addEventListener('pointerdown', (e) => {
+  if (!perf) return;
+  tap = { x: e.clientX, y: e.clientY, t: Date.now(), id: e.pointerId };
+});
+canvasWrap.addEventListener('pointerup', (e) => {
+  if (!perf || !tap || tap.id !== e.pointerId) return;
+  const dx = e.clientX - tap.x, dy = e.clientY - tap.y, dt = Date.now() - tap.t;
+  tap = null;
+  if (Math.abs(dx) > 60 && Math.abs(dy) < 80 && dt < 700) { if (dx < 0) perfNext(); else perfPrev(); return; }
+  if (Math.abs(dx) > 12 || Math.abs(dy) > 12 || dt > 600) return;
+  const r = canvasWrap.getBoundingClientRect(), f = (e.clientX - r.left) / r.width;
+  if ($('perfUI').classList.contains('show') && e.clientY - r.top < 70) return;
+  if (f < 0.3) perfPrev();
+  else if (f > 0.7) perfNext();
+  else setPerfBar(!$('perfUI').classList.contains('show'));
+});
+canvasWrap.addEventListener('pointercancel', () => { tap = null; });
+
+// Tastatur / Fusspedal (Pedale senden meist Pfeiltasten oder Bild-auf/-ab)
+window.addEventListener('keydown', (e) => {
+  if (!ready) return;
+  const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+  if (typing || document.querySelector('.modal-bg') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const next = ['ArrowRight', 'PageDown'], prev = ['ArrowLeft', 'PageUp'];
+  if (perf) { next.push('ArrowDown', ' ', 'Enter'); prev.push('ArrowUp', 'Backspace'); }
+  if (next.includes(e.key)) { e.preventDefault(); if (perf) perfNext(); else goPage(currentPage + 1); }
+  else if (prev.includes(e.key)) { e.preventDefault(); if (perf) perfPrev(); else goPage(currentPage - 1); }
+  else if (perf && e.key === 'Escape') exitPerf();
+});
+
+
+// ---------------------------------------------------------------
+// Upload (per XMLHttpRequest: Fortschritt + Zeitlimit; Fotos werden vorher verkleinert)
+// ---------------------------------------------------------------
+const MAX_IMG_DIM = 3000;
+const RESUMABLE_FROM = 5 * 1024 * 1024;
+const UPLOAD_FIELDS = 'id,name,mimeType,modifiedTime,createdTime,md5Checksum';
+
+function xhrSend(method, url, headers, body, onProgress, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open(method, url);
+    for (const [k, v] of Object.entries(headers)) x.setRequestHeader(k, v);
+    x.timeout = timeoutMs;
+    x.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total); };
+    x.onload = () => resolve(x);
+    x.onerror = () => reject(new Error('Netzwerkfehler'));
+    x.ontimeout = () => reject(new Error('Zeitüberschreitung'));
+    x.send(body);
+  });
+}
+async function driveUpload(method, url, headers, body, onProgress) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await ensureToken();
+    const x = await xhrSend(method, url, Object.assign({ Authorization: 'Bearer ' + accessToken }, headers), body, onProgress, 300000);
+    if (x.status === 401 && attempt === 0) { dropToken(); continue; }
+    if (x.status === 401) throw new Error('unauthorized');
+    if (x.status < 200 || x.status >= 300) throw new Error('Drive-Fehler ' + x.status + ' ' + x.responseText.slice(0, 200));
+    return x;
+  }
+  throw new Error('unauthorized');
+}
+async function prepareUpload(file) {
+  if (!file.type.startsWith('image/') || /gif|svg/.test(file.type)) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const s = Math.min(1, MAX_IMG_DIM / Math.max(bmp.width, bmp.height));
+    if (s === 1 && file.size <= 1.5e6) { if (bmp.close) bmp.close(); return file; }
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(bmp, 0, 0, c.width, c.height);
+    if (bmp.close) bmp.close();
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+    if (!blob || (s === 1 && blob.size >= file.size)) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch (e) { return file; }
+}
+async function uploadMultipart(file, metadata, onProgress) {
+  const boundary = 'gappboundary' + Date.now();
+  const head = new TextEncoder().encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`);
+  const tail = new TextEncoder().encode(`\r\n--${boundary}--`);
+  const x = await driveUpload('POST', `${DRIVE_UPLOAD}?uploadType=multipart&fields=${UPLOAD_FIELDS}`,
+    { 'Content-Type': `multipart/related; boundary=${boundary}` }, new Blob([head, file, tail]), onProgress);
+  return JSON.parse(x.responseText);
+}
+async function uploadResumable(file, metadata, onProgress) {
+  const init = await driveUpload('POST', `${DRIVE_UPLOAD}?uploadType=resumable&fields=${UPLOAD_FIELDS}`, {
+    'Content-Type': 'application/json; charset=UTF-8',
+    'X-Upload-Content-Type': file.type || 'application/octet-stream',
+    'X-Upload-Content-Length': String(file.size)
+  }, JSON.stringify(metadata));
+  const loc = init.getResponseHeader('Location');
+  if (!loc) throw new Error('kein Upload-Link');
+  const x = await driveUpload('PUT', loc, { 'Content-Type': file.type || 'application/octet-stream' }, file, onProgress);
+  return JSON.parse(x.responseText);
+}
+async function uploadOne(file, onProgress) {
+  const metadata = { name: file.name, parents: [folderId] };
+  let created = null;
+  if (file.size > RESUMABLE_FROM) {
+    try { created = await uploadResumable(file, metadata, onProgress); }
+    catch (e) { if (e.message === 'unauthorized') throw e; console.warn('Resumable-Upload fehlgeschlagen, versuche Multipart:', e); }
+  }
+  return created || await uploadMultipart(file, metadata, onProgress);
+}
+
+// Nach dem Hochladen: Liste neu laden, Ordner zuweisen, lokal (offline) ablegen, anzeigen
+async function finishUploads(items) {          // items: [{created, file}]
+  await loadFileList().catch(() => {});
+  let first = null;
+  for (const { created, file } of items) {
+    const f = files.find(x => x.id === created.id) || { id: created.id, name: created.name, mimeType: created.mimeType, modifiedTime: created.modifiedTime, createdTime: created.createdTime, md5Checksum: created.md5Checksum };
+    if (!files.some(x => x.id === f.id)) files.push(f);
+    if (currentFolder) { const m = lib.files[f.id] || (lib.files[f.id] = newFmeta()); m.f = currentFolder; m.u = Date.now(); }
+    await storeBlob(f, file).catch(() => {});
+    if (!first) first = f;
+  }
+  libChanged();
+  safe(IDB.put('kv', 'files', files));
+  if (first) await openFile(first);
+}
+
+async function uploadFiles(fileListRaw) {
+  const list = Array.from(fileListRaw), done = [];
+  for (let i = 0; i < list.length; i++) {
+    const label = list.length > 1 ? ` (${i + 1}/${list.length})` : '';
+    try {
+      setStatus('Bereite vor …' + label, 'saving');
+      const file = await prepareUpload(list[i]);
+      const prog = (f) => setStatus(`Lade hoch … ${Math.round(f * 100)} %${label}`, 'saving');
+      prog(0);
+      done.push({ created: await uploadOne(file, prog), file });
+    } catch (e) {
+      fail(e.message === 'unauthorized' ? 'Sitzung abgelaufen – bitte «Anmelden» tippen' : `Upload fehlgeschlagen: ${list[i].name}`, e);
+      if (done.length) await finishUploads(done);
+      return;
+    }
+  }
+  setStatus('Hochgeladen', 'ok');
+  await finishUploads(done);
+}
+
+// Hochladen/Scannen brauchen Internet + Anmeldung (alles andere geht offline)
+async function requireOnline(what) {
+  if (!isOnline()) { toast(what + ' braucht eine Internetverbindung. Alles andere funktioniert auch offline.'); return false; }
+  if (!tokenValid()) {
     setStatus('Bitte zuerst anmelden', 'error');
-    lastErrorDetail = 'Nicht angemeldet – bitte anmelden, danach «Blatt hinzufügen» erneut tippen.';
-    if (tokenClient) signIn();                        // Klick zählt als Nutzeraktion → Popup erlaubt
-    return;
+    lastErrorDetail = 'Nicht angemeldet – bitte anmelden, danach ' + what + ' erneut tippen.';
+    if (tokenClient) signIn();
+    return false;
   }
-  if (!folderId) {                                    // angemeldet, aber Drive-Ordner nicht ermittelt → erneut versuchen und Fehler zeigen
+  if (!folderId) {
     setStatus('Verbinde mit Drive …', 'saving');
-    afterSignIn().then(() => setStatus('Bereit – «Blatt hinzufügen» erneut tippen', 'ok'))
+    afterSignIn().then(() => setStatus('Bereit – bitte erneut tippen', 'ok'))
       .catch(e => { fail('Verbindung zu Drive fehlgeschlagen', e); showAuthError(explainError(e)); signedOutEl.style.display = 'flex'; });
-    return;
+    return false;
   }
-  $('fileInput').click();
-});
+  return true;
+}
+$('uploadBtn').addEventListener('click', async () => { if (await requireOnline('«Blatt hinzufügen»')) $('fileInput').click(); });
 $('fileInput').addEventListener('change', (e) => { if (e.target.files.length) uploadFiles(e.target.files); e.target.value = ''; });
-$('sidebarToggle').addEventListener('click', () => sidebar.classList.toggle('open'));
-
-window.addEventListener('resize', () => { if (ready) { applyCssSize(); scheduleRender(200); } });
 
 // ---------------------------------------------------------------
-// Boot
+// Bibliothek pdf-lib (lokal) nachladen
 // ---------------------------------------------------------------
-window.addEventListener('load', () => {
-  const check = setInterval(() => {
-    if (window.google && google.accounts) { clearInterval(check); initAuth(); }
-  }, 100);
-});
+let pdfLibPromise = null;
+function loadPdfLib() {
+  if (window.PDFLib) return Promise.resolve(window.PDFLib);
+  if (!pdfLibPromise) pdfLibPromise = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = './vendor/pdf-lib.min.js';
+    s.onload = () => res(window.PDFLib);
+    s.onerror = () => { pdfLibPromise = null; rej(new Error('pdf-lib konnte nicht geladen werden (Ordner «vendor» fehlt?)')); };
+    document.head.append(s);
+  });
+  return pdfLibPromise;
+}
+const canvasBlob = (c, type, q) => new Promise(r => c.toBlob(r, type, q));
+
+// ---------------------------------------------------------------
+// Scan: Foto → Ecken erkennen/anpassen → entzerren → verbessern → (mehrseitiges) PDF
+// ---------------------------------------------------------------
+function boxBlur(src, w, h, r) {           // Mittelwertfilter (separabel), Rand wird gespiegelt begrenzt
+  const tmp = new Float32Array(w * h), out = new Float32Array(w * h), n = 2 * r + 1;
+  for (let y = 0; y < h; y++) {
+    let s = 0; const o = y * w;
+    for (let x = -r; x <= r; x++) s += src[o + clamp(x, 0, w - 1)];
+    for (let x = 0; x < w; x++) { tmp[o + x] = s / n; s += src[o + clamp(x + r + 1, 0, w - 1)] - src[o + clamp(x - r, 0, w - 1)]; }
+  }
+  for (let x = 0; x < w; x++) {
+    let s = 0;
+    for (let y = -r; y <= r; y++) s += tmp[clamp(y, 0, h - 1) * w + x];
+    for (let y = 0; y < h; y++) { out[y * w + x] = s / n; s += tmp[clamp(y + r + 1, 0, h - 1) * w + x] - tmp[clamp(y - r, 0, h - 1) * w + x]; }
+  }
+  return out;
+}
+function maxFilter(src, w, h, r) {         // Dilatation (separabel)
+  const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = 0; for (let k = -r; k <= r; k++) { const v = src[y * w + clamp(x + k, 0, w - 1)]; if (v > m) m = v; } tmp[y * w + x] = m; }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = 0; for (let k = -r; k <= r; k++) { const v = tmp[clamp(y + k, 0, h - 1) * w + x]; if (v > m) m = v; } out[y * w + x] = m; }
+  return out;
+}
+
+function insetCorners(w, h, f) { const dx = w * f, dy = h * f; return [[dx, dy], [w - dx, dy], [w - dx, h - dy], [dx, h - dy]]; }
+const polyArea = (P) => Math.abs(P.reduce((s, p, i) => { const q = P[(i + 1) % P.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+
+// Erkennt die Blatt-Ecken: Otsu-Schwelle → zusammenhängende Fläche um die Bildmitte → äusserste Punkte
+function detectCorners(src) {
+  const fallback = () => insetCorners(src.width, src.height, 0.06);
+  try {
+    const sc = 320 / Math.max(src.width, src.height);
+    const w = Math.max(16, Math.round(src.width * sc)), h = Math.max(16, Math.round(src.height * sc));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(src, 0, 0, w, h);
+    const d = g.getImageData(0, 0, w, h).data;
+    const lum = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) lum[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+    const bl = boxBlur(lum, w, h, 2);
+    const hist = new Array(256).fill(0); bl.forEach(v => hist[clamp(Math.round(v), 0, 255)]++);
+    const total = w * h; let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+    let sB = 0, wB = 0, best = 0, T = 128;
+    for (let t = 0; t < 256; t++) { wB += hist[t]; if (!wB) continue; const wF = total - wB; if (!wF) break; sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF); if (v > best) { best = v; T = t; } }
+    const mask = new Uint8Array(total); for (let i = 0; i < total; i++) mask[i] = bl[i] > T ? 1 : 0;
+    // welche Seite (hell/dunkel) ist das Blatt? → die, die in der Bildmitte überwiegt
+    let ones = 0, cnt = 0; const cx = w >> 1, cy = h >> 1, rr = Math.round(Math.min(w, h) * 0.12);
+    for (let y = cy - rr; y <= cy + rr; y++) for (let x = cx - rr; x <= cx + rr; x++) { ones += mask[y * w + x]; cnt++; }
+    const paper = ones * 2 > cnt ? 1 : 0;
+    // Saatpunkt nahe der Mitte
+    let seed = -1;
+    for (let r = 0; r < Math.min(w, h) / 2 && seed < 0; r += 2) for (let dy = -r; dy <= r && seed < 0; dy += 2) for (let dx = -r; dx <= r; dx += 2) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < w && y < h && mask[y * w + x] === paper) { seed = y * w + x; break; } }
+    if (seed < 0) return fallback();
+    const seen = new Uint8Array(total), stack = new Int32Array(total); let sp = 0, area = 0;
+    stack[sp++] = seed; seen[seed] = 1;
+    let tl = null, tr = null, br = null, bl2 = null, vtl = 1e9, vtr = -1e9, vbr = -1e9, vbl = 1e9;
+    while (sp) {
+      const i = stack[--sp], x = i % w, y = (i / w) | 0; area++;
+      const a = x + y, b = x - y;
+      if (a < vtl) { vtl = a; tl = [x, y]; } if (a > vbr) { vbr = a; br = [x, y]; }
+      if (b > vtr) { vtr = b; tr = [x, y]; } if (b < vbl) { vbl = b; bl2 = [x, y]; }
+      if (x > 0 && !seen[i - 1] && mask[i - 1] === paper) { seen[i - 1] = 1; stack[sp++] = i - 1; }
+      if (x < w - 1 && !seen[i + 1] && mask[i + 1] === paper) { seen[i + 1] = 1; stack[sp++] = i + 1; }
+      if (y > 0 && !seen[i - w] && mask[i - w] === paper) { seen[i - w] = 1; stack[sp++] = i - w; }
+      if (y < h - 1 && !seen[i + w] && mask[i + w] === paper) { seen[i + w] = 1; stack[sp++] = i + w; }
+    }
+    const quad = [tl, tr, br, bl2];
+    if (area < total * 0.12) return fallback();
+    if (area > total * 0.97) return insetCorners(src.width, src.height, 0.02);
+    if (polyArea(quad) < total * 0.12) return fallback();
+    return quad.map(p => [(p[0] + 0.5) / sc, (p[1] + 0.5) / sc]);
+  } catch (e) { console.warn('Eckenerkennung:', e); return fallback(); }
+}
+
+function solveLinear(A, b) {               // Gauss mit Spaltenpivot
+  const n = b.length;
+  for (let i = 0; i < n; i++) {
+    let p = i; for (let r = i + 1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
+    [A[i], A[p]] = [A[p], A[i]]; [b[i], b[p]] = [b[p], b[i]];
+    if (Math.abs(A[i][i]) < 1e-12) return null;
+    for (let r = i + 1; r < n; r++) { const f = A[r][i] / A[i][i]; for (let c = i; c < n; c++) A[r][c] -= f * A[i][c]; b[r] -= f * b[i]; }
+  }
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let c = i + 1; c < n; c++) s -= A[i][c] * x[c]; x[i] = s / A[i][i]; }
+  return x;
+}
+function homography(from, to) {            // bildet from[i] → to[i] ab
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = from[i], [u, v] = to[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  return solveLinear(A, b);
+}
+
+async function warpPerspective(src, corners, outW, outH, progress) {
+  const sw = src.width, sh = src.height;
+  const sd = src.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, sw, sh).data;
+  const H = homography([[0, 0], [outW, 0], [outW, outH], [0, outH]], corners);
+  if (!H) throw new Error('Die Ecken liegen ungünstig (Viereck ist entartet).');
+  const out = new ImageData(outW, outH), od = out.data;
+  for (let y = 0; y < outH; y++) {
+    const yy = y + 0.5;
+    for (let x = 0; x < outW; x++) {
+      const xx = x + 0.5, den = H[6] * xx + H[7] * yy + 1;
+      let u = (H[0] * xx + H[1] * yy + H[2]) / den - 0.5, v = (H[3] * xx + H[4] * yy + H[5]) / den - 0.5;
+      u = clamp(u, 0, sw - 1.001); v = clamp(v, 0, sh - 1.001);
+      const x0 = u | 0, y0 = v | 0, fx = u - x0, fy = v - y0, i = (y0 * sw + x0) * 4, j = i + sw * 4, o = (y * outW + x) * 4;
+      const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+      od[o] = sd[i] * w00 + sd[i + 4] * w10 + sd[j] * w01 + sd[j + 4] * w11;
+      od[o + 1] = sd[i + 1] * w00 + sd[i + 5] * w10 + sd[j + 1] * w01 + sd[j + 5] * w11;
+      od[o + 2] = sd[i + 2] * w00 + sd[i + 6] * w10 + sd[j + 2] * w01 + sd[j + 6] * w11;
+      od[o + 3] = 255;
+    }
+    if (y % 96 === 95) { if (progress) progress(y / outH); await sleep(0); }
+  }
+  return out;
+}
+
+// Kontrast/Helligkeit verbessern
+function enhanceImage(img, mode) {
+  const w = img.width, h = img.height, d = img.data, n = w * h;
+  if (mode === 'orig') return img;
+  const lum = new Float32Array(n);
+  for (let i = 0; i < n; i++) lum[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+  if (mode === 'color' || mode === 'gray') {
+    const hist = new Array(256).fill(0); for (let i = 0; i < n; i += 3) hist[clamp(Math.round(lum[i]), 0, 255)]++;
+    const tot = hist.reduce((a, b) => a + b, 0); let acc = 0, lo = 0, hi = 255;
+    for (let t = 0; t < 256; t++) { acc += hist[t]; if (acc >= tot * 0.01) { lo = t; break; } }
+    acc = 0; for (let t = 255; t >= 0; t--) { acc += hist[t]; if (acc >= tot * 0.05) { hi = t; break; } }   // Papierweiss = oberes Ende
+    if (hi - lo < 40) { lo = 0; hi = 255; }
+    const sc = 255 / (hi - lo);
+    for (let i = 0; i < n; i++) {
+      if (mode === 'gray') { const v = clamp((lum[i] - lo) * sc, 0, 255); d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v; }
+      else { d[i * 4] = clamp((d[i * 4] - lo) * sc, 0, 255); d[i * 4 + 1] = clamp((d[i * 4 + 1] - lo) * sc, 0, 255); d[i * 4 + 2] = clamp((d[i * 4 + 2] - lo) * sc, 0, 255); }
+    }
+    return img;
+  }
+  // 'doc' / 'bw': Beleuchtung schätzen (Hintergrund) und herausrechnen
+  const f = 8, sw = Math.max(8, Math.round(w / f)), sh = Math.max(8, Math.round(h / f));
+  const small = document.createElement('canvas'); small.width = sw; small.height = sh;
+  const sg = small.getContext('2d'), tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
+  tmp.getContext('2d').putImageData(img, 0, 0);
+  sg.drawImage(tmp, 0, 0, sw, sh);
+  const sd = sg.getImageData(0, 0, sw, sh).data, sl = new Float32Array(sw * sh);
+  for (let i = 0; i < sw * sh; i++) sl[i] = 0.299 * sd[i * 4] + 0.587 * sd[i * 4 + 1] + 0.114 * sd[i * 4 + 2];
+  const bgSmall = boxBlur(boxBlur(maxFilter(sl, sw, sh, 3), sw, sh, 5), sw, sh, 5);
+  const bgc = document.createElement('canvas'); bgc.width = sw; bgc.height = sh;
+  const bd = bgc.getContext('2d').createImageData(sw, sh);
+  for (let i = 0; i < sw * sh; i++) { const v = clamp(bgSmall[i], 1, 255); bd.data[i * 4] = bd.data[i * 4 + 1] = bd.data[i * 4 + 2] = v; bd.data[i * 4 + 3] = 255; }
+  bgc.getContext('2d').putImageData(bd, 0, 0);
+  const bigc = document.createElement('canvas'); bigc.width = w; bigc.height = h;
+  const bgx = bigc.getContext('2d', { willReadFrequently: true }); bgx.imageSmoothingEnabled = true; bgx.imageSmoothingQuality = 'high';
+  bgx.drawImage(bgc, 0, 0, w, h);
+  const bgd = bgx.getImageData(0, 0, w, h).data;
+  const lo = mode === 'bw' ? 150 : 95, hi = mode === 'bw' ? 215 : 235;
+  for (let i = 0; i < n; i++) {
+    const nv = lum[i] / Math.max(bgd[i * 4], 24) * 255;
+    let t = clamp((nv - lo) / (hi - lo), 0, 1); t = t * t * (3 - 2 * t);
+    const v = t * 255;
+    d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v;
+  }
+  return img;
+}
+
+// Wahres Seitenverhältnis (Breite/Höhe) aus dem Viereck schätzen (Zhang/He, Kamera mit Hauptpunkt in der Bildmitte).
+// Nur mit den Kantenlängen würde bei schräg fotografierten Blättern die Proportion verzerrt.
+function estimateAspect(c, imgW, imgH) {
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const avgW = (dist(c[0], c[1]) + dist(c[3], c[2])) / 2, avgH = (dist(c[0], c[3]) + dist(c[1], c[2])) / 2;
+  const fallback = avgW / avgH;
+  try {
+    const u0 = imgW / 2, v0 = imgH / 2;
+    const m1 = [c[0][0] - u0, c[0][1] - v0, 1], m2 = [c[1][0] - u0, c[1][1] - v0, 1], m3 = [c[3][0] - u0, c[3][1] - v0, 1], m4 = [c[2][0] - u0, c[2][1] - v0, 1];
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const k2 = dot(cross(m1, m4), m3) / dot(cross(m2, m4), m3), k3 = dot(cross(m1, m4), m2) / dot(cross(m3, m4), m2);
+    const n2 = m2.map((v, i) => k2 * v - m1[i]), n3 = m3.map((v, i) => k3 * v - m1[i]);
+    if (!isFinite(k2) || !isFinite(k3) || Math.abs(n2[2] * n3[2]) < 1e-9) return fallback;
+    const f2 = -(n2[0] * n3[0] + n2[1] * n3[1]) / (n2[2] * n3[2]);
+    if (!(f2 > 0)) return fallback;
+    const f = Math.sqrt(f2), inv = (n) => [n[0] / f, n[1] / f, n[2]];
+    const a = inv(n2), b = inv(n3);
+    const r = Math.sqrt(dot(a, a) / dot(b, b));
+    if (!isFinite(r) || r < fallback / 1.6 || r > fallback * 1.6) return fallback;   // unplausibel → Kantenlängen
+    return r;
+  } catch (e) { return fallback; }
+}
+const A4 = 1 / Math.SQRT2;
+function snapAspect(r) {
+  for (const t of [A4, 1 / A4]) if (Math.abs(r / t - 1) < 0.035) return t;   // A4 hoch/quer
+  return r;
+}
+
+async function scanProcess(src, corners, mode, progress) {
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const L = (dist(corners[0], corners[1]) + dist(corners[3], corners[2])) / 2, Hh = (dist(corners[0], corners[3]) + dist(corners[1], corners[2])) / 2;
+  const r = snapAspect(estimateAspect(corners, src.width, src.height));
+  let w = Math.sqrt(L * Hh * r), h_ = w / r;
+  const s = Math.min(1, 2300 / Math.max(w, h_)); w = Math.max(50, Math.round(w * s)); h_ = Math.max(50, Math.round(h_ * s));
+  const img = await warpPerspective(src, corners, w, h_, progress);
+  await sleep(0);
+  enhanceImage(img, mode);
+  const c = document.createElement('canvas'); c.width = w; c.height = h_;
+  c.getContext('2d').putImageData(img, 0, 0);
+  return c;
+}
+
+async function fileToCanvas(file) {
+  const bmp = await createImageBitmap(file);
+  const s = Math.min(1, 3000 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = 'high'; g.drawImage(bmp, 0, 0, c.width, c.height);
+  if (bmp.close) bmp.close();
+  return c;
+}
+function rotateCanvas(c) {
+  const o = document.createElement('canvas'); o.width = c.height; o.height = c.width;
+  const g = o.getContext('2d'); g.translate(o.width, 0); g.rotate(Math.PI / 2); g.drawImage(c, 0, 0);
+  return o;
+}
+
+let scanSession = null;
+function openScan() {
+  const S = { pages: [], src: null, corners: null, mode: lsGet('gapp_scanmode') || 'doc', api: null, onFile: null };
+  scanSession = S;
+  const api = openModal({ title: '📷 Blatt scannen', body: [], buttons: [], wide: true });
+  S.api = api; api.onClose = () => { if (scanSession === S) scanSession = null; };
+  const btn = (label, fn, primary) => api.btns.append(h('button', { class: primary ? 'primary' : '', text: label, onclick: fn }));
+  const reset = (title) => { api.body.innerHTML = ''; api.btns.innerHTML = ''; api.el.querySelector('h3').textContent = title; };
+
+  function stagePick() {
+    reset('📷 Blatt scannen' + (S.pages.length ? ` – ${S.pages.length} Seite${S.pages.length > 1 ? 'n' : ''}` : ''));
+    api.body.append(
+      h('p', { text: 'Fotografiere das Blatt von oben auf einer möglichst dunklen, einfarbigen Unterlage. Ecken werden automatisch erkannt (und lassen sich verschieben), die Seite wird begradigt und der Kontrast verbessert.', style: 'font-size:13px; color:var(--muted);' }),
+      h('div', { class: 'scan-row' },
+        h('button', { class: 'primary', text: '📷 Foto aufnehmen', onclick: () => $('scanInput').click() }),
+        h('button', { text: '🖼 Bild auswählen', onclick: () => $('scanInputGal').click() })));
+    if (S.pages.length) { btn('Fertig (' + S.pages.length + ')', stageReview, true); }
+    btn('Abbrechen', () => api.close());
+  }
+
+  S.onFile = async (file) => {
+    try {
+      reset('Lade Foto …'); api.body.append(h('p', { text: 'Einen Moment …' }));
+      S.src = await fileToCanvas(file);
+      S.corners = detectCorners(S.src);
+      stageEdit();
+    } catch (e) { toast('Bild konnte nicht gelesen werden: ' + e.message); stagePick(); }
+  };
+
+  function stageEdit() {
+    reset('Ecken prüfen');
+    const cv = h('canvas', { id: 'scanCv' });
+    const maxW = Math.min(720, Math.round(window.innerWidth * 0.8)), maxH = Math.round(window.innerHeight * 0.5);
+    const k = Math.min(maxW / S.src.width, maxH / S.src.height, 1);
+    cv.width = Math.round(S.src.width * k); cv.height = Math.round(S.src.height * k);
+    const g = cv.getContext('2d');
+    const draw = () => {
+      g.clearRect(0, 0, cv.width, cv.height);
+      g.drawImage(S.src, 0, 0, cv.width, cv.height);
+      g.beginPath(); S.corners.forEach((p, i) => i ? g.lineTo(p[0] * k, p[1] * k) : g.moveTo(p[0] * k, p[1] * k)); g.closePath();
+      g.fillStyle = 'rgba(36,113,163,.15)'; g.fill(); g.strokeStyle = '#2471a3'; g.lineWidth = 2; g.stroke();
+      S.corners.forEach(p => { g.beginPath(); g.arc(p[0] * k, p[1] * k, 11, 0, Math.PI * 2); g.fillStyle = 'rgba(255,255,255,.85)'; g.fill(); g.strokeStyle = '#2471a3'; g.lineWidth = 3; g.stroke(); });
+    };
+    let drag = -1;
+    const pos = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * cv.width / k, (e.clientY - r.top) / r.height * cv.height / k]; };
+    cv.addEventListener('pointerdown', (e) => {
+      const p = pos(e), r = cv.getBoundingClientRect(), scaleCss = (cv.width / r.width) / k;
+      let best = -1, bd = 40 * scaleCss;
+      S.corners.forEach((c, i) => { const d = Math.hypot(c[0] - p[0], c[1] - p[1]); if (d < bd) { bd = d; best = i; } });
+      drag = best; if (drag >= 0) { cv.setPointerCapture(e.pointerId); e.preventDefault(); }
+    });
+    cv.addEventListener('pointermove', (e) => { if (drag < 0) return; const p = pos(e); S.corners[drag] = [clamp(p[0], 0, S.src.width), clamp(p[1], 0, S.src.height)]; draw(); });
+    cv.addEventListener('pointerup', () => { drag = -1; });
+    const sel = h('select', { onchange: (e) => { S.mode = e.target.value; lsSet('gapp_scanmode', S.mode); } },
+      [['doc', 'Dokument (weisser Grund, Beleuchtung ausgleichen)'], ['bw', 'Schwarz-Weiss'], ['color', 'Farbe (Kontrast verbessern)'], ['gray', 'Graustufen'], ['orig', 'Original']]
+        .map(([v, t]) => h('option', { value: v, text: t, selected: v === S.mode ? true : null })));
+    api.body.append(cv, h('div', { class: 'scan-row' },
+      h('button', { text: '⟳ Drehen', onclick: () => { S.src = rotateCanvas(S.src); S.corners = detectCorners(S.src); stageEdit(); } }),
+      h('button', { text: '✦ Ecken neu erkennen', onclick: () => { S.corners = detectCorners(S.src); draw(); } }),
+      h('button', { text: '▢ Ganzes Bild', onclick: () => { S.corners = insetCorners(S.src.width, S.src.height, 0); draw(); } })),
+      h('div', { class: 'scan-row' }, h('span', { text: 'Modus:' }), sel));
+    draw();
+    btn('Zurück', stagePick);
+    btn('Übernehmen', async () => {
+      reset('Verarbeite …');
+      const pr = h('p', { text: 'Begradige und verbessere …' }); api.body.append(pr);
+      try {
+        const page = await scanProcess(S.src, S.corners, S.mode, (f) => { pr.textContent = `Begradige … ${Math.round(f * 100)} %`; });
+        S.pages.push(page); S.src = null; stageReview();
+      } catch (e) { toast('Verarbeitung fehlgeschlagen: ' + e.message); stageEdit(); }
+    }, true);
+  }
+
+  function stageReview() {
+    reset(`Seiten (${S.pages.length})`);
+    const wrap = h('div', { style: 'display:flex; flex-wrap:wrap; gap:10px;' });
+    S.pages.forEach((c, i) => {
+      const th = h('canvas', { width: 150, height: Math.round(150 * c.height / c.width), style: 'border:1px solid var(--border); border-radius:6px; max-width:150px;' });
+      th.getContext('2d').drawImage(c, 0, 0, th.width, th.height);
+      wrap.append(h('div', { style: 'text-align:center; font-size:12px;' }, th,
+        h('div', {}, `Seite ${i + 1} `, h('a', { text: '✕ entfernen', style: 'color:var(--danger); cursor:pointer;', onclick: () => { S.pages.splice(i, 1); S.pages.length ? stageReview() : stagePick(); } }))));
+    });
+    api.body.append(wrap);
+    btn('＋ Weitere Seite', stagePick);
+    btn('Weiter', stageSave, true);
+    btn('Abbrechen', () => api.close());
+  }
+
+  function stageSave() {
+    reset('Speichern');
+    const d = new Date(), pad = (n) => String(n).padStart(2, '0');
+    const name = h('input', { type: 'text', value: `Scan ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}.${pad(d.getMinutes())}`, style: 'width:100%;' });
+    const fmt = h('select', {}, h('option', { value: 'pdf', text: 'PDF (empfohlen, mehrseitig möglich)' }), S.pages.length === 1 ? h('option', { value: 'jpg', text: 'Bild (JPG)' }) : null);
+    api.body.append(h('p', { text: 'Name des Blatts:' }), name, h('p', { text: 'Format:' }), fmt,
+      h('p', { style: 'font-size:12px; color:var(--muted);', text: currentFolder ? 'Wird im aktuell geöffneten Ordner abgelegt: ' + folderPath(currentFolder).map(x => x.n).join(' › ') : 'Wird im Hauptordner abgelegt (später verschiebbar).' }));
+    btn('Zurück', stageReview);
+    btn('Hochladen', async () => {
+      const nm = (name.value.trim() || 'Scan').replace(/[\\/]+/g, '-'), kind = fmt.value, pages = S.pages.slice();
+      api.close();
+      try {
+        setStatus('Erzeuge Datei …', 'saving');
+        let file;
+        if (kind === 'jpg') file = new File([await canvasBlob(pages[0], 'image/jpeg', 0.9)], nm + '.jpg', { type: 'image/jpeg' });
+        else file = new File([await buildScanPdf(pages)], nm + '.pdf', { type: 'application/pdf' });
+        const prog = (f) => setStatus(`Lade hoch … ${Math.round(f * 100)} %`, 'saving');
+        const created = await uploadOne(file, prog);
+        setStatus('Hochgeladen', 'ok');
+        await finishUploads([{ created, file }]);
+      } catch (e) { fail('Scan konnte nicht gespeichert werden', e); }
+    }, true);
+  }
+  stagePick();
+}
+async function buildScanPdf(pages) {
+  const { PDFDocument } = await loadPdfLib();
+  const doc = await PDFDocument.create();
+  for (const c of pages) {
+    const jpg = await doc.embedJpg(new Uint8Array(await (await canvasBlob(c, 'image/jpeg', 0.88)).arrayBuffer()));
+    const long = 842, ratio = c.height / c.width;
+    const w = ratio >= 1 ? long / ratio : long, hh = ratio >= 1 ? long : long * ratio;
+    const pg = doc.addPage([w, hh]); pg.drawImage(jpg, { x: 0, y: 0, width: w, height: hh });
+  }
+  doc.setTitle('Scan'); doc.setCreator('Gesangs-App');
+  return new Uint8Array(await doc.save());
+}
+$('scanBtn').addEventListener('click', async () => { if (await requireOnline('Scannen')) openScan(); });
+[$('scanInput'), $('scanInputGal')].forEach(inp => inp.addEventListener('change', (e) => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (f && scanSession) scanSession.onFile(f);
+}));
+
+// ---------------------------------------------------------------
+// PDF-Export mit eingebrannten Annotationen
+// ---------------------------------------------------------------
+function makeOverlay(objs, wPx, aspect) {
+  const c = document.createElement('canvas'); c.width = wPx; c.height = Math.round(wPx * aspect);
+  renderObjects(c.getContext('2d'), wPx, objs);
+  return c;
+}
+async function exportPdf() {
+  if (!ready || !currentFile || !currentBlob) { toast('Erst ein Blatt öffnen.'); return; }
+  const f = currentFile;
+  try {
+    setStatus('Exportiere …', 'saving');
+    const PL = await loadPdfLib(), { PDFDocument, BlendMode } = PL;
+    let doc;
+    const bakePage = [];                       // [{index, aspect}] – Anzeige-Seitenverhältnis je Seite
+    if (f.mimeType === 'application/pdf') {
+      doc = await PDFDocument.load(await currentBlob.arrayBuffer(), { ignoreEncryption: true, updateMetadata: false });
+      const pj = await getPdfjs();
+      const tmpTask = pj.getDocument(Object.assign({ data: await currentBlob.arrayBuffer() }, PDF_OPTS)), tmp = await tmpTask.promise;
+      for (let i = 1; i <= tmp.numPages; i++) { const p = await tmp.getPage(i), v = p.getViewport({ scale: 1 }); bakePage.push({ aspect: v.height / v.width, wpt: v.width }); }
+      try { tmpTask.destroy(); } catch (e) {}
+    } else {
+      doc = await PDFDocument.create();
+      const m = fget(f.id), img = currentImg;
+      const c = document.createElement('canvas'); const s = Math.min(1, 3000 / Math.max(img.naturalWidth, img.naturalHeight));
+      c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      if (m.bri !== 1 || m.con !== 1) g.filter = `brightness(${m.bri}) contrast(${m.con})`;
+      g.drawImage(img, 0, 0, c.width, c.height);
+      const jpg = await doc.embedJpg(new Uint8Array(await (await canvasBlob(c, 'image/jpeg', 0.9)).arrayBuffer()));
+      const long = 842, ratio = c.height / c.width, w = ratio >= 1 ? long / ratio : long, hh = ratio >= 1 ? long : long * ratio;
+      doc.addPage([w, hh]).drawImage(jpg, { x: 0, y: 0, width: w, height: hh });
+      bakePage.push({ aspect: ratio, wpt: w });
+    }
+    const pages = doc.getPages();
+    for (let i = 0; i < pages.length && i < bakePage.length; i++) {
+      const objs = pageArrRO(i + 1).filter(o => visLayer(o.l));
+      if (!objs.length) continue;
+      const { aspect, wpt } = bakePage[i];
+      const wPx = Math.round(clamp(wpt * 200 / 72, 900, 2400));
+      const png = await doc.embedPng(new Uint8Array(await (await canvasBlob(makeOverlay(objs, wPx, aspect), 'image/png')).arrayBuffer()));
+      const pg = pages[i], rot = ((pg.getRotation().angle % 360) + 360) % 360;
+      const box = pg.getCropBox ? pg.getCropBox() : pg.getMediaBox(), bx = box.x, by = box.y, bw = box.width, bh = box.height;
+      const opt = { blendMode: BlendMode.Multiply };
+      if (rot === 0) pg.drawImage(png, Object.assign(opt, { x: bx, y: by, width: bw, height: bh }));
+      else if (rot === 90) pg.drawImage(png, Object.assign(opt, { x: bx + bw, y: by, width: bh, height: bw, rotate: PL.degrees(90) }));
+      else if (rot === 180) pg.drawImage(png, Object.assign(opt, { x: bx + bw, y: by + bh, width: bw, height: bh, rotate: PL.degrees(180) }));
+      else pg.drawImage(png, Object.assign(opt, { x: bx, y: by + bh, width: bh, height: bw, rotate: PL.degrees(270) }));
+    }
+    const bytes = await doc.save();
+    const outName = f.name.replace(/\.[^.]+$/, '') + ' (annotiert).pdf';
+    const file = new File([bytes], outName, { type: 'application/pdf' });
+    setStatus('');
+    const touch = matchMedia('(pointer:coarse)').matches;
+    if (touch && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: outName }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(file), a = h('a', { href: url, download: outName });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+    toast('PDF exportiert: ' + outName);
+  } catch (e) { fail('Export fehlgeschlagen', e); }
+}
+$('exportBtn').addEventListener('click', exportPdf);
+
+
+// ---------------------------------------------------------------
+// Start (offline-first): erst lokale Daten anzeigen, dann Google/Drive im Hintergrund
+// ---------------------------------------------------------------
+let gsiLoading = null;
+function loadGsi() {
+  if (tokenClient) return Promise.resolve();
+  if (window.google && window.google.accounts && window.google.accounts.oauth2) { initAuth(); return Promise.resolve(); }
+  if (!isOnline()) return Promise.resolve();
+  if (!gsiLoading) gsiLoading = new Promise((res) => {
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.onload = () => { let n = 0; (function wait() { if (window.google && window.google.accounts && window.google.accounts.oauth2) { initAuth(); res(); } else if (++n < 60) setTimeout(wait, 100); else res(); })(); };
+    s.onerror = () => { gsiLoading = null; s.remove(); res(); };
+    document.head.append(s);
+  });
+  return gsiLoading;
+}
+window.addEventListener('online', () => { loadGsi(); });
+
+(async function boot() {
+  await IDB.open();
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  await loadLocalState();
+
+  // Service Worker: Programm-Dateien offline verfügbar machen (nur über https bzw. localhost möglich)
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service Worker:', e));
+  }
+
+  loadStoredToken(); updateAuthBtn();
+  const haveLocal = !!(folderId || files.length);
+  if (haveLocal) showShell();
+  renderSidebar(); updateSyncState(); 
+  if (!haveLocal && !isOnline()) { showAuthError('Du bist offline und hast auf diesem Gerät noch keine Blätter gespeichert. Bitte einmal mit Internet anmelden.'); }
+
+  // Bereits gültige Anmeldung → sofort im Hintergrund abgleichen
+  if (tokenValid()) {
+    (async () => {
+      try { if (!folderId) await afterSignIn(); else { showShell(); await syncAll(true); } }
+      catch (e) { syncFail(e); }
+    })();
+  }
+  await loadGsi();
+  updateAuthBtn(); updateSyncState();
+  if (!tokenValid() && haveLocal && isOnline()) setStatus('Nicht angemeldet – alles lokal verfügbar', '');
+})();
+
 </script>
 </body>
 </html>
