@@ -21,8 +21,18 @@
     // Name des Drive-Ordners, in dem alles abgelegt wird (wird automatisch angelegt, falls nicht vorhanden)
     FOLDER_NAME: 'Gesangs-App Lyrics',
     // Minimal nötiger Scope: die App sieht/verwaltet nur Dateien, die sie selbst anlegt
-    SCOPE: 'https://www.googleapis.com/auth/drive.file'
+    SCOPE: 'https://www.googleapis.com/auth/drive.file',
+    // Ab v2.2 – optional, für automatische Song-Verknüpfungen. Leer lassen = nur manuelles Verlinken/Abspielen per URL.
+    // YouTube Data API v3: Google Cloud Console → APIs & Dienste → Bibliothek → «YouTube Data API v3» aktivieren,
+    // dann → Anmeldedaten → API-Schlüssel erstellen (im selben Projekt wie CLIENT_ID möglich).
+    YOUTUBE_API_KEY: '',
+    // Spotify: developer.spotify.com/dashboard → App erstellen → Client-ID und Client-Secret.
+    // Nur für die automatische Suche nötig; Abspielen selbst braucht keinen Schlüssel.
+    SPOTIFY_CLIENT_ID: '',
+    SPOTIFY_CLIENT_SECRET: ''
   };
+  // Für automatisierte Tests: erlaubt, einzelne Werte oben ohne Codeänderung zu überschreiben.
+  if (window.__TEST_CFG) Object.assign(CONFIG, window.__TEST_CFG);
 </script>
 
 <style>
@@ -115,6 +125,9 @@
   #pageNav, #zoomNav{display:flex; align-items:center; gap:5px; font-size:13px; color:var(--muted);}
   #zoomLabel{min-width:40px; text-align:center;}
   #stampBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:#f5f1ea; border-bottom:1px solid var(--border);}
+  #sheetTabs{display:none; gap:6px; padding:6px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  #sheetTabs button{flex:none; padding:5px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg); color:var(--muted); font-size:13px;}
+  #sheetTabs button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
   #stampBar.show{display:flex;}
   #stampBar button{padding:5px 9px; font-size:14px; min-width:38px;}
   #stampBar button.on{background:var(--accent); color:#fff; border-color:var(--accent);}
@@ -126,7 +139,7 @@
   }
   #canvasStack{position:relative; margin:auto; flex:none; box-shadow:0 2px 10px rgba(0,0,0,.15); background:#fff; touch-action:none;}
   #baseCanvas, #inkCanvas{position:absolute; top:0; left:0;}
-  #inkCanvas{touch-action:none; mix-blend-mode:multiply;}
+  #inkCanvas{touch-action:none;}
 
   #selBar{
     position:absolute; left:50%; bottom:14px; transform:translateX(-50%); z-index:12;
@@ -173,7 +186,7 @@
     #stampBar button{flex-shrink:0;}
   }
   @media (max-width: 600px){
-    #status{display:none;}
+    #status:not(.error){display:none;}
     header{gap:6px; padding:6px 8px; padding-top:max(6px, env(safe-area-inset-top));}
     header h1{font-size:14px;}
     #authBtn{padding:6px 10px; font-size:13px;}
@@ -202,6 +215,24 @@
   .pick-row:hover{background:var(--accent-light);}
   .chip{display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid var(--border); margin:3px 4px 3px 0; font-size:13px; cursor:pointer; background:var(--panel);}
   .chip.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .link-embed{width:100%; margin:2px 0 10px;}
+  .link-embed iframe{width:100%; border:0; border-radius:8px; display:block;}
+  .link-embed.yt iframe{aspect-ratio:16/9; height:auto;}
+  .link-embed.sp iframe{height:152px;}
+  .link-suggestions{border-top:1px dashed var(--border); margin-top:4px;}
+  button.danger{border-color:var(--danger); color:var(--danger);}
+  .recorder{display:flex; flex-direction:column; gap:6px;}
+  .tuner{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 0 4px;}
+  .tuner-note{font-size:40px; font-weight:700; line-height:1;}
+  .tuner-cents{font-size:13px; color:var(--muted); min-height:16px;}
+  .tuner-cents.good{color:var(--ok);}
+  .tuner-cents.ok{color:var(--warn);}
+  .tuner-cents.bad{color:var(--danger);}
+  .tuner-meter{position:relative; width:min(320px,90%); height:8px; border-radius:999px; background:var(--accent-light); margin-top:4px;}
+  .tuner-meter::before{content:''; position:absolute; left:50%; top:-3px; width:2px; height:14px; background:var(--border);}
+  .tuner-needle{position:absolute; top:-3px; left:50%; width:4px; height:14px; border-radius:2px; background:var(--accent); transform:translateX(-50%); transition:left .08s linear;}
+  .pitch-canvas{width:100%; height:140px; background:var(--accent-light); border-radius:8px;}
+  .audio-manage .sub{color:var(--muted);}
   .tagchip{display:inline-block; font-size:10px; padding:1px 6px; border-radius:999px; background:var(--accent-light); color:var(--accent); margin-right:3px;}
   #toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:rgba(30,26,22,.92); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; z-index:200; display:none; max-width:86vw; text-align:center;}
 
@@ -210,7 +241,7 @@
   .scan-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0;}
 
   /* ---------- Auftrittsmodus ---------- */
-  body.perf header, body.perf #sidebar, body.perf #toolbar, body.perf #notesPanel, body.perf #stampBar, body.perf #selBar{display:none !important;}
+  body.perf header, body.perf #sidebar, body.perf #toolbar, body.perf #notesPanel, body.perf #stampBar, body.perf #selBar, body.perf #sheetTabs{display:none !important;}
   body.perf #canvasWrap{padding:0; background:#000; overflow:hidden;}
   body.perf #canvasStack{box-shadow:none;}
   body.perf .popover{top:64px !important;}
@@ -242,7 +273,7 @@
 <div id="app">
   <div id="sidebar">
     <div id="sbTabs">
-      <button data-tab="sheets" class="active">Blätter</button>
+      <button data-tab="sheets" class="active">Songs</button>
       <button data-tab="sets">Setlisten</button>
     </div>
 
@@ -331,6 +362,7 @@
         <button id="saveBtn">Speichern</button>
       </div>
       <div id="stampBar"></div>
+      <div id="sheetTabs" style="display:none;"></div>
 
       <div id="canvasArea">
         <div id="canvasWrap">
@@ -394,7 +426,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.3.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -603,7 +635,7 @@ function mergeAnnot(base, local, remote) {
 // Bibliothek: Ordner, Tags, Favoriten, Setlisten, Anzeige – liegt als library.json in Drive
 //   folders:{id:{n,p,u,d?}}  files:{fileId:{f,tg,fv,lo,bri,con,u}}  setlists:{id:{n,it:[fileId],u,d?}}
 // ---------------------------------------------------------------
-const emptyLib = () => ({ version: 1, folders: {}, files: {}, setlists: {} });
+const emptyLib = () => ({ version: 1, folders: {}, files: {}, setlists: {}, songs: {} });
 let lib = emptyLib();
 let libDirty = false, libRemoteId = null, libRemoteTime = null, libVer = 0;
 
@@ -617,6 +649,7 @@ function fset(id, patch) {
 function touchOpened(id) {
   const m = lib.files[id] || (lib.files[id] = newFmeta());
   m.lo = Date.now();
+  if (m.sg && lib.songs[m.sg]) lib.songs[m.sg].lo = m.lo;
   libDirty = true; libVer++; libPersist(); scheduleLibSync(); renderSidebar();
 }
 function libChanged() { libDirty = true; libVer++; libPersist(); scheduleLibSync(); renderSidebar(); updateSyncState(); }
@@ -624,6 +657,7 @@ function libChanged() { libDirty = true; libVer++; libPersist(); scheduleLibSync
 const folderAlive = (id) => !!(id && lib.folders[id] && !lib.folders[id].d);
 const effParent = (f) => (f && f.p && folderAlive(f.p)) ? f.p : null;
 const effFolder = (fid) => { const m = lib.files[fid]; return m && folderAlive(m.f) ? m.f : null; };
+const effSongFolder = (sid) => { const s = lib.songs[sid]; return s && folderAlive(s.f) ? s.f : null; };
 function childFolders(parent) {
   return Object.entries(lib.folders).filter(([id, f]) => !f.d && effParent(f) === (parent || null))
     .map(([id, f]) => ({ id, ...f })).sort((a, b) => a.n.localeCompare(b.n, 'de', { numeric: true }));
@@ -640,14 +674,14 @@ function isDescendant(id, ancestor) {
 }
 function allTags() {
   const s = new Set();
-  Object.values(lib.files).forEach(m => (m.tg || []).forEach(t => s.add(t)));
+  Object.values(lib.songs).forEach(sg => !sg.d && (sg.tg || []).forEach(t => s.add(t)));
   return [...s].sort((a, b) => a.localeCompare(b, 'de'));
 }
 const aliveSetlists = () => Object.entries(lib.setlists).filter(([id, s]) => !s.d).map(([id, s]) => ({ id, ...s })).sort((a, b) => a.n.localeCompare(b.n, 'de', { numeric: true }));
 
 function mergeLib(a, b) {
   const out = emptyLib();
-  for (const key of ['folders', 'files', 'setlists']) {
+  for (const key of ['folders', 'files', 'setlists', 'songs']) {
     const ids = new Set([...Object.keys(a[key] || {}), ...Object.keys(b[key] || {})]);
     for (const id of ids) {
       const x = (a[key] || {})[id], y = (b[key] || {})[id];
@@ -655,10 +689,135 @@ function mergeLib(a, b) {
         const win = (y.u || 0) > (x.u || 0) ? y : x;
         out[key][id] = JSON.parse(JSON.stringify(win));
         if (key === 'files') out[key][id].lo = Math.max(x.lo || 0, y.lo || 0);
+        if (key === 'songs') {
+          out[key][id].lo = Math.max(x.lo || 0, y.lo || 0);
+          out[key][id].sheets = [...new Set([...(x.sheets || []), ...(y.sheets || [])])];
+          // Verknüpfungen: Vereinigung nach id (wie sheets) – bei gleicher id gewinnt der neuere Eintrag.
+          const lm = new Map();
+          [...(x.links || []), ...(y.links || [])].forEach(l => { if (l && l.id && (!lm.has(l.id) || (l.u || 0) >= (lm.get(l.id).u || 0))) lm.set(l.id, l); });
+          out[key][id].links = [...lm.values()];
+          // Aufnahmen/Backing-Track: Vereinigung nach id (=Drive-Datei-id des Audio-Anhangs), wie links.
+          const amp = new Map();
+          [...(x.audio || []), ...(y.audio || [])].forEach(a => { if (a && a.id && (!amp.has(a.id) || (a.u || 0) >= (amp.get(a.id).u || 0))) amp.set(a.id, a); });
+          out[key][id].audio = [...amp.values()];
+        }
       } else out[key][id] = JSON.parse(JSON.stringify(x || y));
     }
   }
   return out;
+}
+
+// ---------------------------------------------------------------
+// Songs: zentrale Einheit (ab v2.1). Ein Song bündelt ein oder mehrere Blätter
+// (Drive-Dateien, z.B. «Text» + «Noten» desselben Lieds) sowie – später –
+// Verknüpfungen (Spotify/YouTube) und Aufnahmen.
+//   songs:{id:{n,f,tg,fv,lo,u,d?,sheets:[fileId,…],links:[…]}}
+// Ordner/Tags/Favorit/Setlisten beziehen sich ab jetzt auf den Song, nicht mehr
+// auf die einzelne Datei; lib.files[id] verwaltet nur noch sg (zugehöriger Song),
+// bri/con (Anzeige) und lo (zuletzt geöffnet, pro Blatt).
+// ---------------------------------------------------------------
+const newSong = (n) => ({ n, f: null, tg: [], fv: 0, lo: 0, u: Date.now(), sheets: [], links: [], audio: [] });
+const songAlive = (id) => !!(id && lib.songs[id] && !lib.songs[id].d);
+const sget = (id) => lib.songs[id] || null;
+function sTouch(id, fn) { const s = lib.songs[id]; if (!s) return; fn(s); s.u = Date.now(); libChanged(); }
+function songForFile(fileId) {
+  const m = lib.files[fileId];
+  return (m && m.sg && songAlive(m.sg)) ? m.sg : null;
+}
+function aliveSongs() { return Object.entries(lib.songs).filter(([id, s]) => !s.d).map(([id, s]) => ({ id, ...s })); }
+function songSheets(id) {                       // vorhandene Blätter eines Songs, gespeicherte Reihenfolge
+  const s = lib.songs[id]; if (!s) return [];
+  return s.sheets.map(fid => files.find(f => f.id === fid)).filter(Boolean);
+}
+function primarySheet(id) {                      // zuletzt geöffnetes, sonst erstes vorhandenes Blatt
+  const s = lib.songs[id]; if (!s || !s.sheets.length) return null;
+  const present = s.sheets.filter(fid => files.some(f => f.id === fid));
+  if (!present.length) return null;
+  const fid = [...present].sort((a, b) => (fget(b).lo || 0) - (fget(a).lo || 0))[0];
+  return files.find(f => f.id === fid) || null;
+}
+function attachSheet(songId, fileId, { toFront = false } = {}) {
+  const s = lib.songs[songId]; if (!s) return;
+  const prevSid = songForFile(fileId);
+  if (prevSid && prevSid !== songId) {                 // Blatt gehörte noch einem anderen Song: dort entfernen
+    const prev = lib.songs[prevSid];
+    prev.sheets = prev.sheets.filter(x => x !== fileId); prev.u = Date.now();
+    if (!prev.sheets.length) prev.d = 1;
+  }
+  if (!s.sheets.includes(fileId)) { toFront ? s.sheets.unshift(fileId) : s.sheets.push(fileId); }
+  const m = lib.files[fileId] || (lib.files[fileId] = newFmeta());
+  m.sg = songId; m.u = Date.now();
+  s.u = Date.now();
+  libChanged();
+}
+function songLinks(id) { const s = lib.songs[id]; return (s && s.links) || []; }
+function addLink(songId, link) {
+  sTouch(songId, s => {
+    s.links = s.links || [];
+    if (!s.links.some(l => l.url === link.url)) s.links.push(Object.assign({ id: uid('lk'), u: Date.now() }, link));
+  });
+}
+function removeLink(songId, linkId) {
+  sTouch(songId, s => { s.links = (s.links || []).filter(l => l.id !== linkId); });
+}
+
+// --- Aufnahmen (eigene Takes) + Backing-Track: beide als Audio-Anhänge eines Songs.
+//   audio: { id (=Drive-Datei-id), name, kind:'take'|'backing', dur?, u }
+function songAudio(id, kind) { const s = lib.songs[id]; const a = (s && s.audio) || []; return kind ? a.filter(x => x.kind === kind) : a; }
+function addAudio(songId, item) {
+  sTouch(songId, s => {
+    s.audio = s.audio || [];
+    s.audio = s.audio.filter(x => x.id !== item.id);   // gleiche Drive-id ersetzt (z. B. erneuter Sync)
+    s.audio.push(Object.assign({ u: Date.now() }, item));
+  });
+}
+function removeAudioMeta(songId, id) {
+  sTouch(songId, s => { s.audio = (s.audio || []).filter(x => x.id !== id); });
+}
+function detachSheet(songId, fileId) {
+  const s = lib.songs[songId]; if (!s) return;
+  s.sheets = s.sheets.filter(x => x !== fileId);
+  s.u = Date.now();
+  libChanged();
+}
+function createSongRaw(name, { folder = null, sheetFileId = null } = {}) {
+  const id = uid('sg');
+  lib.songs[id] = newSong(name.replace(/[\\/]+/g, '-'));
+  lib.songs[id].f = folder;
+  if (sheetFileId) attachSheet(id, sheetFileId); else libChanged();
+  return id;
+}
+
+// Migration ab v2.1: bis v2.0.x war jede Drive-Datei selbst der Bibliothekseintrag
+// (lib.files[id]={f,tg,fv,lo,…}). Jetzt gehört jede Datei zu einem Song. Für jede
+// noch nicht zugeordnete Datei wird ein Song mit deterministischer ID (sg_<fileId>)
+// angelegt und Ordner/Tags/Favorit/Zuletzt-geöffnet übernommen – so entstehen auch
+// bei parallelem Erstlauf auf zwei Geräten keine doppelten Songs (gleiche ID, LWW-Merge).
+function migrateSongs() {
+  let changed = false;
+  for (const f of files) {
+    const m = lib.files[f.id];
+    if (!(m && m.sg && lib.songs[m.sg])) {
+      const sid = 'sg_' + f.id;
+      if (!lib.songs[sid]) {
+        const meta = m || newFmeta();
+        lib.songs[sid] = Object.assign(newSong(f.name.replace(/\.[^.]+$/, '')), {
+          f: meta.f || null, tg: meta.tg || [], fv: meta.fv || 0, lo: meta.lo || 0,
+          u: meta.u || Date.now(), sheets: [f.id]
+        });
+        changed = true;
+      } else if (!lib.songs[sid].sheets.includes(f.id)) { lib.songs[sid].sheets.push(f.id); changed = true; }
+      const meta2 = lib.files[f.id] || (lib.files[f.id] = newFmeta());
+      if (meta2.sg !== sid) { meta2.sg = sid; changed = true; }
+    }
+  }
+  // Setlisten zeigten bis v2.0.x auf Datei-IDs, ab v2.1 auf Song-IDs.
+  for (const s of Object.values(lib.setlists)) {
+    if (s.d || !s.it || !s.it.length) continue;
+    const mapped = s.it.map(x => lib.songs[x] ? x : (songForFile(x) || ('sg_' + x)));
+    if (mapped.some((x, i) => x !== s.it[i])) { s.it = mapped; s.u = Date.now(); changed = true; }
+  }
+  if (changed) libChanged();
 }
 
 
@@ -668,10 +827,12 @@ function mergeLib(a, b) {
 let accessToken = null, tokenExpiry = 0, tokenClient = null, tokenWaiters = [];
 let folderId = lsGet('gapp_folderId') || null;
 
+let filesKnown = false;         // Blattliste wurde schon einmal aus Drive (bzw. lokalem Cache) geladen
 let files = [];                 // Blätter (aus Drive bzw. lokalem Cache): {id,name,mimeType,modifiedTime}
 const cachedIds = new Set();    // Blätter, die offline verfügbar sind
 const dirtyIds = new Set();     // Blätter mit noch nicht synchronisierten Annotationen
 let currentFile = null;
+let currentSongId = null;       // Song, zu dem das gerade geöffnete Blatt gehört
 let currentDoc = null;          // pdf.js-Dokument
 let currentImg = null;          // HTMLImageElement (Bilddatei)
 let currentImgUrl = null;
@@ -685,7 +846,7 @@ let undoStack = [];
 
 let zoom = 1, pageAspect = 1.414, fitMode = 'width';
 let renderSeq = 0, renderTask = null, renderTimer = null, openSeq = 0;
-let prefetched = null;
+let prefetched = null, baseCache = null;
 
 let dirty = false;
 let saveTimer = null, persistTimer = null;
@@ -890,7 +1051,10 @@ async function loadFileList(interactive = true) {
     all = all.concat(data.files || []);
     token = data.nextPageToken || null;
   } while (token);
-  files = all;
+  files = all; filesKnown = true;
+  // Songs werden bewusst NICHT hier migriert, sondern in syncLibrary() – erst nachdem
+  // library.json von Drive gemerged wurde (sonst könnte ein noch leerer lokaler Stand
+  // vorübergehend leere Songs anlegen und hochladen, bevor Ordner/Tags/Favoriten da sind).
   safe(IDB.put('kv', 'files', files));
   // Lokale Kopien von Blättern entfernen, die es in Drive nicht mehr gibt
   const ids = new Set(files.map(f => f.id));
@@ -909,33 +1073,38 @@ async function loadLocalState() {
   if (!IDB.ok) return;
   const l = await safe(IDB.get('kv', 'lib'));
   if (l) { lib = l.lib || emptyLib(); libDirty = !!l.libDirty; libRemoteId = l.libRemoteId || null; libRemoteTime = l.libRemoteTime || null; }
+  if (!lib.songs) lib.songs = {};
   const f = await safe(IDB.get('kv', 'files'));
-  if (Array.isArray(f)) files = f;
+  if (Array.isArray(f)) { files = f; filesKnown = true; }
   const keys = await safe(IDB.keys('blobs'));
   (keys || []).forEach(k => cachedIds.add(k));
   const d = await safe(IDB.get('kv', 'dirtyIds'));
   (d || []).forEach(k => dirtyIds.add(k));
+  migrateSongs();
 }
 
 // ---------------------------------------------------------------
-// Seitenleiste: Blätter (Ordner, Suche, Tags, Favoriten, Sortierung)
+// Seitenleiste: Songs (Ordner, Suche, Tags, Favoriten, Sortierung)
 // ---------------------------------------------------------------
 let sbTab = 'sheets', currentFolder = null, searchQ = '', tagSel = '', favOnly = false, setView = null;
 let sortMode = lsGet('gapp_sort') || 'name';
 $('sortSel').value = sortMode;
 
-function sortFiles(arr) {
-  const byName = (a, b) => a.name.localeCompare(b.name, 'de', { numeric: true });
-  const added = (f) => f.createdTime || f.modifiedTime || '';
+function songAdded(s) {                         // frühestes Erstellungsdatum unter den Blättern (für Sortierung)
+  const ds = s.sheets.map(fid => files.find(f => f.id === fid)).filter(Boolean).map(f => f.createdTime || f.modifiedTime || '').filter(Boolean).sort();
+  return ds[0] || '';
+}
+function sortSongs(arr) {
+  const byName = (a, b) => a.n.localeCompare(b.n, 'de', { numeric: true });
   return arr.sort((a, b) => {
-    if (sortMode === 'opened') return (fget(b.id).lo - fget(a.id).lo) || byName(a, b);
-    if (sortMode === 'added') return added(b).localeCompare(added(a)) || byName(a, b);
+    if (sortMode === 'opened') return ((b.lo || 0) - (a.lo || 0)) || byName(a, b);
+    if (sortMode === 'added') return songAdded(b).localeCompare(songAdded(a)) || byName(a, b);
     return byName(a, b);
   });
 }
 
-function pathLabel(fileId) {
-  const p = folderPath(effFolder(fileId));
+function songPathLabel(songId) {
+  const p = folderPath(effSongFolder(songId));
   return p.length ? p.map(x => x.n).join(' › ') : '';
 }
 
@@ -944,6 +1113,7 @@ function renderSidebar() {
   $('sbSheets').style.display = sbTab === 'sheets' ? 'flex' : 'none';
   $('sbSets').style.display = sbTab === 'sets' ? 'flex' : 'none';
   if (sbTab === 'sheets') renderSheets(); else renderSets();
+  renderSheetTabs();
 }
 
 function renderSheets() {
@@ -966,23 +1136,28 @@ function renderSheets() {
   if (global) {
     cr.append(h('span', { text: 'Gefiltert über alle Ordner · ' }), h('a', { text: 'Filter zurücksetzen', onclick: () => resetFilters() }));
   } else {
-    cr.append(h('a', { text: 'Alle Blätter', onclick: () => { currentFolder = null; renderSidebar(); } }));
+    cr.append(h('a', { text: 'Alle Songs', onclick: () => { currentFolder = null; renderSidebar(); } }));
     folderPath(currentFolder).forEach(seg => cr.append(h('span', { text: '›' }), h('a', { text: seg.n, onclick: () => { currentFolder = seg.id; renderSidebar(); } })));
   }
 
   const list = fileListEl; list.innerHTML = '';
-  let arr = files.slice();
+  let arr = aliveSongs();
   if (global) {
-    if (q) arr = arr.filter(f => f.name.toLowerCase().includes(q) || (fget(f.id).tg || []).some(t => t.toLowerCase().includes(q)) || pathLabel(f.id).toLowerCase().includes(q));
-    if (favOnly) arr = arr.filter(f => fget(f.id).fv);
-    if (tagSel) arr = arr.filter(f => (fget(f.id).tg || []).includes(tagSel));
+    if (q) arr = arr.filter(s => s.n.toLowerCase().includes(q) || (s.tg || []).some(t => t.toLowerCase().includes(q)) || songPathLabel(s.id).toLowerCase().includes(q));
+    if (favOnly) arr = arr.filter(s => s.fv);
+    if (tagSel) arr = arr.filter(s => (s.tg || []).includes(tagSel));
   } else {
-    arr = arr.filter(f => effFolder(f.id) === currentFolder);
+    arr = arr.filter(s => effSongFolder(s.id) === currentFolder);
     childFolders(currentFolder).forEach(fo => list.append(folderItem(fo)));
   }
-  sortFiles(arr);
-  arr.forEach(f => list.append(fileItem(f, global)));
-  if (!list.children.length) list.append(h('div', { class: 'empty-note', text: global ? 'Keine Treffer.' : (files.length ? 'Dieser Ordner ist leer.' : 'Noch keine Blätter. Oben «+ Blatt» oder «📷 Scan».') }));
+  sortSongs(arr);
+  arr.forEach(s => list.append(songItem(s, global)));
+  if (!list.children.length) {
+    if (!filesKnown && !global) list.append(h('div', { class: 'empty-note' },
+      h('p', { text: 'Deine Songs liegen in Google Drive und sind auf diesem Gerät noch nicht geladen.' }),
+      h('button', { class: 'primary', text: tokenValid() ? 'Songs laden' : 'Mit Google anmelden', onclick: () => (tokenValid() ? afterSignIn().catch(e => syncFail(e)) : signIn()) })));
+    else list.append(h('div', { class: 'empty-note', text: global ? 'Keine Treffer.' : (aliveSongs().length ? 'Dieser Ordner ist leer.' : 'Noch keine Songs. Oben «+ Blatt» oder «📷 Scan».') }));
+  }
   $('offlineAllBtn').textContent = `⇩ Alle offline speichern (${cachedIds.size}/${files.length})`;
 }
 function resetFilters() {
@@ -991,51 +1166,74 @@ function resetFilters() {
 }
 
 function folderItem(fo) {
-  const n = files.filter(f => effFolder(f.id) === fo.id).length + childFolders(fo.id).length;
+  const n = aliveSongs().filter(s => effSongFolder(s.id) === fo.id).length + childFolders(fo.id).length;
   return h('div', { class: 'file-item folder-item', onclick: () => { currentFolder = fo.id; renderSidebar(); } },
     h('span', { class: 'type-icon', text: '📁' }),
     h('div', { class: 'mid' }, h('div', { class: 'name', text: fo.n }), h('div', { class: 'sub', text: n + ' Einträge' })),
     h('button', { class: 'more', text: '⋯', title: 'Ordner-Menü', onclick: (e) => { e.stopPropagation(); folderMenu(fo); } }));
 }
 
-function fileItem(f, global) {
-  const m = fget(f.id);
-  const path = global ? pathLabel(f.id) : '';
-  const sub = h('div', { class: 'sub' }, (m.tg || []).map(t => h('span', { class: 'tagchip', text: t })), path ? h('span', { text: '📁 ' + path }) : null);
-  return h('div', { class: 'file-item' + (currentFile && currentFile.id === f.id ? ' active' : ''), onclick: () => openFromList(f) },
-    h('button', { class: 'fav' + (m.fv ? ' on' : ''), text: m.fv ? '★' : '☆', title: 'Favorit', onclick: (e) => { e.stopPropagation(); fset(f.id, { fv: m.fv ? 0 : 1 }); } }),
-    h('span', { class: 'type-icon', text: f.mimeType === 'application/pdf' ? 'PDF' : 'IMG' }),
-    h('div', { class: 'mid' }, h('div', { class: 'name', text: f.name }), (m.tg || []).length || path ? sub : null),
-    cachedIds.has(f.id) ? h('span', { class: 'off', title: 'offline verfügbar', text: '●' }) : null,
-    h('button', { class: 'more', text: '⋯', title: 'Menü', onclick: (e) => { e.stopPropagation(); fileMenu(f); } }));
+function songItem(s, global) {
+  const path = global ? songPathLabel(s.id) : '';
+  const sheets = songSheets(s.id);
+  const sub = h('div', { class: 'sub' },
+    (s.tg || []).map(t => h('span', { class: 'tagchip', text: t })),
+    sheets.length > 1 ? h('span', { text: '📄 ' + sheets.length + ' Blätter' }) : null,
+    (s.links || []).length ? h('span', { text: '🔗 ' + s.links.length }) : null,
+    songAudio(s.id, 'take').length ? h('span', { text: '🎤 ' + songAudio(s.id, 'take').length }) : null,
+    path ? h('span', { text: '📁 ' + path }) : null);
+  const offline = sheets.length && sheets.every(f => cachedIds.has(f.id));
+  const hasSub = (s.tg || []).length || sheets.length > 1 || path || (s.links || []).length || songAudio(s.id, 'take').length;
+  return h('div', { class: 'file-item' + (currentSongId === s.id ? ' active' : ''), onclick: () => openSong(s) },
+    h('button', { class: 'fav' + (s.fv ? ' on' : ''), text: s.fv ? '★' : '☆', title: 'Favorit', onclick: (e) => { e.stopPropagation(); sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }); } }),
+    h('span', { class: 'type-icon', text: '♪' }),
+    h('div', { class: 'mid' }, h('div', { class: 'name', text: s.n }), hasSub ? sub : null),
+    offline ? h('span', { class: 'off', title: 'offline verfügbar', text: '●' }) : null,
+    h('button', { class: 'more', text: '⋯', title: 'Menü', onclick: (e) => { e.stopPropagation(); songMenu(s); } }));
 }
 
-function openFromList(f) { perfCtx = null; openFile(f); }
+function openSong(s) {
+  perfCtx = null;
+  const f = primarySheet(s.id);
+  if (!f) { toast('Dieser Song hat kein verfügbares Blatt (offline noch nicht geladen?).'); return; }
+  return openFile(f);
+}
 
-function fileMenu(f) {
-  const m = fget(f.id), cached = cachedIds.has(f.id);
-  menuSheet(f.name, [
-    { label: 'Öffnen', fn: () => openFromList(f) },
-    { label: m.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => fset(f.id, { fv: m.fv ? 0 : 1 }) },
-    { label: '✎ Umbenennen', fn: () => renameFile(f) },
-    { label: '📁 In Ordner verschieben …', fn: () => moveFile(f) },
-    { label: '🏷 Tags bearbeiten …', fn: () => editTags(f.id) },
-    { label: '♫ Zur Setliste hinzufügen …', fn: () => addToSetlist(f.id) },
-    { label: cached ? '⇧ Offline-Kopie entfernen' : '⇩ Offline speichern', fn: () => toggleOffline(f) },
-    { label: '⤓ Als PDF mit Annotationen exportieren', fn: async () => { await openFile(f); exportPdf(); } },
-    { label: '🗑 In den Papierkorb', fn: () => trashFile(f), danger: true }
+function songMenu(s) {
+  const sheets = songSheets(s.id);
+  menuSheet(s.n, [
+    { label: 'Öffnen', fn: () => openSong(s) },
+    { label: s.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
+    { label: '✎ Song umbenennen', fn: () => renameSong(s.id) },
+    { label: '📁 In Ordner verschieben …', fn: () => moveSong(s) },
+    { label: '🏷 Tags bearbeiten …', fn: () => editSongTags(s.id) },
+    { label: '♫ Zur Setliste hinzufügen …', fn: () => addToSetlist(s.id) },
+    { label: '📄 Blätter verwalten' + (sheets.length > 1 ? ` (${sheets.length})` : '') + ' …', fn: () => manageSheets(s) },
+    { label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
+    { label: '🎙 Aufnahmen & Backing-Track' + (songAudio(s.id).length ? ` (${songAudio(s.id).length})` : '') + ' …', fn: () => manageAudio(s) },
+    { label: sheets.length && sheets.every(f => cachedIds.has(f.id)) ? '⇧ Offline-Kopien entfernen' : '⇩ Alle Blätter offline speichern', fn: () => toggleOfflineSong(s) },
+    { label: '🗑 Song in den Papierkorb', fn: () => deleteSong(s), danger: true }
   ]);
 }
 
-async function moveFile(f) {
+function renameSong(id) {
+  const s = lib.songs[id];
+  const n = (prompt('Neuer Name des Songs:', s.n) || '').trim().replace(/[\\/]+/g, '-');
+  if (!n || n === s.n) return;
+  sTouch(id, x => { x.n = n; });
+  if (currentSongId === id) currentTitleEl.textContent = n;
+}
+
+async function moveSong(s) {
   const target = await pickFolder({ title: 'Verschieben nach …' });
   if (target === undefined) return;
-  fset(f.id, { f: target });
+  sTouch(s.id, x => { x.f = target; });
   toast(target ? 'Verschoben nach «' + lib.folders[target].n + '»' : 'Verschoben in den Hauptordner');
 }
 
-function editTags(id) {
-  const cur = new Set(fget(id).tg || []);
+function editSongTags(id) {
+  const s = lib.songs[id];
+  const cur = new Set(s.tg || []);
   const chips = h('div');
   const input = h('input', { type: 'text', placeholder: 'Neuer Tag (Enter) …', style: 'width:100%; margin-top:8px;' });
   function draw() {
@@ -1047,8 +1245,55 @@ function editTags(id) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = input.value.trim(); if (v) { cur.add(v); input.value = ''; draw(); } } });
   openModal({
     title: 'Tags (Stimmlage, Genre, Aufgabe …)', body: [chips, input],
-    buttons: [{ label: 'Abbrechen' }, { label: 'Speichern', primary: true, fn: () => { const v = input.value.trim(); if (v) cur.add(v); fset(id, { tg: [...cur] }); } }]
+    buttons: [{ label: 'Abbrechen' }, { label: 'Speichern', primary: true, fn: () => { const v = input.value.trim(); if (v) cur.add(v); sTouch(id, x => { x.tg = [...cur]; }); } }]
   });
+}
+
+async function toggleOfflineSong(s) {
+  const sheets = songSheets(s.id);
+  if (sheets.length && sheets.every(f => cachedIds.has(f.id))) {
+    for (const f of sheets) { cachedIds.delete(f.id); await safe(IDB.del('blobs', f.id)); }
+    renderSidebar(); toast('Offline-Kopien entfernt');
+  } else await cacheMany(sheets);
+}
+
+// --- Blätter eines Songs verwalten -----------------------------------
+function manageSheets(s) {
+  const body = h('div', { class: 'sheet-manage' });
+  function draw() {
+    body.innerHTML = '';
+    const sheets = songSheets(s.id);
+    if (!sheets.length) body.append(h('div', { class: 'empty-note', text: 'Kein Blatt (mehr) vorhanden.' }));
+    sheets.forEach((f, i) => {
+      body.append(h('div', { class: 'pick-row' },
+        h('span', { class: 'type-icon', text: f.mimeType === 'application/pdf' ? 'PDF' : 'IMG' }),
+        h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => { api.close(); currentSongId = s.id; openFile(f); } }, h('div', { class: 'name', text: f.name }), cachedIds.has(f.id) ? h('div', { class: 'sub', text: '● offline verfügbar' }) : null),
+        h('button', { class: 'more', text: '✎', title: 'Blatt umbenennen', onclick: async (e) => { e.stopPropagation(); await renameFile(f); draw(); } }),
+        h('button', { class: 'more', text: '▲', title: 'Nach oben', disabled: i === 0 ? true : null, onclick: (e) => { e.stopPropagation(); sTouch(s.id, x => { [x.sheets[i - 1], x.sheets[i]] = [x.sheets[i], x.sheets[i - 1]]; }); draw(); } }),
+        h('button', { class: 'more', text: '▼', title: 'Nach unten', disabled: i === sheets.length - 1 ? true : null, onclick: (e) => { e.stopPropagation(); sTouch(s.id, x => { [x.sheets[i + 1], x.sheets[i]] = [x.sheets[i], x.sheets[i + 1]]; }); draw(); } }),
+        h('button', { class: 'more', text: '🗑', title: 'Blatt entfernen (Papierkorb)', onclick: (e) => { e.stopPropagation(); removeSheetFromSong(s, f, draw); } })));
+    });
+    body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => { uploadTargetSong = s.id; api.close(); triggerUpload(); } }, h('span', { text: '＋' }), h('span', { text: 'Datei hochladen …' })));
+    body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => { uploadTargetSong = s.id; api.close(); triggerScan(); } }, h('span', { text: '📷' }), h('span', { text: 'Scannen …' })));
+  }
+  const api = openModal({ title: 'Blätter von «' + s.n + '»', body, buttons: [{ label: 'Fertig' }] });
+  draw();
+}
+async function removeSheetFromSong(s, f, after) {
+  if (!confirm(`«${f.name}» in den Papierkorb verschieben?`)) return;
+  detachSheet(s.id, f.id);
+  await trashFile(f, true);
+  if (!songSheets(s.id).length) sTouch(s.id, x => { x.d = 1; });
+  if (after) after();
+}
+
+function deleteSong(s) {
+  const sheets = songSheets(s.id);
+  if (!confirm(`Song «${s.n}» mit ${sheets.length} Blatt/Blättern in den Papierkorb verschieben?`)) return;
+  (async () => {
+    for (const f of sheets) await trashFile(f, true);
+    sTouch(s.id, x => { x.d = 1; });
+  })();
 }
 
 // --- Ordner ----------------------------------------------------------
@@ -1100,11 +1345,11 @@ async function moveFolderTo(id) {
   libChanged();
 }
 function deleteFolder(id) {
-  const f = lib.folders[id], kids = childFolders(id), n = files.filter(x => effFolder(x.id) === id).length;
-  if (!confirm(`Ordner «${f.n}» löschen?\nDie ${n} Blätter und ${kids.length} Unterordner darin werden in den übergeordneten Ordner verschoben – es wird nichts gelöscht.`)) return;
+  const f = lib.folders[id], kids = childFolders(id), n = aliveSongs().filter(s => effSongFolder(s.id) === id).length;
+  if (!confirm(`Ordner «${f.n}» löschen?\nDie ${n} Songs und ${kids.length} Unterordner darin werden in den übergeordneten Ordner verschoben – es wird nichts gelöscht.`)) return;
   const parent = effParent(f), now = Date.now();
   kids.forEach(k => { lib.folders[k.id].p = parent; lib.folders[k.id].u = now; });
-  Object.values(lib.files).forEach(m => { if (m.f === id) { m.f = parent; m.u = now; } });
+  Object.values(lib.songs).forEach(s => { if (s.f === id) { s.f = parent; s.u = now; } });
   f.d = 1; f.u = now;
   if (currentFolder === id) currentFolder = parent;
   libChanged();
@@ -1127,11 +1372,11 @@ function newSetlistRaw(name) {
 }
 function setTouch(id, fn) { const s = lib.setlists[id]; fn(s); s.u = Date.now(); libChanged(); }
 
-async function addToSetlist(fileId) {
+async function addToSetlist(songId) {
   const sets = aliveSetlists();
   const body = h('div');
   const api = openModal({ title: 'Zur Setliste hinzufügen', body, buttons: [{ label: 'Abbrechen' }] });
-  const add = (id) => { setTouch(id, s => { if (!s.it.includes(fileId)) s.it.push(fileId); }); api.close(); toast('Zur Setliste «' + lib.setlists[id].n + '» hinzugefügt'); };
+  const add = (id) => { setTouch(id, s => { if (!s.it.includes(songId)) s.it.push(songId); }); api.close(); toast('Zur Setliste «' + lib.setlists[id].n + '» hinzugefügt'); };
   sets.forEach(s => body.append(h('div', { class: 'pick-row', onclick: () => add(s.id) }, h('span', { text: '♫' }), h('span', { text: s.n + ' (' + s.it.length + ')' }))));
   body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => {
     const n = (prompt('Name der neuen Setliste:') || '').trim();
@@ -1146,7 +1391,7 @@ function renderSets() {
     setView = null;
     head.style.display = 'none'; $('sbSetActions').style.display = 'flex';
     const sets = aliveSetlists();
-    if (!sets.length) list.append(h('div', { class: 'empty-note', text: 'Noch keine Setliste. Mit «+ Neue Setliste» anlegen; Blätter fügst du über ihr ⋯-Menü hinzu.' }));
+    if (!sets.length) list.append(h('div', { class: 'empty-note', text: 'Noch keine Setliste. Mit «+ Neue Setliste» anlegen; Songs fügst du über ihr ⋯-Menü hinzu.' }));
     sets.forEach(s => list.append(h('div', { class: 'file-item', onclick: () => { setView = s.id; renderSidebar(); } },
       h('span', { class: 'type-icon', text: '♫' }),
       h('div', { class: 'mid' }, h('div', { class: 'name', text: s.n }), h('div', { class: 'sub', text: s.it.length + ' Lieder' })),
@@ -1161,13 +1406,14 @@ function renderSets() {
     h('span', { class: 't', text: s.n }),
     h('button', { text: '▶ Auftritt', title: 'Setliste im Auftrittsmodus durchspielen', onclick: () => startSetlist(setView) }),
     h('button', { class: 'icon', text: '⋯', onclick: () => setMenu(setView) }));
-  if (!s.it.length) list.append(h('div', { class: 'empty-note', text: 'Leer. Füge Blätter über ihr ⋯-Menü («Zur Setliste hinzufügen») hinzu.' }));
-  s.it.forEach((fid, i) => {
-    const f = files.find(x => x.id === fid);
+  if (!s.it.length) list.append(h('div', { class: 'empty-note', text: 'Leer. Füge Songs über ihr ⋯-Menü («Zur Setliste hinzufügen») hinzu.' }));
+  s.it.forEach((sid, i) => {
+    const song = lib.songs[sid];
+    const f = song ? primarySheet(sid) : null;
     list.append(h('div', { class: 'file-item set-item', onclick: () => { if (f) openFromSet(setView, i); } },
       h('span', { class: 'idx', text: String(i + 1) }),
-      h('div', { class: 'mid' }, h('div', { class: 'name', text: f ? f.name : '(Blatt nicht mehr vorhanden)' })),
-      f && cachedIds.has(fid) ? h('span', { class: 'off', text: '●', title: 'offline verfügbar' }) : null,
+      h('div', { class: 'mid' }, h('div', { class: 'name', text: song ? song.n : '(Song nicht mehr vorhanden)' })),
+      f && cachedIds.has(f.id) ? h('span', { class: 'off', text: '●', title: 'offline verfügbar' }) : null,
       h('button', { class: 'more', text: '▲', title: 'Nach oben', disabled: i === 0 ? true : null, onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { [x.it[i - 1], x.it[i]] = [x.it[i], x.it[i - 1]]; }); } }),
       h('button', { class: 'more', text: '▼', title: 'Nach unten', disabled: i === s.it.length - 1 ? true : null, onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { [x.it[i + 1], x.it[i]] = [x.it[i], x.it[i + 1]]; }); } }),
       h('button', { class: 'more', text: '✕', title: 'Aus Setliste entfernen', onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { x.it.splice(i, 1); }); } })));
@@ -1177,18 +1423,29 @@ function setMenu(id) {
   const s = lib.setlists[id];
   menuSheet('♫ ' + s.n, [
     { label: '▶ Im Auftrittsmodus starten', fn: () => startSetlist(id) },
-    { label: '⇩ Alle Blätter offline speichern', fn: () => cacheMany(s.it.map(fid => files.find(f => f.id === fid)).filter(Boolean)) },
+    { label: '⇩ Alle Blätter offline speichern', fn: () => cacheMany(s.it.flatMap(sid => songSheets(sid))) },
     { label: '✎ Umbenennen', fn: () => { const n = (prompt('Neuer Name der Setliste:', s.n) || '').trim(); if (n) setTouch(id, x => { x.n = n; }); } },
-    { label: '🗑 Setliste löschen', danger: true, fn: () => { if (confirm('Setliste «' + s.n + '» löschen? (Die Blätter bleiben erhalten.)')) { setTouch(id, x => { x.d = 1; }); if (setView === id) setView = null; renderSidebar(); } } }
+    { label: '🗑 Setliste löschen', danger: true, fn: () => { if (confirm('Setliste «' + s.n + '» löschen? (Die Songs bleiben erhalten.)')) { setTouch(id, x => { x.d = 1; }); if (setView === id) setView = null; renderSidebar(); } } }
   ]);
 }
 function openFromSet(setId, idx) {
   const s = lib.setlists[setId];
-  const f = files.find(x => x.id === s.it[idx]);
+  const song = lib.songs[s.it[idx]];
+  const f = song && primarySheet(song.id);
   if (!f) return;
   perfCtx = { setId, idx };
   sidebar.classList.remove('open');
   return openFile(f);
+}
+
+// --- Blatt-Umschalter im Viewer (wenn ein Song mehrere Blätter hat) ----------
+function renderSheetTabs() {
+  const el = $('sheetTabs');
+  const sheets = currentSongId ? songSheets(currentSongId) : [];
+  if (!el) return;
+  if (sheets.length < 2) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'flex'; el.innerHTML = '';
+  sheets.forEach(f => el.append(h('button', { class: 'tab' + (currentFile && currentFile.id === f.id ? ' on' : ''), text: f.name, onclick: () => { if (!currentFile || currentFile.id !== f.id) openFile(f); } })));
 }
 
 // --- Verdrahtung -------------------------------------------------------------
@@ -1269,8 +1526,8 @@ function closeCurrent() {
   if (renderTask) { try { renderTask.cancel(); } catch (e) {} renderTask = null; }
   if (currentDoc) { destroyDoc(currentDoc); currentDoc = null; }
   if (currentImgUrl) { URL.revokeObjectURL(currentImgUrl); currentImgUrl = null; }
-  currentImg = null; currentBlob = null; prefetched = null;
-  currentFile = null; annotRec = { aid: null, aTime: null, base: null }; annotData = emptyAnnot();
+  currentImg = null; currentBlob = null; prefetched = null; baseCache = null;
+  currentFile = null; currentSongId = null; annotRec = { aid: null, aTime: null, base: null }; annotData = emptyAnnot();
   undoStack = []; zoom = 1; currentPage = 1; totalPages = 1; notesScope = 'file'; selId = null; dirty = false;
   updateSelBar && updateSelBar();
   renderSidebar();
@@ -1294,11 +1551,13 @@ async function openFile(f, opts = {}) {
 
   closeCurrent();
   currentFile = f;
-  currentTitleEl.textContent = f.name;
+  currentSongId = songForFile(f.id);
+  currentTitleEl.textContent = sget(currentSongId) ? sget(currentSongId).n : f.name;
   $('renameBtn').style.display = ''; $('perfBtn').style.display = '';
   emptyEl.style.display = 'none'; signedOutEl.style.display = 'none';
   mainViewerEl.style.display = 'flex';
   sidebar.classList.remove('open');
+  renderSheetTabs();
   baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
   inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
   updateZoomLabel(); updatePageNav(); bindNotes(); applyDisplay();
@@ -1375,7 +1634,9 @@ function targetPixelWidth() {
 }
 function commitCanvas(off) {
   [baseCanvas, inkCanvas].forEach(c => { c.width = off.width; c.height = off.height; });
+  baseCache = off;
   baseCtx.drawImage(off, 0, 0);
+  inkCacheValid = false;
   applyCssSize();
   redrawInk();
   pageReady = true;
@@ -1568,10 +1829,10 @@ async function renameFile(f) {
   renderSidebar();
   setStatus('Umbenannt', 'ok');
 }
-$('renameBtn').addEventListener('click', () => { if (currentFile) renameFile(currentFile); });
+$('renameBtn').addEventListener('click', () => { if (currentSongId) renameSong(currentSongId); else if (currentFile) renameFile(currentFile); });
 
-async function trashFile(f) {
-  if (!confirm(`"${f.name}" in den Papierkorb verschieben?`)) return;
+async function trashFile(f, silent) {
+  if (!silent && !confirm(`"${f.name}" in den Papierkorb verschieben?`)) return;
   const isCur = currentFile && currentFile.id === f.id;
   try {
     await driveFetch(`${DRIVE_FILES}/${f.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) });
@@ -1720,8 +1981,24 @@ const selObj = () => selId ? (pageArrRO().find(o => o.id === selId) || null) : n
 // ---------------------------------------------------------------
 // Ink-Canvas: zwischengespeicherte Objekte + Live-Strich + Auswahlrahmen
 // ---------------------------------------------------------------
-let inkCache = null, inkCacheValid = false, inkKey = '', inkRaf = 0;
+// Kein CSS-mix-blend-mode mehr (auf manchen Handy-Browsern wurde die Ink-Ebene damit unsichtbar):
+// Stift/Text/Symbole liegen normal auf dem Ink-Canvas, der Marker wird per Canvas-"multiply" direkt ins Blatt gerechnet.
+let inkCache = null, hlCache = null, inkCacheValid = false, inkKey = '', inkRaf = 0, hlHasAny = false, hlWasLive = false;
 const invalidateInk = () => { inkCacheValid = false; };
+const isHlObj = (o) => !!(o.hl || o.er);                 // Marker (und alte Radierstriche) gehören in die Marker-Ebene
+function paintBase(liveHl) {
+  const W = baseCanvas.width, H = baseCanvas.height;
+  if (!baseCache || baseCache.width !== W || baseCache.height !== H) return;
+  baseCtx.globalCompositeOperation = 'source-over';
+  baseCtx.clearRect(0, 0, W, H);
+  baseCtx.drawImage(baseCache, 0, 0);
+  if (hlHasAny || liveHl) {
+    baseCtx.globalCompositeOperation = 'multiply';
+    if (hlHasAny) baseCtx.drawImage(hlCache, 0, 0);
+    if (liveHl) drawObj(baseCtx, live.o, W);
+    baseCtx.globalCompositeOperation = 'source-over';
+  }
+}
 function redrawInk() {
   const W = inkCanvas.width, H = inkCanvas.height;
   if (!W) return;
@@ -1729,17 +2006,28 @@ function redrawInk() {
   if (!ready || !currentFile) return;
   const key = currentFile.id + ':' + currentPage + ':' + [...hiddenLayers].join(',');
   if (!inkCache || inkCache.width !== W || inkCache.height !== H || key !== inkKey) {
-    if (!inkCache || inkCache.width !== W || inkCache.height !== H) { inkCache = document.createElement('canvas'); inkCache.width = W; inkCache.height = H; }
+    if (!inkCache || inkCache.width !== W || inkCache.height !== H) {
+      inkCache = document.createElement('canvas'); inkCache.width = W; inkCache.height = H;
+      hlCache = document.createElement('canvas'); hlCache.width = W; hlCache.height = H;
+    }
     inkKey = key; inkCacheValid = false;
   }
+  let rebuilt = false;
   if (!inkCacheValid) {
-    const c = inkCache.getContext('2d');
-    c.clearRect(0, 0, W, H);
-    renderObjects(c, W, pageArrRO());
-    inkCacheValid = true;
+    const objs = pageArrRO();
+    const c = inkCache.getContext('2d'), c2 = hlCache.getContext('2d');
+    c.clearRect(0, 0, W, H); c2.clearRect(0, 0, W, H);
+    renderObjects(c, W, objs.filter(o => !isHlObj(o)));
+    const hls = objs.filter(isHlObj);
+    hlHasAny = hls.some(o => o.hl && visLayer(o.l));
+    if (hlHasAny) renderObjects(c2, W, hls);
+    inkCacheValid = true; rebuilt = true;
   }
+  const liveHl = !!(live && live.o.hl);
+  if (rebuilt || liveHl || hlWasLive) paintBase(liveHl);
+  hlWasLive = liveHl;
   inkCtx.drawImage(inkCache, 0, 0);
-  if (live) drawObj(inkCtx, live.o, W);
+  if (live && !liveHl) drawObj(inkCtx, live.o, W);
   const so = tool === 'select' ? selObj() : null;
   if (so) {
     const b = bbox(so), pad = 6;
@@ -1925,12 +2213,17 @@ stack.addEventListener('pointerdown', (e) => {
   startTool(e);
 });
 
+// Strichstärke in Seitenbreiten; auf schmalen Bildschirmen (Handy) mindestens ~0.7 px pro Schieberstufe, damit der Strich nicht zum Haarstrich wird
+function strokeW(hl) {
+  const cssW = stack.getBoundingClientRect().width || 900, k = hl ? 5 : 1;
+  return r5(Math.max(widthVal * k / REF_W, widthVal * k * 0.7 / cssW));
+}
 function startTool(e) {
   const pt = pagePt(e), pen = e.pointerType === 'pen';
   if (tool === 'pen' || tool === 'hl') {
     if (hiddenLayers.has(activeLayer)) setLayerVisible(activeLayer, true);
     const hl = tool === 'hl';
-    live = { o: { id: uid('o'), l: activeLayer, p: [[r5(pt.x), r5(pt.y)]], c: color, w: r5((hl ? widthVal * 5 : widthVal) / REF_W) } };
+    live = { o: { id: uid('o'), l: activeLayer, p: [[r5(pt.x), r5(pt.y)]], c: color, w: strokeW(hl) } };
     if (hl) live.o.hl = 1;
     action = { kind: 'stroke', pen };
     requestInk();
@@ -2257,6 +2550,12 @@ async function syncLibrary() {
       const ver = libVer;
       let merged = lib;
       if (remote) { merged = mergeLib(lib, remote); if (stableStr(merged) !== stableStr(lib)) { lib = merged; renderSidebar(); } }
+      // Songs erst NACH dem Merge migrieren: sonst würde ein noch leerer lokaler Bibliotheksstand
+      // (z.B. beim allerersten Start nach dem Update) Ordner/Tags/Favorit/Setlisten-Einträge, die
+      // erst gleich aus Drive dazukommen, mit leeren Songs überschreiben. An dieser Stelle spiegelt
+      // lib immer den bestmöglichen bekannten Stand wider (frisch gemergt, schon aktuell, oder –
+      // falls noch nie eine library.json existierte – der lokale Stand, gegen den nichts race'n kann).
+      migrateSongs();
       const needUp = remote ? stableStr(merged) !== stableStr(remote) : (libDirty && (meta || libHasData(lib)));
       let up = null;
       if (needUp) {
@@ -2420,11 +2719,12 @@ $('perfBar').addEventListener('input', () => setPerfBar(true));
 async function stepSong(dir, page) {
   if (!perfCtx || !lib.setlists[perfCtx.setId]) return false;
   const s = lib.setlists[perfCtx.setId];
+  const avail = (i) => lib.songs[s.it[i]] && primarySheet(s.it[i]);
   let i = perfCtx.idx + dir;
-  while (i >= 0 && i < s.it.length && !files.find(f => f.id === s.it[i])) i += dir;
+  while (i >= 0 && i < s.it.length && !avail(i)) i += dir;
   if (i < 0 || i >= s.it.length) return false;
   perfCtx.idx = i;
-  await openFile(files.find(f => f.id === s.it[i]), page ? { page } : {});
+  await openFile(avail(i), page ? { page } : {});
   return true;
 }
 async function perfNext() {
@@ -2440,11 +2740,11 @@ async function perfPrev() {
 }
 async function startSetlist(setId) {
   const s = lib.setlists[setId];
-  const i = s.it.findIndex(fid => files.some(f => f.id === fid));
+  const i = s.it.findIndex(sid => lib.songs[sid] && primarySheet(sid));
   if (i < 0) { toast('Die Setliste enthält keine verfügbaren Blätter.'); return; }
   perfCtx = { setId, idx: i };
   sidebar.classList.remove('open');
-  await openFile(files.find(f => f.id === s.it[i]));
+  await openFile(primarySheet(s.it[i]));
   enterPerf();
 }
 
@@ -2559,20 +2859,28 @@ async function uploadOne(file, onProgress) {
   return created || await uploadMultipart(file, metadata, onProgress);
 }
 
-// Nach dem Hochladen: Liste neu laden, Ordner zuweisen, lokal (offline) ablegen, anzeigen
+// Nach dem Hochladen: Liste neu laden, Song zuweisen (neu oder «uploadTargetSong»), lokal ablegen, anzeigen
+let uploadTargetSong = null;   // gesetzt, wenn «+ weiteres Blatt» aus einer Song-Detailansicht ausgelöst wurde
 async function finishUploads(items) {          // items: [{created, file}]
   await loadFileList().catch(() => {});
-  let first = null;
+  const target = uploadTargetSong; uploadTargetSong = null;
+  let firstSong = null;
   for (const { created, file } of items) {
     const f = files.find(x => x.id === created.id) || { id: created.id, name: created.name, mimeType: created.mimeType, modifiedTime: created.modifiedTime, createdTime: created.createdTime, md5Checksum: created.md5Checksum };
     if (!files.some(x => x.id === f.id)) files.push(f);
-    if (currentFolder) { const m = lib.files[f.id] || (lib.files[f.id] = newFmeta()); m.f = currentFolder; m.u = Date.now(); }
+    let sid = songForFile(f.id);
+    if (target && lib.songs[target]) { attachSheet(target, f.id, { toFront: true }); sid = target; }
+    else if (!sid) sid = createSongRaw(f.name.replace(/\.[^.]+$/, ''), { folder: currentFolder, sheetFileId: f.id });
+    // Bei sehr schneller Verbindung kann loadFileList() (oben) die neue Datei bereits sehen und via
+    // migrateSongs() automatisch einen (ordnerlosen) Song dafür anlegen, bevor wir hier ankommen –
+    // für eine gerade erst hochgeladene Datei gewinnt in diesem Fall trotzdem der aktuelle Ordner.
+    else if (lib.songs[sid]) { lib.songs[sid].f = currentFolder; lib.songs[sid].u = Date.now(); }
     await storeBlob(f, file).catch(() => {});
-    if (!first) first = f;
+    if (!firstSong) firstSong = sid;
   }
   libChanged();
   safe(IDB.put('kv', 'files', files));
-  if (first) await openFile(first);
+  if (firstSong && lib.songs[firstSong]) { const f = primarySheet(firstSong); if (f) { currentSongId = firstSong; await openFile(f); } }
 }
 
 async function uploadFiles(fileListRaw) {
@@ -2612,7 +2920,9 @@ async function requireOnline(what) {
   }
   return true;
 }
-$('uploadBtn').addEventListener('click', async () => { if (await requireOnline('«Blatt hinzufügen»')) $('fileInput').click(); });
+async function triggerUpload() { if (await requireOnline('«Blatt hinzufügen»')) $('fileInput').click(); }
+async function triggerScan() { if (await requireOnline('Scannen')) openScan(); }
+$('uploadBtn').addEventListener('click', triggerUpload);
 $('fileInput').addEventListener('change', (e) => { if (e.target.files.length) uploadFiles(e.target.files); e.target.value = ''; });
 
 // ---------------------------------------------------------------
@@ -2979,7 +3289,7 @@ async function buildScanPdf(pages) {
   doc.setTitle('Scan'); doc.setCreator('Gesangs-App');
   return new Uint8Array(await doc.save());
 }
-$('scanBtn').addEventListener('click', async () => { if (await requireOnline('Scannen')) openScan(); });
+$('scanBtn').addEventListener('click', triggerScan);
 [$('scanInput'), $('scanInputGal')].forEach(inp => inp.addEventListener('change', (e) => {
   const f = e.target.files[0]; e.target.value = '';
   if (f && scanSession) scanSession.onFile(f);
@@ -3083,7 +3393,7 @@ window.addEventListener('online', () => { loadGsi(); });
   }
 
   loadStoredToken(); updateAuthBtn();
-  const haveLocal = !!(folderId || files.length);
+  const haveLocal = filesKnown;
   if (haveLocal) showShell();
   renderSidebar(); updateSyncState(); 
   if (!haveLocal && !isOnline()) { showAuthError('Du bist offline und hast auf diesem Gerät noch keine Blätter gespeichert. Bitte einmal mit Internet anmelden.'); }
@@ -3099,6 +3409,481 @@ window.addEventListener('online', () => { loadGsi(); });
   updateAuthBtn(); updateSyncState();
   if (!tokenValid() && haveLocal && isOnline()) setStatus('Nicht angemeldet – alles lokal verfügbar', '');
 })();
+
+
+// ---------------------------------------------------------------
+// Song-Verknüpfungen (ab v2.2): automatische Vorschläge von YouTube/Spotify
+// (Original + Karaoke, wo verfügbar) und manuelle Links. Abspielen direkt
+// in der App über eingebettete Player, ohne YouTube/Spotify öffnen zu müssen.
+//   Link: { id, type:'yt'|'sp', kind:'orig'|'karaoke'|'manual', mediaId,
+//           title, url, thumb?, auto?:1, u }
+// ---------------------------------------------------------------
+
+// --- Manuellen Link aus eingefügter URL erkennen -----------------
+function parseMediaUrl(raw) {
+  const s = (raw || '').trim();
+  let m;
+  if ((m = s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([\w-]{11})/))) {
+    return { type: 'yt', mediaId: m[1], url: 'https://www.youtube.com/watch?v=' + m[1] };
+  }
+  if ((m = s.match(/open\.spotify\.com\/(?:intl-\w+\/)?track\/([A-Za-z0-9]+)/))) {
+    return { type: 'sp', mediaId: m[1], url: 'https://open.spotify.com/track/' + m[1] };
+  }
+  return null;
+}
+
+// --- YouTube Data API v3 ------------------------------------------
+async function youtubeSearch(query) {
+  if (!CONFIG.YOUTUBE_API_KEY) return [];
+  const url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=3&q='
+    + encodeURIComponent(query) + '&key=' + encodeURIComponent(CONFIG.YOUTUBE_API_KEY);
+  let res;
+  try { res = await fetch(url); } catch (e) { throw new Error('YouTube nicht erreichbar (offline?)'); }
+  if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error('YouTube-Fehler ' + res.status + ': ' + t.slice(0, 200)); }
+  const data = await res.json();
+  return (data.items || []).filter(it => it.id && it.id.videoId).map(it => ({
+    type: 'yt', mediaId: it.id.videoId, title: it.snippet.title,
+    url: 'https://www.youtube.com/watch?v=' + it.id.videoId,
+    thumb: it.snippet.thumbnails && (it.snippet.thumbnails.default || {}).url
+  }));
+}
+
+// --- Spotify: Client-Credentials-Token (kein Nutzer-Login nötig) + Suche ---
+let spotifyToken = null, spotifyTokenExp = 0;
+async function spotifyGetToken() {
+  if (spotifyToken && Date.now() < spotifyTokenExp - 5000) return spotifyToken;
+  if (!CONFIG.SPOTIFY_CLIENT_ID || !CONFIG.SPOTIFY_CLIENT_SECRET) return null;
+  let res;
+  try {
+    res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': 'Basic ' + btoa(CONFIG.SPOTIFY_CLIENT_ID + ':' + CONFIG.SPOTIFY_CLIENT_SECRET) },
+      body: 'grant_type=client_credentials'
+    });
+  } catch (e) { throw new Error('Spotify nicht erreichbar (offline?)'); }
+  if (!res.ok) throw new Error('Spotify-Anmeldung fehlgeschlagen (' + res.status + ') – Client-ID/Secret prüfen');
+  const data = await res.json();
+  spotifyToken = data.access_token; spotifyTokenExp = Date.now() + (data.expires_in || 3600) * 1000;
+  return spotifyToken;
+}
+async function spotifySearch(query) {
+  if (!CONFIG.SPOTIFY_CLIENT_ID || !CONFIG.SPOTIFY_CLIENT_SECRET) return [];
+  const token = await spotifyGetToken();
+  if (!token) return [];
+  const url = 'https://api.spotify.com/v1/search?type=track&limit=3&q=' + encodeURIComponent(query);
+  let res;
+  try { res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } }); } catch (e) { throw new Error('Spotify nicht erreichbar (offline?)'); }
+  if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error('Spotify-Fehler ' + res.status + ': ' + t.slice(0, 200)); }
+  const data = await res.json();
+  return ((data.tracks && data.tracks.items) || []).map(tr => ({
+    type: 'sp', mediaId: tr.id,
+    title: tr.name + ' – ' + (tr.artists || []).map(a => a.name).join(', '),
+    url: (tr.external_urls && tr.external_urls.spotify) || ('https://open.spotify.com/track/' + tr.id),
+    thumb: tr.album && tr.album.images && tr.album.images.length ? tr.album.images[tr.album.images.length - 1].url : null
+  }));
+}
+
+// --- Vorschläge für einen Songnamen: Original + Karaoke, beide Dienste ----
+async function suggestLinksFor(name) {
+  const out = [];
+  const jobs = [];
+  if (CONFIG.YOUTUBE_API_KEY) {
+    jobs.push(youtubeSearch(name).then(r => out.push(...r.map(x => Object.assign(x, { kind: 'orig' }))))
+      .catch(e => out.push({ error: 'YouTube: ' + e.message })));
+    jobs.push(youtubeSearch(name + ' karaoke').then(r => out.push(...r.map(x => Object.assign(x, { kind: 'karaoke' }))))
+      .catch(e => out.push({ error: 'YouTube (Karaoke): ' + e.message })));
+  }
+  if (CONFIG.SPOTIFY_CLIENT_ID && CONFIG.SPOTIFY_CLIENT_SECRET) {
+    jobs.push(spotifySearch(name).then(r => out.push(...r.map(x => Object.assign(x, { kind: 'orig' }))))
+      .catch(e => out.push({ error: 'Spotify: ' + e.message })));
+    jobs.push(spotifySearch(name + ' karaoke').then(r => out.push(...r.map(x => Object.assign(x, { kind: 'karaoke' }))))
+      .catch(e => out.push({ error: 'Spotify (Karaoke): ' + e.message })));
+  }
+  await Promise.all(jobs);
+  return out;
+}
+
+// --- Eingebetteter Player -------------------------------------------
+function linkEmbedEl(link) {
+  if (link.type === 'yt') {
+    return h('div', { class: 'link-embed yt' }, h('iframe', {
+      src: 'https://www.youtube.com/embed/' + link.mediaId + '?autoplay=1',
+      allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+      allowfullscreen: true
+    }));
+  }
+  return h('div', { class: 'link-embed sp' }, h('iframe', {
+    src: 'https://open.spotify.com/embed/track/' + link.mediaId + '?utm_source=generator',
+    allow: 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
+  }));
+}
+const linkIcon = (l) => l.type === 'yt' ? '▶' : '♫';
+const linkKindLabel = (l) => l.kind === 'karaoke' ? 'Karaoke' : (l.kind === 'orig' ? 'Original' : 'Manuell');
+
+// --- Verknüpfungen-Modal (vom Song-Menü aus: "🔗 Verknüpfungen") ----------
+function manageLinks(s) {
+  let playingId = null, autoTried = false;
+  const body = h('div', { class: 'link-manage' });
+
+  function draw() {
+    body.innerHTML = '';
+    const links = songLinks(s.id);
+    if (!links.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Verknüpfungen.' }));
+    links.forEach(l => {
+      body.append(h('div', { class: 'pick-row' },
+        h('span', { class: 'type-icon', text: linkIcon(l) }),
+        h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => { playingId = playingId === l.id ? null : l.id; draw(); } },
+          h('div', { class: 'name', text: l.title || l.url }),
+          h('div', { class: 'sub', text: linkKindLabel(l) + (l.auto ? ' · Vorschlag' : '') })),
+        h('button', { class: 'more', text: playingId === l.id ? '⏸' : '▶', title: 'Abspielen', onclick: (e) => { e.stopPropagation(); playingId = playingId === l.id ? null : l.id; draw(); } }),
+        h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); window.open(l.url, '_blank', 'noopener'); } }),
+        h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); if (playingId === l.id) playingId = null; draw(); } })));
+      if (playingId === l.id) body.append(linkEmbedEl(l));
+    });
+    body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => searchSuggestions() },
+      h('span', { text: '🔍' }), h('span', { text: 'Vorschläge suchen (YouTube/Spotify) …' })));
+    const manualInput = h('input', { type: 'text', placeholder: 'YouTube- oder Spotify-Link einfügen …', style: 'width:100%; margin-top:8px;' });
+    body.append(h('div', { style: 'padding:9px 6px;' }, manualInput,
+      h('button', { text: 'Hinzufügen', style: 'margin-top:6px;', onclick: () => addManual(manualInput.value) })));
+    if (!CONFIG.YOUTUBE_API_KEY && !(CONFIG.SPOTIFY_CLIENT_ID && CONFIG.SPOTIFY_CLIENT_SECRET)) {
+      body.append(h('div', { class: 'empty-note', text: 'Automatische Vorschläge sind noch nicht eingerichtet (kein API-Schlüssel hinterlegt). Manuelles Verlinken über einen eingefügten Link funktioniert bereits.' }));
+    }
+  }
+
+  function addManual(raw) {
+    const p = parseMediaUrl(raw);
+    if (!p) { toast('Das sieht nicht nach einem YouTube- oder Spotify-Link aus.'); return; }
+    const title = (prompt('Titel (optional):', '') || '').trim();
+    addLink(s.id, Object.assign(p, { kind: 'manual', title: title || (p.type === 'yt' ? 'YouTube-Link' : 'Spotify-Link') }));
+    draw();
+  }
+
+  async function searchSuggestions() {
+    const note = h('div', { class: 'empty-note', text: 'Suche läuft …' });
+    body.append(note);
+    let res;
+    try { res = await suggestLinksFor(s.n); } catch (e) { draw(); toast('Suche fehlgeschlagen: ' + e.message); return; }
+    draw();
+    const good = res.filter(x => !x.error), errs = res.filter(x => x.error);
+    if (errs.length) toast(errs[0].error);
+    if (!good.length) { if (!errs.length) toast('Keine Vorschläge gefunden.'); return; }
+    const sec = h('div', { class: 'link-suggestions' }, h('div', { class: 'sub', style: 'padding:6px;', text: 'Vorschläge – zum Hinzufügen antippen:' }));
+    good.forEach(sg => sec.append(h('div', { class: 'pick-row', onclick: () => { addLink(s.id, { type: sg.type, mediaId: sg.mediaId, url: sg.url, title: sg.title, kind: sg.kind, auto: 1 }); draw(); } },
+      h('span', { class: 'type-icon', text: linkIcon(sg) }),
+      h('div', { class: 'mid' }, h('div', { class: 'name', text: sg.title }), h('div', { class: 'sub', text: linkKindLabel(sg) })),
+      h('span', { text: '＋' }))));
+    body.append(sec);
+  }
+
+  // Erster Aufruf für diesen Song (noch keine Verknüpfungen, Schlüssel vorhanden):
+  // automatisch nach Original + Karaoke suchen und den jeweils besten Treffer verlinken.
+  async function autoLinkIfEmpty() {
+    if (autoTried || songLinks(s.id).length) return;
+    if (!CONFIG.YOUTUBE_API_KEY && !(CONFIG.SPOTIFY_CLIENT_ID && CONFIG.SPOTIFY_CLIENT_SECRET)) return;
+    autoTried = true;
+    const note = h('div', { class: 'empty-note', text: 'Suche automatisch nach Original & Karaoke …' });
+    body.append(note);
+    let res = [];
+    try { res = await suggestLinksFor(s.n); } catch (e) { /* still let user use the manual search button */ }
+    const seen = new Set();
+    res.filter(x => !x.error).forEach(sg => {
+      const key = sg.type + ':' + sg.kind;
+      if (seen.has(key)) return;
+      seen.add(key);
+      addLink(s.id, { type: sg.type, mediaId: sg.mediaId, url: sg.url, title: sg.title, kind: sg.kind, auto: 1 });
+    });
+    draw();
+  }
+
+  draw();
+  openModal({ title: 'Verknüpfungen von «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+  autoLinkIfEmpty();
+}
+
+
+// ---------------------------------------------------------------
+// Aufnahme mit Pitch-Feedback + Backing-Track (ab v2.3)
+//   song.audio: [{id (=Drive-Datei-id), name, kind:'take'|'backing', dur?, u}]
+// Aufnahmen/Backing-Track werden wie Blätter als Datei im selben Drive-Ordner
+// abgelegt (nicht als 'sheets' gelistet, da mimeType audio/*), offline über
+// dieselbe blobs-IndexedDB wie Blätter zwischengespeichert.
+// ---------------------------------------------------------------
+
+// --- Tonhöhenerkennung (normierte Autokorrelation, für Singstimme monophon geeignet) -----
+// buf: Float32Array (Zeitbereich, -1..1), sampleRate in Hz. Rückgabe: Frequenz (Hz) oder null.
+function ncAt(buf, lag) {                            // normierte Kreuzkorrelation bei „lag“, Bereich ~[-1,1]
+  const n = buf.length, m = n - lag;
+  let c = 0, e1 = 0, e2 = 0;
+  for (let i = 0; i < m; i++) { const a = buf[i], b = buf[i + lag]; c += a * b; e1 += a * a; e2 += b * b; }
+  const denom = Math.sqrt(e1 * e2);
+  return denom > 0 ? c / denom : 0;
+}
+function detectPitch(buf, sampleRate) {
+  const n = buf.length;
+  let rms = 0;
+  for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / n);
+  if (rms < 0.01) return null;                      // zu leise/Stille
+
+  const minLag = Math.max(2, Math.floor(sampleRate / 1100));  // ~1100 Hz obere Grenze
+  const maxLag = Math.min(n - 2, Math.ceil(sampleRate / 70)); // ~70 Hz untere Grenze
+  if (minLag >= maxLag) return null;
+
+  // Ersten (=tiefstliegenden) klaren Korrelationsgipfel suchen, nicht das globale Maximum –
+  // sonst würde bei einem sauberen Ton oft eine Subharmonische (halbe/drittel Frequenz) gewinnen,
+  // da deren Korrelation bei einem reinen Ton genauso hoch ausfallen kann («Oktavfehler»).
+  const THRESH = 0.6;
+  let inPeak = false, curMax = -1, curMaxLag = -1, bestLag = -1;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    const c = ncAt(buf, lag);
+    if (c >= THRESH) { inPeak = true; if (c > curMax) { curMax = c; curMaxLag = lag; } }
+    else if (inPeak) { bestLag = curMaxLag; break; }
+  }
+  if (bestLag < 0 && inPeak) bestLag = curMaxLag;
+  if (bestLag < 0) return null;                      // kein Gipfel über der Schwelle -> unklar (Rauschen/Konsonanten)
+
+  // Parabolische Interpolation um bestLag für Sub-Sample-Genauigkeit
+  const c0 = ncAt(buf, Math.max(minLag, bestLag - 1)), c1 = curMax, c2 = ncAt(buf, Math.min(maxLag, bestLag + 1));
+  const denom = (c0 - 2 * c1 + c2);
+  const shift = denom !== 0 ? clamp(0.5 * (c0 - c2) / denom, -1, 1) : 0;
+  const lag = bestLag + shift;
+  return lag > 0 ? sampleRate / lag : null;
+}
+
+// Deutsche Notenbezeichnung (H = B natural, B = B♭/A♯)
+const NOTE_NAMES_DE = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'B', 'H'];
+function freqToNote(freq) {
+  if (!freq || freq <= 0) return null;
+  const midi = 69 + 12 * Math.log2(freq / 440);
+  const rounded = Math.round(midi);
+  const cents = Math.round((midi - rounded) * 100);
+  const name = NOTE_NAMES_DE[((rounded % 12) + 12) % 12];
+  const octave = Math.floor(rounded / 12) - 1;
+  return { note: name + octave, cents, midi: rounded, freq };
+}
+
+// --- Audio-Blobs laden (wie loadBlob für Blätter, aber ohne md5-Abgleich) ------
+async function loadAudioBlob(item) {
+  const rec = await getBlobRec(item.id);
+  if (rec) return new Blob([rec.buf], { type: rec.mime });
+  if (!isOnline()) throw new Error('offline, noch nicht zwischengespeichert');
+  const res = await driveFetch(`${DRIVE_FILES}/${item.id}?alt=media`);
+  const blob = await res.blob();
+  storeBlob({ id: item.id, name: item.name, mimeType: blob.type }, blob).catch(() => {});
+  return blob;
+}
+async function trashAudio(item) {
+  try { if (isOnline() && tokenValid()) await driveFetch(`${DRIVE_FILES}/${item.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) }); }
+  catch (e) { /* lokal trotzdem entfernen; Drive-Aufräumen kann später nachgeholt werden */ }
+  cachedIds.delete(item.id); await safe(IDB.del('blobs', item.id));
+}
+
+// --- Aufnahme-Ansicht (Mikrofon, Live-Tonhöhe, Start/Stop, Speichern) ----------
+function openRecorder(song) {
+  let chunks = [], recorder = null, stream = null, actx = null, analyser = null, raf = null;
+  let recording = false, mimeType = '', pitchHist = [], timer = null;
+
+  const statusEl = h('div', { class: 'empty-note', text: 'Mikrofon wird erst beim Start angefragt.' });
+  const noteEl = h('div', { class: 'tuner-note', text: '–' });
+  const centsEl = h('div', { class: 'tuner-cents', text: '' });
+  const needle = h('div', { class: 'tuner-needle', style: 'left:50%;' });
+  const canvas = h('canvas', { class: 'pitch-canvas', width: 640, height: 140 });
+  const cctx = canvas.getContext('2d');
+  const startBtn = h('button', { class: 'primary', text: '🔴 Aufnahme starten' });
+  const timeEl = h('span', { class: 'sub', text: '' });
+  const previewWrap = h('div');
+  const backing = songAudio(song.id, 'backing')[0] || null;
+  const backingChk = h('input', { type: 'checkbox', checked: true });
+  const backingEl = backing ? h('audio', { style: 'display:none;' }) : null;
+  const backingRow = backing ? h('label', { class: 'sub', style: 'display:flex; align-items:center; gap:6px; cursor:pointer;' },
+    backingChk, h('span', { text: '🎵 Mit Backing-Track «' + backing.name + '» mithören (über Kopfhörer, damit das Mikrofon ihn nicht mit aufnimmt)' })) : null;
+  const body = h('div', { class: 'recorder' },
+    statusEl,
+    h('div', { class: 'tuner' }, noteEl, centsEl, h('div', { class: 'tuner-meter' }, needle)),
+    canvas,
+    h('div', { style: 'display:flex; align-items:center; gap:10px; margin-top:8px;' }, startBtn, timeEl),
+    backingRow, backingEl, previewWrap);
+
+  const LO = 48, HI = 84; // Anzeigebereich C3–C6 (typische Gesangslage)
+  function drawTrace() {
+    cctx.clearRect(0, 0, canvas.width, canvas.height);
+    cctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--border') || '#e2ddd6';
+    cctx.lineWidth = 1;
+    for (let m = LO; m <= HI; m += 3) {
+      const y = canvas.height - ((m - LO) / (HI - LO)) * canvas.height;
+      cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(canvas.width, y); cctx.stroke();
+    }
+    cctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent') || '#6b4f3b';
+    cctx.lineWidth = 2.5;
+    let started = false;
+    cctx.beginPath();
+    pitchHist.forEach((mval, i) => {
+      const x = (i / 300) * canvas.width;
+      if (mval == null) { started = false; return; }
+      const y = canvas.height - ((clamp(mval, LO, HI) - LO) / (HI - LO)) * canvas.height;
+      if (!started) { cctx.moveTo(x, y); started = true; } else cctx.lineTo(x, y);
+    });
+    cctx.stroke();
+  }
+  drawTrace();
+
+  function pushPitch(mval) { pitchHist.push(mval); if (pitchHist.length > 300) pitchHist.shift(); drawTrace(); }
+
+  function tick() {
+    if (!analyser) return;
+    const buf = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(buf);
+    const freq = detectPitch(buf, actx.sampleRate);
+    const info = freq ? freqToNote(freq) : null;
+    if (info) {
+      noteEl.textContent = info.note;
+      centsEl.textContent = (info.cents >= 0 ? '+' : '') + info.cents + ' ct';
+      centsEl.className = 'tuner-cents ' + (Math.abs(info.cents) <= 8 ? 'good' : Math.abs(info.cents) <= 20 ? 'ok' : 'bad');
+      needle.style.left = (50 + clamp(info.cents, -50, 50) / 50 * 45) + '%';
+      pushPitch(info.midi);
+    } else {
+      noteEl.textContent = '–'; centsEl.textContent = ''; centsEl.className = 'tuner-cents';
+      needle.style.left = '50%';
+      pushPitch(null);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  async function start() {
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+    catch (e) { statusEl.textContent = 'Mikrofonzugriff verweigert oder nicht verfügbar.'; statusEl.style.display = 'block'; return; }
+    statusEl.style.display = 'none';
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = actx.createMediaStreamSource(stream);
+    analyser = actx.createAnalyser(); analyser.fftSize = 2048;
+    src.connect(analyser);
+    const cand = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+    mimeType = cand.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+    recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    chunks = [];
+    recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = onStopped;
+    recorder.start();
+    recording = true; pitchHist = [];
+    startBtn.textContent = '⏹ Aufnahme beenden'; startBtn.classList.add('danger'); startBtn.classList.remove('primary');
+    if (backing && backingChk.checked) {
+      loadAudioBlob(backing).then(blob => { backingEl.src = URL.createObjectURL(blob); backingEl.currentTime = 0; return backingEl.play(); }).catch(() => {});
+    }
+    const t0 = Date.now();
+    timer = setInterval(() => {
+      const s = Math.floor((Date.now() - t0) / 1000);
+      timeEl.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    }, 250);
+    tick();
+  }
+  function stop() {
+    if (!recording && !stream) return;
+    recording = false;
+    if (raf) cancelAnimationFrame(raf); raf = null;
+    if (timer) clearInterval(timer); timer = null;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (actx) actx.close().catch(() => {});
+    if (backingEl && !backingEl.paused) backingEl.pause();
+    stream = null; analyser = null;
+    startBtn.textContent = '🔴 Aufnahme starten'; startBtn.classList.remove('danger'); startBtn.classList.add('primary');
+  }
+  function onStopped() {
+    const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+    const url = URL.createObjectURL(blob);
+    previewWrap.innerHTML = '';
+    const audioEl = h('audio', { class: 'take-preview', controls: true, src: url, style: 'width:100%; margin-top:8px;' });
+    previewWrap.append(audioEl,
+      h('div', { style: 'display:flex; gap:8px; margin-top:8px;' },
+        h('button', { class: 'primary', text: '💾 Speichern', onclick: () => saveTake(blob) }),
+        h('button', { text: 'Verwerfen', onclick: () => { previewWrap.innerHTML = ''; } })));
+  }
+  startBtn.addEventListener('click', () => { recording ? stop() : start(); });
+
+  async function saveTake(blob) {
+    if (!(await requireOnline('Aufnahme speichern'))) return;
+    const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
+    const label = 'Aufnahme ' + new Date().toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const fname = (song.n.replace(/[\\/]+/g, '-') + ' – ' + label + '.' + ext);
+    const file = new File([blob], fname, { type: blob.type });
+    setStatus('Aufnahme wird hochgeladen …', 'saving');
+    try {
+      const created = await uploadOne(file);
+      addAudio(song.id, { id: created.id, name: label, kind: 'take' });
+      await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType }, blob);
+      setStatus('Aufnahme gespeichert', 'ok'); toast('Aufnahme gespeichert');
+      api.close();
+      manageAudio(song);
+    } catch (e) { fail('Aufnahme konnte nicht hochgeladen werden', e); }
+  }
+
+  const api = openModal({ title: '🔴 Neue Aufnahme – «' + song.n + '»', body, wide: true, buttons: [{ label: 'Schliessen' }] });
+  api.onClose = stop;
+}
+
+// --- Übersicht: eigene Aufnahmen + Backing-Track (vom Song-Menü aus) ----------
+function manageAudio(s) {
+  let playingId = null;
+  const body = h('div', { class: 'audio-manage' });
+
+  function audioRow(item) {
+    return h('div', { class: 'pick-row' },
+      h('span', { class: 'type-icon', text: item.kind === 'backing' ? '🎵' : '🎤' }),
+      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => { playingId = playingId === item.id ? null : item.id; draw(); } },
+        h('div', { class: 'name', text: item.name }),
+        h('div', { class: 'sub', text: new Date(item.u).toLocaleString('de-DE') + (cachedIds.has(item.id) ? ' · offline verfügbar' : '') })),
+      h('button', { class: 'more', text: playingId === item.id ? '⏸' : '▶', title: 'Abspielen', onclick: (e) => { e.stopPropagation(); playingId = playingId === item.id ? null : item.id; draw(); } }),
+      h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeItem(item); } }));
+  }
+  function playerFor(item) {
+    const wrap = h('div', { style: 'padding:0 6px 8px;' });
+    const audioEl = h('audio', { controls: true, style: 'width:100%;' });
+    wrap.append(audioEl);
+    loadAudioBlob(item).then(blob => { audioEl.src = URL.createObjectURL(blob); audioEl.play().catch(() => {}); })
+      .catch(e => wrap.append(h('div', { class: 'empty-note', text: 'Konnte nicht geladen werden: ' + e.message })));
+    return wrap;
+  }
+  function draw() {
+    body.innerHTML = '';
+    const takes = songAudio(s.id, 'take').slice().sort((a, b) => (b.u || 0) - (a.u || 0));
+    const backing = songAudio(s.id, 'backing');
+    body.append(h('div', { class: 'sub', style: 'padding:6px 6px 2px; font-weight:600;', text: '🎤 Eigene Aufnahmen' }));
+    if (!takes.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Aufnahme.' }));
+    takes.forEach(t => { body.append(audioRow(t)); if (playingId === t.id) body.append(playerFor(t)); });
+    body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => { api.close(); openRecorder(s); } },
+      h('span', { text: '🔴' }), h('span', { text: 'Neue Aufnahme …' })));
+
+    body.append(h('div', { class: 'sub', style: 'padding:12px 6px 2px; font-weight:600;', text: '🎵 Backing-Track' }));
+    if (!backing.length) body.append(h('div', { class: 'empty-note', text: 'Kein Backing-Track hinterlegt.' }));
+    else backing.forEach(b => { body.append(audioRow(b)); if (playingId === b.id) body.append(playerFor(b)); });
+    const inp = h('input', { type: 'file', accept: 'audio/*', style: 'display:none;' });
+    inp.addEventListener('change', () => { if (inp.files[0]) uploadBacking(inp.files[0]); inp.value = ''; });
+    body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() },
+      h('span', { text: '＋' }), h('span', { text: (backing.length ? 'Ersetzen' : 'Hochladen') + ' …' }), inp));
+  }
+  async function removeItem(item) {
+    if (!confirm('«' + item.name + '» wirklich entfernen?')) return;
+    await trashAudio(item);
+    removeAudioMeta(s.id, item.id);
+    if (playingId === item.id) playingId = null;
+    draw();
+  }
+  async function uploadBacking(file) {
+    if (!(await requireOnline('Backing-Track hochladen'))) return;
+    const old = songAudio(s.id, 'backing');
+    setStatus('Backing-Track wird hochgeladen …', 'saving');
+    try {
+      const created = await uploadOne(file);
+      addAudio(s.id, { id: created.id, name: file.name, kind: 'backing' });
+      await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType || file.type }, file);
+      for (const o of old) { await trashAudio(o); removeAudioMeta(s.id, o.id); }
+      setStatus('Backing-Track gespeichert', 'ok'); draw();
+    } catch (e) { fail('Backing-Track: Hochladen fehlgeschlagen', e); }
+  }
+
+  draw();
+  const api = openModal({ title: '🎙 Aufnahmen & Backing-Track – «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+}
 
 </script>
 </body>

@@ -13,13 +13,62 @@ Seit v2.0 besteht die App nicht mehr nur aus `index.html`. **Alle folgenden Date
 | `manifest.webmanifest` + `icons/` | Installation als App auf Handy/Tablet («Zum Startbildschirm») |
 | `vendor/` | pdf.js und pdf-lib lokal (kein CDN mehr nötig – Voraussetzung für Offline) inkl. Lizenzdateien |
 
-Am einfachsten: `gesangs-app-v2.0.zip` entpacken und den **Inhalt** (nicht den Ordner selbst) im GitHub-Webinterface per «Add file → Upload files» hochladen (Ordner lassen sich dort per Drag & Drop mitziehen).
+Am einfachsten: `gesangs-app-v2.3.zip` entpacken und den **Inhalt** (nicht den Ordner selbst) im GitHub-Webinterface per «Add file → Upload files» hochladen (Ordner lassen sich dort per Drag & Drop mitziehen).
 
 In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ «Webanwendung», JavaScript-Ursprung = `https://krohnoshub.github.io`). **Sie ist in dieser Lieferung bereits auf `159994249880-flb4nhh2aq51tspov0d7nv787hir84e5…` gesetzt** und wurde vor der Auslieferung geprüft.
 
 **Wichtig beim Umstieg:** Ab v2.0 speichern Notizen im Format v3. Ältere App-Versionen (v1.x) können Textfelder/Symbole daraus nicht darstellen. Bitte alle Geräte auf v2.0 aktualisieren (Seite einmal neu laden; ggf. zweimal, bis der Service Worker die neue Version übernommen hat).
 
 ## Änderungslog
+
+### v2.3.0 – Aufnahme mit Pitch-Feedback, Backing-Track (22.09.2026)
+
+Dritter und letzter der drei geplanten Schritte.
+
+- Neuer Menüpunkt pro Song: **«🎙 Aufnahmen & Backing-Track»**.
+- **Aufnehmen:** «🔴 Neue Aufnahme» fragt das Mikrofon an und zeigt währenddessen ein **Live-Stimmgerät** – grosse Notenanzeige (deutsche Bezeichnung: C, C♯, D, … A, B, H), Cent-Abweichung mit Zeiger (grün/gelb/rot) und eine **scrollende Tonhöhenkurve** der letzten Sekunden, ähnlich einem einfachen Tuner. Die Erkennung läuft per Autokorrelation direkt im Browser, ohne Internet oder externe Bibliothek. Nach «⏹ Aufnahme beenden» gibt es eine Vorhör-Vorschau, dann **Speichern** (lädt in den Drive-Ordner des Songs hoch, wird sofort offline verfügbar) oder **Verwerfen**.
+- Beliebig viele Aufnahmen pro Song, mit Datum/Uhrzeit, abspielbar (auch offline, wenn zwischengespeichert) und einzeln löschbar.
+- **Backing-Track:** eigene Audiodatei (MP3 etc.) pro Song hochladen, im selben Menü abspielbar, ersetzbar, entfernbar.
+- **Mitsingen mit Backing-Track:** Ist ein Backing-Track hinterlegt, bietet die Aufnahme-Ansicht «🎵 mithören» an (standardmässig aktiv) – er läuft beim Start automatisch mit. Landet **nicht** in der Aufnahme selbst; für ein sauberes Ergebnis am besten mit Kopfhörern arbeiten, sonst nimmt das Mikrofon ihn zwangsläufig etwas mit auf (physikalische Grenze, keine App kann das umgehen ohne eine spezielle Rückkopplungsunterdrückung).
+- Aufnahmen/Backing-Track erscheinen bewusst **nicht** in der Blatt-Liste (andere Dateiendung/Typ als PDF/Bild) und werden zwischen Geräten über `library.json` mitsynchronisiert (`songs[…].audio`).
+- Die Tonhöhenerkennung vergleicht **nicht** mit den Noten des Blatts (dafür läge keine maschinenlesbare Melodie vor) – sie zeigt, welche Note gerade gesungen wird und wie sauber getroffen, wie ein klassisches Stimmgerät. Sinnvoll fürs Einsingen, Intonationstraining und zum Nachhören der eigenen Aufnahmen.
+
+### v2.2.0 – Spotify-/YouTube-Verknüpfungen pro Song (22.09.2026)
+
+Zweiter der drei geplanten Schritte (danach: Aufnahme mit Pitch-Feedback).
+
+- Jeder Song hat jetzt einen Menüpunkt **«🔗 Verknüpfungen»**: Songs lassen sich mit YouTube- und Spotify-Links verbinden, je einmal als **Original** und – wo verfügbar – als **Karaoke-Version**.
+- **Automatische Vorschläge:** Ist mindestens ein API-Schlüssel eingerichtet (siehe unten), sucht die App beim ersten Öffnen der «Verknüpfungen» eines Songs automatisch nach «‹Songname›» und «‹Songname› karaoke» und verlinkt den jeweils besten Treffer selbstständig (als «Vorschlag» markiert). Über **«🔍 Vorschläge suchen»** lassen sich weitere Treffer ansehen und gezielt hinzufügen – etwa wenn der automatische Vorschlag nicht passt.
+- **Entfernen/manuell verlinken:** Jede Verknüpfung lässt sich per 🗑 wieder entfernen. Zusätzlich kann jederzeit ein eigener YouTube- oder Spotify-Link eingefügt werden (einfach die URL einfügen, Titel optional).
+- **Abspielen direkt in der App:** ▶ neben einer Verknüpfung blendet einen eingebetteten Player ein (YouTube-Video bzw. Spotify-Track), ohne YouTube/Spotify öffnen zu müssen. ↗ öffnet den Link zusätzlich extern. Spotify spielt in voller Länge nur, wenn im selben Browser bereits ein Spotify-Premium-Konto eingeloggt ist (siehe Hinweis unten) – ohne Login/Premium zeigt der eingebettete Player nur eine kurze Vorschau, der Link funktioniert aber immer.
+- Ohne hinterlegte API-Schlüssel funktioniert weiterhin alles **manuell** (Link einfügen, entfernen, abspielen) – nur die automatische Suche bleibt dann aus (mit entsprechendem Hinweis im Verknüpfungen-Dialog).
+- `library.json`: `songs[…].links` (Liste der Verknüpfungen, pro Song) wird jetzt aktiv genutzt und zwischen Geräten synchronisiert (siehe Datenformat unten).
+
+### v2.1.0 – Song als zentrale Einheit (22.09.2026)
+
+Grösserer Umbau der Bibliothek, erster Teil von drei geplanten Schritten (als Nächstes: automatische Spotify-/YouTube-Verknüpfung pro Song, danach Aufnahme mit Pitch-Feedback).
+
+- **Neu:** Nicht mehr das einzelne Blatt (PDF/Foto) ist die oberste Einheit, sondern der **Song**. Ein Song kann ein oder mehrere Blätter enthalten (z. B. «Text» + «Noten» desselben Lieds) und bündelt Ordner, Tags, Favorit und Setlisten-Zugehörigkeit.
+- **Umstieg automatisch:** Beim ersten Start nach dem Update wird für jedes bestehende Blatt automatisch ein Song angelegt (Name = Dateiname ohne Endung), inklusive Ordner, Tags, Favorit und Setlisten-Einträgen – es geht nichts verloren. Das läuft auf jedem Gerät unabhängig und erzeugt dieselben Songs (kein Duplikat, wenn zwei Geräte gleichzeitig aktualisiert werden).
+- Sidebar-Reiter heisst jetzt **«Songs»**; die Kopfzeile zeigt den Songnamen. Hat ein Song mehrere Blätter, erscheint darunter ein **Umschalter** («Text» / «Noten» …) zum Wechseln, ohne die Seite zu verlassen.
+- Menü pro Song (⋯): Umbenennen (Songname, unabhängig vom Dateinamen), Ordner, Tags, Favorit, Zur Setliste, **«Blätter verwalten»** (weitere Blätter anhängen/hochladen/scannen, einzeln umbenennen [Drive-Dateiname], Reihenfolge ändern, entfernen), Papierkorb (verschiebt alle Blätter des Songs).
+- «+ Blatt» / «📷 Scan» legen wie bisher direkt einen neuen Song an; über «Blätter verwalten» eines bestehenden Songs lässt sich stattdessen ein weiteres Blatt demselben Song hinzufügen.
+- Setlisten enthalten jetzt Songs statt einzelner Blätter; der Auftrittsmodus blättert wie bisher zwischen den Setlisten-Einträgen.
+- `library.json` hat ein neues Feld `songs`; das bisherige `files`-Feld bleibt (dort stehen nur noch Helligkeit/Kontrast und zuletzt geöffnet pro Blatt sowie die Song-Zuordnung).
+
+### v2.0.2 – Stift und Marker auf dem Handy sichtbar (22.09.2026)
+
+- **Fehler:** Auf dem Handy waren Stift- und Marker-Striche beim Zeichnen nicht zu sehen, obwohl sie gespeichert und am PC nach der Synchronisation sichtbar waren.
+- **Vermutete Ursache:** Die Ink-Ebene wurde per CSS `mix-blend-mode: multiply` über das Blatt gelegt; manche Handy-Browser stellen solche Ebenen in scrollbaren Containern nicht dar. **Auf dem Handy selbst nicht reproduzierbar (nur Chromium-Handy-Emulation, dort trat der Fehler nicht auf) – bitte auf dem Gerät prüfen.**
+- **Jetzt:** Kein CSS-Blending mehr. Stift/Text/Symbole liegen normal auf der Ink-Ebene, der Marker wird per Canvas-Multiply direkt ins Blatt gerechnet (auch beim Live-Zeichnen). PDF-Export unverändert.
+- Zusätzlich: Strichstärke hat auf schmalen Bildschirmen eine Mindestbreite (~0.7 px pro Schieberstufe), damit Striche nicht zum Haarstrich werden. Am PC unverändert. Gilt nur für neu gezeichnete Striche.
+- Hinweis: Der Marker verwendet die gewählte Farbe; bei Schwarz erscheint er grau (Schwarz mit 38 % Deckkraft) – für einen gelben Marker bitte die Farbe wählen.
+
+### v2.0.1 – Blattliste nach dem Update (21.09.2026)
+
+- **Fehler:** Nach dem Umstieg auf v2.0 zeigte die App bei abgelaufener Anmeldung «Noch keine Blätter», obwohl die Dateien unverändert in Drive liegen (v2.0 zeigt zuerst lokale Daten, und die sind auf dem Gerät anfangs leer).
+- **Jetzt:** Solange die Liste auf dem Gerät noch nie geladen wurde, erscheint der Hinweis «Deine Blätter liegen in Google Drive …» mit Knopf **«Mit Google anmelden»**; nach der Anmeldung erscheint die Liste. Fehlermeldungen sind auch auf dem Handy sichtbar (rote Statuszeile).
+- Speicherort unverändert: Drive-Ordner **«Gesangs-App Lyrics»**; v2.0 legt dort zusätzlich `library.json` an.
 
 ### v2.0 – Offline, Organisation, Werkzeuge, Auftrittsmodus, Scan (21.09.2026)
 
@@ -114,6 +163,29 @@ Google prüft, ob die Adresse, von der die App geladen wird, in der Cloud Consol
 3. Prüfen, dass die `CLIENT_ID` in `index.html` zu **diesem** Client gehört (die Diagnose-Zeile zeigt Anfang und Ende).
 4. Die App nur über die gehostete https-Adresse öffnen – nicht als lokale Datei (`file://`), nicht über `localhost`, nicht aus GitHubs Datei-Vorschau oder einem In-App-Browser.
 
+## Einrichtung: automatische Spotify-/YouTube-Vorschläge (optional)
+
+Ohne diese Einrichtung funktioniert das Verlinken weiterhin **manuell** (Link einfügen, abspielen, entfernen) – nur die automatische Suche nach Vorschlägen bleibt aus. Beide Schlüssel sind unabhängig voneinander; du kannst auch nur einen der beiden einrichten.
+
+**YouTube Data API v3 (API-Schlüssel):**
+
+1. [console.cloud.google.com](https://console.cloud.google.com) öffnen – am besten im **selben Projekt**, in dem auch die `CLIENT_ID` der App angelegt wurde (oben im Projekt-Auswahlmenü prüfen/wählen).
+2. Menü *APIs & Dienste* → *Bibliothek* → «**YouTube Data API v3**» suchen → **Aktivieren**.
+3. *APIs & Dienste* → *Anmeldedaten* → **+ Anmeldedaten erstellen** → **API-Schlüssel**. Der Schlüssel wird sofort angezeigt.
+4. Empfohlen: Schlüssel direkt einschränken (**Schlüssel bearbeiten**) → *API-Einschränkungen* → nur «YouTube Data API v3» erlauben. Das verhindert Missbrauch, falls der Schlüssel versehentlich sichtbar wird (er steht offen in `index.html`, da die App ohne eigenen Server läuft).
+5. Den Schlüssel in `index.html` im `CONFIG`-Block bei `YOUTUBE_API_KEY: ''` zwischen die Anführungszeichen eintragen.
+6. Kostenlos bis 10.000 «Einheiten» pro Tag; eine Suche verbraucht 100 Einheiten – reicht für gut 50 Song-Suchen täglich (jede Suche fragt YouTube zweimal ab: Original + Karaoke).
+
+**Spotify (Client-ID + Client-Secret):**
+
+1. [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) öffnen, mit dem eigenen Spotify-Konto anmelden.
+2. **Create app**: Name/Beschreibung frei wählbar (z. B. «Gesangs-App»); als *Redirect URI* reicht `https://krohnoshub.github.io/gesangs-app` (wird für die Suche selbst nicht gebraucht, ist aber ein Pflichtfeld); API: **Web API** ankreuzen.
+3. In der neuen App → **Settings**: **Client ID** direkt sichtbar; **Client secret** über «View client secret» anzeigen.
+4. Beide Werte in `index.html` eintragen: `SPOTIFY_CLIENT_ID: '…'` und `SPOTIFY_CLIENT_SECRET: '…'`.
+5. Das reicht **nur für die Suche** (Client-Credentials-Verfahren, ohne dass sich jemand einloggen muss). Für das **Abspielen in voller Länge** ist zusätzlich nötig, dass im selben Browser bereits ein Spotify-**Premium**-Konto eingeloggt ist (z. B. weil man ohnehin auf open.spotify.com angemeldet ist) – das hat mit diesem Schlüssel nichts zu tun und lässt sich aus der App heraus nicht auslösen.
+
+Nach dem Eintragen: `index.html` (und ggf. `sw.js`, falls neu gebaut) wie gewohnt auf GitHub Pages hochladen.
+
 ## Datenformat
 
 **Annotationen** `<Drive-ID>.annotations.json` (Format v3; v1/v2 werden beim Laden automatisch übernommen):
@@ -135,17 +207,26 @@ Google prüft, ob die Adresse, von der die App geladen wird, in der Cloud Consol
 
 Koordinaten in Seitenbreiten (1.0 = volle Breite, `y` ebenfalls in Breiten); `w`/`z` ebenfalls in Seitenbreiten.
 
-**Bibliothek** `library.json` im selben Drive-Ordner: `folders` (Name, Elternordner), `files` (Ordner, Tags, Favorit, zuletzt geöffnet, Helligkeit/Kontrast), `setlists`; jeder Eintrag mit Zeitstempel `u` («neuester Eintrag gewinnt» pro Eintrag; Löschungen als Marker `d:1`). Setzt gleich gehende Geräteuhren voraus.
+**Bibliothek** `library.json` im selben Drive-Ordner (ab v2.1):
+
+- `songs` (zentrale Einheit): Name, Ordner, Tags, Favorit, zuletzt geöffnet, `sheets` (Liste der zugehörigen Blatt-IDs), `links` (ab v2.2: Spotify-/YouTube-Verknüpfungen, je `{id, type:'yt'|'sp', kind:'orig'|'karaoke'|'manual', mediaId, title, url, auto?, u}`), `audio` (ab v2.3: Aufnahmen/Backing-Track, je `{id (=Drive-Datei-id), name, kind:'take'|'backing', u}`).
+- `files`: pro Blatt nur noch `sg` (zugehöriger Song), Helligkeit/Kontrast, zuletzt geöffnet.
+- `folders`, `setlists` (Setlisten enthalten jetzt Song-IDs statt Blatt-IDs) wie bisher.
+
+Jeder Eintrag mit Zeitstempel `u` («neuester Eintrag gewinnt» pro Eintrag; Löschungen als Marker `d:1`). Setzt gleich gehende Geräteuhren voraus.
 
 ## Getestet
 
-Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simuliertem Drive (**142 Prüfungen, alle bestanden**; Ausführung über `localhost`):
+Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simuliertem Drive/YouTube/Spotify/Mikrofon (**233 Prüfungen, alle bestanden**; Ausführung über `localhost`, teils mit Handy-Emulation: Viewport, Touch, Pixelverhältnis):
 
+- **Aufnahme/Pitch-Feedback/Backing-Track (32):** Tonhöhenerkennung als reine Funktion geprüft (u. a. 440 Hz → A4 ±0 Cent, 220 Hz → A3, 261.63 Hz → C4, 445 Hz → A4 +20 Cent, Stille/Rauschen → keine Erkennung), Aufnahme über Chromiums simuliertes Mikrofon (Start/Stopp, Vorschau, Speichern lädt zu Drive hoch, sofort offline verfügbar, im Song-Datenmodell verknüpft, abspielbar, löschbar inkl. Drive-Papierkorb), **Live-Stimmgerät mit echtem simuliertem 440-Hz-Sinuston geprüft** (zeigt «A4» mit kleiner Cent-Abweichung während laufender Aufnahme), Backing-Track hochladen/abspielen/ersetzen (alter Track landet im Drive-Papierkorb)/entfernen, «mit Backing-Track mithören» wird bei laufender Aufnahme angeboten, Verknüpfungen synchronisieren zwischen zwei Geräten ohne Duplikate (Merge nach `id`).
+- **Song-Verknüpfungen (24):** manueller Link (YouTube/Spotify, aus eingefügter URL erkannt), ungültige Links werden abgelehnt, Entfernen, eingebetteter Player mit korrekter Embed-URL, automatische Suche nach Original + Karaoke mit gestubbten API-Schlüsseln (verlinkt automatisch, keine doppelte Suche bei erneutem Öffnen), «Vorschläge suchen» zeigt Pickliste ohne automatisch hinzuzufügen, keine Duplikate beim erneuten Antippen eines schon verlinkten Vorschlags, Verknüpfungen synchronisieren zwischen zwei Geräten ohne Duplikate (Merge nach `id`, neuerer Eintrag gewinnt bei Konflikt).
 - **Organisation (47):** Ordner/Unterordner, Verschieben, Brotkrumen, Suche über Ordner, Tags, Favoriten, Sortierung, Setlisten, alle Werkzeuge (Stift, Marker mit Transparenz, Text anlegen/bearbeiten, alle 15 Symbole, Auswahl/Verschieben/Grösse/Löschen, Radierer), Undo aller Typen, Ebenen aus-/einblenden, «Seite leeren» nur aktive Ebene, Helligkeit, Synchronisation von Ordnern/Tags/Favoriten/Helligkeit/Setliste/Notizen nach Drive, Neuladen mit lokalem Stand.
 - **Offline/Sync (25):** Service-Worker-Precache, Neuladen **ohne Netz**, PDF öffnen/zeichnen/Notiz offline, lokale Sicherung, Nachsynchronisieren beim Wiederverbinden, **Konflikt zweier Geräte** (Striche beider Seiten, Notizen beider Seiten, fremdes Löschen), kein Upload ohne Änderung, Bibliotheksänderung von anderem Gerät, abgelaufenes Token → lokal weiterarbeiten → nach Anmeldung nachsynchronisieren.
 - **Auftrittsmodus/Touch (30):** Tippzonen, Wischen, Tasten/Pedal, Vorab-Rendern, Setliste über Liedgrenzen (vor/zurück), Zeichnen gesperrt, Helligkeit, Wake Lock (simuliert), Finger/Stift-Erkennung, Pinch-Zoom mit Nachrendern, Finger-Scrollen.
 - **Export/Scan/Upload (36):** PDF-Export mit exakt platzierter Handschrift bei Rotate 0/90/180/270 und CropBox (Rendervergleich mit pdfium), Marker-Multiply, Bild-Export mit eingebrannter Helligkeit, Upload in aktuellen Ordner, Umbenennen, Papierkorb, **Scan** eines simuliert fotografierten, perspektivisch verzerrten Blatts mit Schatten (Ecken < 1 % genau, Seitenverhältnis, weisser Grund), mehrseitiges Scan-PDF, S/W-Modus.
 - **Fehlerfälle (4):** «Drive API nicht aktiviert» wird verständlich gemeldet, Erststart offline.
+- **Songs/Migration (20):** bestehende Blätter werden beim Update automatisch zu Songs (Ordner/Tags/Favorit/Setliste bleiben erhalten), zwei Geräte erzeugen dieselben Song-IDs (kein Duplikat), Song mit mehreren Blättern samt Umschalter in der Kopfzeile, Upload in den aktuellen Ordner landet beim Song, Blatt umbenennen weiterhin über «Blätter verwalten» möglich.
 
 ## Nicht getestet (braucht echte Geräte/Konten)
 
@@ -154,6 +235,9 @@ Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simul
 - Stiftdruck, Handballen, Vollbild, Wake Lock und Pedale auf realen Tablets; **iOS-Safari** (Vollbild-API fehlt dort – dann «Zum Home-Bildschirm» installieren; Wake Lock erst ab iOS 16.4).
 - Service-Worker-Update auf GitHub Pages (Prinzip getestet, nicht über mehrere Deployments).
 - Aus früheren Versionen noch offen: **Blätter umbenennen** (v1.4) – bitte kurz mit echtem Drive prüfen.
+- Song-Migration und «Blätter verwalten» nur mit simuliertem Drive geprüft, nicht mit deiner echten, gewachsenen Bibliothek – bitte nach dem Update kurz durchsehen, ob alle Songs/Ordner/Tags wie erwartet aussehen.
+- **Song-Verknüpfungen:** YouTube-Data-API und Spotify-Suche wurden nur gegen simulierte Antworten getestet (kein echter Schlüssel in dieser Umgebung verfügbar) – Trefferqualität/Relevanz der echten Suche bitte nach der Einrichtung kurz prüfen. Spotify-Wiedergabe in voller Länge (Premium-Login im selben Browser) ist nur anhand der Spotify-Dokumentation bestätigt, nicht mit deinem echten Account getestet; bitte einmal ausprobieren, insbesondere auf iOS Safari (dort ist eingebettetes Premium-Abspielen laut Spotify eingeschränkt).
+- **Aufnahme/Pitch-Feedback:** Mikrofonzugriff, Aufnahme und Live-Stimmgerät wurden nur mit Chromiums *simuliertem* Mikrofon (u. a. echtem 440-Hz-Testton) geprüft – bitte einmal mit deiner echten Stimme auf PC/Handy/Tablet ausprobieren, insbesondere Mikrofonberechtigung, Erkennungsgenauigkeit tiefer/hoher Stimmen und Hintergrundgeräusche. **iOS Safari:** `MediaRecorder` wird erst seit iOS 14.3 unterstützt und liefert dort AAC/MP4 statt WebM – ungetestet, bitte kurz prüfen. Die Tonhöhenerkennung vergleicht nicht mit den Noten des Blatts, sondern zeigt nur, welche Note gerade gesungen wird (wie ein Stimmgerät).
 
 ## Bekannte Grenzen
 
@@ -163,5 +247,7 @@ Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simul
 
 ## Nächste Schritte (vorgemerkt)
 
+Die drei ursprünglich geplanten Bausteine (Song-Architektur, Spotify/YouTube-Verknüpfung, Aufnahme mit Pitch-Feedback) sind damit umgesetzt. Offen, nur bei Bedarf:
+
 - **Lyrics-Websuche:** Lyrics direkt suchen und in eine (noch zu definierende) Vorlage formatieren, mit Änderungsmöglichkeit.
-- Aufnahme mit Pitch-Feedback, Backing-Tracks.
+- Denkbare Erweiterung der Aufnahme-Funktion, falls gewünscht: Tonhöhenkurve der Aufnahme im Nachhinein ansehen (nicht nur live), mehrere Backing-Tracks pro Song, Referenz-Melodie (aus Noten/MIDI) zum Vergleich statt nur reines Stimmgerät.

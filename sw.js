@@ -1,6 +1,6 @@
 // Service Worker der Gesangs-App – hält Programm und pdf.js offline bereit.
 // Blätter und Notizen selbst liegen in IndexedDB (nicht hier).
-const VERSION = '2.0-0b76c5f7';
+const VERSION = '2.3.0-08a2c921';
 const CACHE = 'gesangs-app-' + VERSION;
 const PRECACHE = [
  "./",
