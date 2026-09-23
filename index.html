@@ -241,6 +241,19 @@
   .tagchip{display:inline-block; font-size:10px; padding:1px 6px; border-radius:999px; background:var(--accent-light); color:var(--accent); margin-right:3px;}
   #toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:rgba(30,26,22,.92); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; z-index:200; display:none; max-width:86vw; text-align:center;}
 
+  /* ---------- Mini-Player (ab v2.3.3): spielt Verknüpfungen/Backing-Track ausserhalb von
+     Dialogen ab, damit das Notenblatt sichtbar bleibt -- läuft auch im Vollbildmodus weiter,
+     siehe Ausnahme bei "Auftrittsmodus" unten (kein body.perf-Eintrag für #miniPlayer). */
+  #miniPlayer{position:fixed; right:10px; bottom:10px; width:min(240px,60vw); background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.3); z-index:90; overflow:hidden;}
+  #miniPlayer.min .mp-mount{max-height:0; padding:0; overflow:hidden;}
+  .mp-bar{display:flex; align-items:center; gap:4px; padding:5px 6px; background:var(--accent-light);}
+  .mp-bar .mp-title{flex:1; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;}
+  .mp-bar button{flex:none; padding:2px 7px; font-size:12px; border-radius:6px;}
+  .mp-mount{padding:6px;}
+  .mp-mount iframe{width:100%; border:0; border-radius:8px; display:block; aspect-ratio:16/9; height:auto;}
+  .mp-mount audio{width:100%; display:block;}
+  @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(200px,58vw);} }
+
   /* ---------- Scan ---------- */
   #scanCv{max-width:100%; touch-action:none; background:#222; border-radius:8px; display:block; margin:0 auto;}
   .scan-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0;}
@@ -432,7 +445,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.3.2';
+const APP_VERSION = '2.3.3';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -508,6 +521,84 @@ function menuSheet(title, items) {
     buttons: [{ label: 'Abbrechen' }]
   });
   return api;
+}
+
+// ---------------------------------------------------------------
+// Mini-Player (ab v2.3.3): spielt eine Verknüpfung (YouTube/Spotify) oder eine
+// hinterlegte Audiodatei ausserhalb von Dialogen ab -- bleibt beim Schliessen
+// eines Modals bestehen und läuft auch im Vollbildmodus (Auftrittsmodus) im
+// Hintergrund weiter (siehe CSS: #miniPlayer ist von den body.perf-Regeln
+// ausgenommen). loadYouTubeApi() ist unten in der Aufnahme-Sektion definiert,
+// wird hier aber erst zur Laufzeit aufgerufen (Function-Hoisting über die
+// gesamte zusammengebaute Datei hinweg) -- daher unproblematisch.
+// ---------------------------------------------------------------
+let mp = { el: null, mount: null, titleEl: null, link: null, kind: null, ytPlayer: null, audioEl: null, audioItem: null, listeners: new Set() };
+function mpNotify() { mp.listeners.forEach(fn => { try { fn(); } catch (e) {} }); }
+function ensureMiniPlayer() {
+  if (mp.el) return mp;
+  mp.titleEl = h('div', { class: 'mp-title', text: '', title: 'Ein-/Ausklappen', onclick: () => mp.el.classList.toggle('min') });
+  mp.mount = h('div', { class: 'mp-mount' });
+  mp.el = h('div', { id: 'miniPlayer', style: 'display:none;' },
+    h('div', { class: 'mp-bar' }, mp.titleEl,
+      h('button', { text: '↗', title: 'Extern öffnen', onclick: () => { if (mp.link) window.open(mp.link.url, '_blank', 'noopener'); } }),
+      h('button', { text: '✕', title: 'Player schliessen', onclick: () => stopMiniPlayer() })),
+    mp.mount);
+  document.body.append(mp.el);
+  return mp;
+}
+function stopMiniPlayer() {
+  if (!mp.el) return;
+  if (mp.ytPlayer && mp.ytPlayer.destroy) try { mp.ytPlayer.destroy(); } catch (e) {}
+  mp.ytPlayer = null;
+  if (mp.audioEl) { try { mp.audioEl.pause(); } catch (e) {} mp.audioEl = null; }
+  mp.mount.innerHTML = '';
+  mp.el.style.display = 'none';
+  mp.link = null; mp.kind = null; mp.audioItem = null;
+  mpNotify();
+}
+// Für die Verknüpfungen-Liste: Antippen = abspielen, nochmals antippen = stoppen (Toggle).
+function playLinkInMiniPlayer(link) {
+  if (mp.kind === 'link' && mp.link && mp.link.id === link.id) { stopMiniPlayer(); return; }
+  startMiniPlayerLink(link);
+}
+// Startet/setzt eine Verknüpfung von vorne fort -- für den Aufnahme-Mitspiel-Start.
+// Läuft der gleiche YouTube-Link schon, wird nur zurückgespult statt neu geladen.
+function startMiniPlayerLink(link) {
+  ensureMiniPlayer();
+  if (mp.kind === 'link' && mp.link && mp.link.id === link.id && mp.ytPlayer) {
+    try { mp.ytPlayer.seekTo(0); mp.ytPlayer.playVideo(); } catch (e) {}
+    mp.el.style.display = 'flex'; mp.el.classList.remove('min'); mpNotify(); return;
+  }
+  stopMiniPlayer(); ensureMiniPlayer();
+  mp.link = link; mp.kind = 'link';
+  mp.titleEl.textContent = link.title || 'Wiedergabe';
+  mp.el.style.display = 'flex'; mp.el.classList.remove('min');
+  if (link.type === 'yt') {
+    const inner = h('div');
+    mp.mount.append(inner);
+    loadYouTubeApi().then(YT => {
+      mp.ytPlayer = new YT.Player(inner, { videoId: link.mediaId, playerVars: { playsinline: 1 }, events: { onReady: (e) => e.target.playVideo() } });
+      mpNotify();
+    }).catch(e => { toast('YouTube: ' + e.message); stopMiniPlayer(); });
+  } else {
+    mp.mount.append(h('iframe', {
+      src: 'https://open.spotify.com/embed/track/' + link.mediaId + '?utm_source=generator&autoplay=1',
+      allow: 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
+    }));
+  }
+  mpNotify();
+}
+function playAudioBlobInMiniPlayer(item, blob) {
+  ensureMiniPlayer(); stopMiniPlayer(); ensureMiniPlayer();
+  mp.kind = 'audio'; mp.link = null; mp.audioItem = item;
+  mp.titleEl.textContent = item.name || 'Wiedergabe';
+  mp.el.style.display = 'flex'; mp.el.classList.remove('min');
+  const audioEl = h('audio', { controls: true });
+  mp.audioEl = audioEl; mp.mount.append(audioEl);
+  audioEl.src = URL.createObjectURL(blob);
+  audioEl.play().catch(() => {});
+  mpNotify();
+  return audioEl;
 }
 
 // ---------------------------------------------------------------
@@ -883,6 +974,13 @@ function setStatus(text, cls) {
   statusEl.className = cls || '';
   statusEl.title = text;
 }
+// Fehler-Hinweis "Bitte zuerst anmelden"/"Sitzung abgelaufen" blieb bisher stehen, auch nachdem man
+// sich danach erfolgreich (neu) angemeldet hatte -- der Anmelde-Knopf zeigte dann schon "Angemeldet",
+// während direkt daneben noch der alte, nicht mehr zutreffende Hinweis stand. Wird jetzt nach jeder
+// erfolgreichen Anmeldung aufgeräumt (siehe initAuth-Callback und afterSignIn).
+function clearAuthStatusIfStale() {
+  if (/^(Bitte zuerst anmelden|Sitzung abgelaufen)/.test(statusEl.textContent)) setStatus('', '');
+}
 
 // Verständliche Fehlertexte – auf dem Handy gibt es keine Konsole, daher: Status antippen zeigt die Details
 let lastErrorDetail = '';
@@ -947,7 +1045,7 @@ function initAuth() {
       if (resp.error || !resp.access_token) { w.forEach(x => x.reject(new Error(resp.error || 'no_token'))); return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + ((Number(resp.expires_in) || 3600) - 60) * 1000;
-      saveToken(); updateAuthBtn();
+      saveToken(); updateAuthBtn(); clearAuthStatusIfStale();
       w.forEach(x => x.resolve(accessToken));
     },
     error_callback: (err) => {
@@ -2677,7 +2775,7 @@ async function afterSignIn() {
   showAuthError('');
   await ensureFolder(); await loadFileList();
   showShell();
-  updateAuthBtn(); updateSyncState();
+  updateAuthBtn(); clearAuthStatusIfStale(); updateSyncState();
   await syncAll(true);
 }
 function showShell() {
@@ -2694,7 +2792,7 @@ document.addEventListener('visibilitychange', () => {
   else { updateAuthBtn(); updateSyncState(); syncAll(); }
 });
 window.addEventListener('pagehide', () => { persistAnnot(); libPersist(); });
-setInterval(() => { updateAuthBtn(); if (document.visibilityState === 'visible') { updateSyncState(); syncAll(); } }, 60000);
+setInterval(() => { updateAuthBtn(); if (tokenValid()) clearAuthStatusIfStale(); if (document.visibilityState === 'visible') { updateSyncState(); syncAll(); } }, 60000);
 
 
 // ---------------------------------------------------------------
@@ -3557,27 +3655,14 @@ async function suggestLinksFor(name) {
   return out;
 }
 
-// --- Eingebetteter Player -------------------------------------------
-function linkEmbedEl(link) {
-  if (link.type === 'yt') {
-    return h('div', { class: 'link-embed yt' }, h('iframe', {
-      src: 'https://www.youtube.com/embed/' + link.mediaId + '?autoplay=1',
-      allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
-      allowfullscreen: true
-    }));
-  }
-  return h('div', { class: 'link-embed sp' }, h('iframe', {
-    src: 'https://open.spotify.com/embed/track/' + link.mediaId + '?utm_source=generator',
-    allow: 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
-  }));
-}
 const linkIcon = (l) => l.type === 'yt' ? '▶' : '♫';
 const linkKindLabel = (l) => l.kind === 'karaoke' ? 'Karaoke' : (l.kind === 'orig' ? 'Original' : 'Manuell');
 
 // --- Verknüpfungen-Modal (vom Song-Menü aus: "🔗 Verknüpfungen") ----------
 function manageLinks(s) {
-  let playingId = null, autoTried = false;
+  let autoTried = false;
   const body = h('div', { class: 'link-manage' });
+  const isPlaying = (l) => mp.kind === 'link' && mp.link && mp.link.id === l.id;
 
   function draw() {
     body.innerHTML = '';
@@ -3586,13 +3671,12 @@ function manageLinks(s) {
     links.forEach(l => {
       body.append(h('div', { class: 'pick-row' },
         h('span', { class: 'type-icon', text: linkIcon(l) }),
-        h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => { playingId = playingId === l.id ? null : l.id; draw(); } },
+        h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playLinkInMiniPlayer(l) },
           h('div', { class: 'name', text: l.title || l.url }),
           h('div', { class: 'sub', text: linkKindLabel(l) + (l.auto ? ' · Vorschlag' : '') })),
-        h('button', { class: 'more', text: playingId === l.id ? '⏸' : '▶', title: 'Abspielen', onclick: (e) => { e.stopPropagation(); playingId = playingId === l.id ? null : l.id; draw(); } }),
+        h('button', { class: 'more', text: isPlaying(l) ? '⏸' : '▶', title: 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)', onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }),
         h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); window.open(l.url, '_blank', 'noopener'); } }),
-        h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); if (playingId === l.id) playingId = null; draw(); } })));
-      if (playingId === l.id) body.append(linkEmbedEl(l));
+        h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } })));
     });
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => searchSuggestions() },
       h('span', { text: '🔍' }), h('span', { text: 'Vorschläge suchen (YouTube/Spotify) …' })));
@@ -3603,6 +3687,7 @@ function manageLinks(s) {
       body.append(h('div', { class: 'empty-note', text: 'Automatische Vorschläge sind noch nicht eingerichtet (kein API-Schlüssel hinterlegt). Manuelles Verlinken über einen eingefügten Link funktioniert bereits.' }));
     }
   }
+  mp.listeners.add(draw);
 
   function addManual(raw) {
     const p = parseMediaUrl(raw);
@@ -3650,7 +3735,8 @@ function manageLinks(s) {
   }
 
   draw();
-  openModal({ title: 'Verknüpfungen von «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+  const api = openModal({ title: 'Verknüpfungen von «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+  api.onClose = () => mp.listeners.delete(draw);   // Wiedergabe im Mini-Player läuft nach dem Schliessen weiter
   autoLinkIfEmpty();
 }
 
@@ -3775,51 +3861,42 @@ function openRecorder(song) {
   else if (fileBacking) backingMode = 'file';
   else if (ytBackingLinks.length) backingMode = ytBackingLinks[0].id;
 
-  const backingEl = fileBacking ? h('audio', { style: 'display:none;' }) : null;
-  const ytHost = h('div', { class: 'link-embed yt', style: 'display:none;' });
-  let ytPlayer = null, ytPlayerLinkId = null;
-
+  // Läuft im gemeinsamen Mini-Player (02_core.js) statt eingebettet im Dialog, damit die
+  // Wiedergabe auch nach dem Schliessen dieser Ansicht oder im Vollbildmodus weiterläuft.
   const backingSel = hasBackingChoice ? h('select', {}) : null;
   if (backingSel) {
     backingSel.append(h('option', { value: 'none', text: 'Nicht mitspielen' }));
     if (fileBacking) backingSel.append(h('option', { value: 'file', text: '🎵 Backing-Track (Datei): ' + fileBacking.name }));
     ytBackingLinks.forEach(l => backingSel.append(h('option', { value: l.id, text: '▶ ' + (l.title || 'YouTube') + ' (' + linkKindLabel(l) + ')' })));
     backingSel.value = backingMode;
-    backingSel.addEventListener('change', () => { backingMode = backingSel.value; updateBackingUi(); });
+    backingSel.addEventListener('change', () => { backingMode = backingSel.value; if (backingMode === 'none') stopMiniPlayer(); else startBackingPlayback(); });
   }
   const backingRow = hasBackingChoice ? h('div', { class: 'sub', style: 'display:flex; align-items:center; gap:6px; flex-wrap:wrap;' },
     h('span', { text: '🎧 Mitspielen mit:' }), backingSel,
-    h('span', { text: '(über Kopfhörer, damit das Mikrofon es nicht mit aufnimmt)' })) : null;
+    h('span', { text: '(läuft im Mini-Player unten rechts – bleibt auch nach dem Schliessen aktiv)' })) : null;
 
-  function updateBackingUi() {
-    ytHost.style.display = 'none';
-    if (backingMode !== 'none' && backingMode !== 'file') {
+  function startBackingPlayback() {
+    if (backingMode === 'file' && fileBacking) {
+      loadAudioBlob(fileBacking).then(blob => playAudioBlobInMiniPlayer(fileBacking, blob)).catch(() => {});
+    } else if (backingMode !== 'none') {
       const link = ytBackingLinks.find(l => l.id === backingMode);
-      if (link) { ytHost.style.display = ''; ensureYtPlayer(link); }
+      if (link) startMiniPlayerLink(link);
     }
   }
-  function ensureYtPlayer(link) {
-    if (ytPlayerLinkId === link.id) return Promise.resolve(ytPlayer);
-    ytHost.innerHTML = '';
-    const mount = h('div');
-    ytHost.append(mount);
-    return loadYouTubeApi().then(YT => new Promise((resolve) => {
-      if (ytPlayer && ytPlayer.destroy) try { ytPlayer.destroy(); } catch (e) {}
-      ytPlayer = new YT.Player(mount, {
-        videoId: link.mediaId,
-        playerVars: { playsinline: 1 },
-        events: { onReady: () => { ytPlayerLinkId = link.id; resolve(ytPlayer); } }
-      });
-    })).catch(e => { ytPlayer = null; ytPlayerLinkId = null; toast('YouTube-Backing: ' + e.message); return null; });
+  function pauseBackingPlayback() {
+    if (mp.ytPlayer) try { mp.ytPlayer.pauseVideo(); } catch (e) {}
+    if (mp.audioEl) try { mp.audioEl.pause(); } catch (e) {}
   }
+  // Vorhören: sobald eine Mitspiel-Option gewählt ist, direkt im Mini-Player starten
+  // (wie bisher schon beim Öffnen der Ansicht), statt erst beim Aufnahmestart.
+  if (backingMode !== 'none') startBackingPlayback();
 
   const body = h('div', { class: 'recorder' },
     statusEl,
     h('div', { class: 'tuner' }, noteEl, centsEl, h('div', { class: 'tuner-meter' }, needle)),
     canvas,
     h('div', { style: 'display:flex; align-items:center; gap:10px; margin-top:8px;' }, startBtn, timeEl),
-    backingRow, backingEl, ytHost, previewWrap);
-  updateBackingUi();
+    backingRow, previewWrap);
 
   const LO = 48, HI = 84; // Anzeigebereich C3–C6 (typische Gesangslage)
   function drawTrace() {
@@ -3883,12 +3960,7 @@ function openRecorder(song) {
     recorder.start();
     recording = true; pitchHist = [];
     startBtn.textContent = '⏹ Aufnahme beenden'; startBtn.classList.add('danger'); startBtn.classList.remove('primary');
-    if (backingMode === 'file' && fileBacking) {
-      loadAudioBlob(fileBacking).then(blob => { backingEl.src = URL.createObjectURL(blob); backingEl.currentTime = 0; return backingEl.play(); }).catch(() => {});
-    } else if (backingMode !== 'none') {
-      const link = ytBackingLinks.find(l => l.id === backingMode);
-      if (link) ensureYtPlayer(link).then(p => { if (p) try { p.seekTo(0); p.playVideo(); } catch (e) {} });
-    }
+    startBackingPlayback();
     const t0 = Date.now();
     timer = setInterval(() => {
       const s = Math.floor((Date.now() - t0) / 1000);
@@ -3904,16 +3976,13 @@ function openRecorder(song) {
     if (recorder && recorder.state !== 'inactive') recorder.stop();
     if (stream) stream.getTracks().forEach(t => t.stop());
     if (actx) actx.close().catch(() => {});
-    if (backingEl && !backingEl.paused) backingEl.pause();
-    if (ytPlayer) try { ytPlayer.pauseVideo(); } catch (e) {}
+    pauseBackingPlayback();
     stream = null; analyser = null;
     startBtn.textContent = '🔴 Aufnahme starten'; startBtn.classList.remove('danger'); startBtn.classList.add('primary');
   }
-  function cleanup() {
-    stop();
-    if (ytPlayer && ytPlayer.destroy) try { ytPlayer.destroy(); } catch (e) {}
-    ytPlayer = null; ytPlayerLinkId = null;
-  }
+  // Der Mini-Player selbst wird beim Schliessen NICHT gestoppt -- er soll (wie gewünscht) auch
+  // ausserhalb dieser Ansicht und im Vollbildmodus weiterlaufen; Stoppen erfolgt über sein eigenes ✕.
+  function cleanup() { stop(); }
   function onStopped() {
     const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
     const url = URL.createObjectURL(blob);
