@@ -445,7 +445,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.3.3';
+const APP_VERSION = '2.3.4';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -808,7 +808,7 @@ function mergeLib(a, b) {
 // Songs: zentrale Einheit (ab v2.1). Ein Song bündelt ein oder mehrere Blätter
 // (Drive-Dateien, z.B. «Text» + «Noten» desselben Lieds) sowie – später –
 // Verknüpfungen (Spotify/YouTube) und Aufnahmen.
-//   songs:{id:{n,f,tg,fv,lo,u,d?,sheets:[fileId,…],links:[…]}}
+//   songs:{id:{n,f,tg,fv,lo,u,d?,sheets:[fileId,…],links:[…],alnk?:1 (automatische Link-Suche schon gelaufen)}}
 // Ordner/Tags/Favorit/Setlisten beziehen sich ab jetzt auf den Song, nicht mehr
 // auf die einzelne Datei; lib.files[id] verwaltet nur noch sg (zugehöriger Song),
 // bri/con (Anzeige) und lo (zuletzt geöffnet, pro Blatt).
@@ -3565,8 +3565,11 @@ window.addEventListener('online', () => { loadGsi(); });
 
 // ---------------------------------------------------------------
 // Song-Verknüpfungen (ab v2.2): automatische Vorschläge von YouTube/Spotify
-// (Original + Karaoke, wo verfügbar) und manuelle Links. Abspielen direkt
-// in der App über eingebettete Player, ohne YouTube/Spotify öffnen zu müssen.
+// (Original + Karaoke, wo verfügbar) und manuelle Links. Abspielen im
+// persistenten Mini-Player (siehe 02_core.js), ohne YouTube/Spotify öffnen zu
+// müssen. Ab v2.3.4 in zwei Bereichen dargestellt (Original/Karaoke, siehe
+// linkGroup()); "manual" ist ein Alt-Wert (vor v2.3.4 angelegte Links ohne
+// bewusste Zuordnung) und fällt für die Anzeige unter "Original".
 //   Link: { id, type:'yt'|'sp', kind:'orig'|'karaoke'|'manual', mediaId,
 //           title, url, thumb?, auto?:1, u }
 // ---------------------------------------------------------------
@@ -3656,32 +3659,84 @@ async function suggestLinksFor(name) {
 }
 
 const linkIcon = (l) => l.type === 'yt' ? '▶' : '♫';
-const linkKindLabel = (l) => l.kind === 'karaoke' ? 'Karaoke' : (l.kind === 'orig' ? 'Original' : 'Manuell');
+const linkSourceLabel = (l) => l.type === 'yt' ? 'YouTube' : 'Spotify';
+const linkGroup = (l) => l.kind === 'karaoke' ? 'karaoke' : 'orig';           // 'manual' (Altbestand) fällt unter Original
+const linkKindLabel = (l) => linkGroup(l) === 'karaoke' ? 'Karaoke' : 'Original';
+
+// --- Groben Bezug zum Songnamen prüfen, bevor ein Suchtreffer automatisch übernommen wird
+// (verhindert z. B., dass ein völlig anderer Titel als "Karaoke-Version" verlinkt wird, nur
+// weil die Suche nach "<Songname> karaoke" zufällig etwas Unpassendes als Treffer liefert). ---
+const LINK_STOPWORDS = new Set(['the', 'a', 'an', 'of', 'and', 'feat', 'ft', 'official', 'video', 'audio', 'lyric', 'lyrics', 'music', 'karaoke', 'version', 'hd', 'with', 'vocals', 'live']);
+function normWords(s) {
+  return (s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ')
+    .split(' ').filter(w => w.length > 2 && !LINK_STOPWORDS.has(w));
+}
+function looksRelevant(songName, resultTitle) {
+  const words = normWords(songName);
+  if (!words.length) return true;
+  const t = ' ' + normWords(resultTitle).join(' ') + ' ';
+  const hits = words.filter(w => t.includes(' ' + w + ' ')).length;
+  return hits / words.length >= 0.5;
+}
+
+// --- Doppelte/übermässige Verknüpfungen aufräumen (z. B. nach einer Race Condition, bei der
+// autoLinkIfEmpty() nach einem Neuladen erneut lief, bevor die vorherigen Verknüpfungen aus
+// Drive nachgeladen waren) -- läuft beim Öffnen des Dialogs. Entfernt exakte Duplikate (gleiche
+// Quelle + gleiche Video-/Track-ID) und begrenzt automatische Vorschläge auf höchstens 1 pro
+// Quelle (YouTube/Spotify) je Bereich (Original/Karaoke), also max. 2 Vorschläge pro Bereich. ---
+function dedupeLinksInPlace(s) {
+  const links = songLinks(s.id);
+  if (links.length < 2) return;
+  const seenMedia = new Set(), seenAutoSlot = new Set(), toRemove = [];
+  links.slice().sort((a, b) => (a.u || 0) - (b.u || 0)).forEach(l => {
+    const mkey = l.type + ':' + l.mediaId;
+    if (seenMedia.has(mkey)) { toRemove.push(l.id); return; }
+    seenMedia.add(mkey);
+    if (l.auto) {
+      const slot = l.type + ':' + linkGroup(l);
+      if (seenAutoSlot.has(slot)) { toRemove.push(l.id); return; }
+      seenAutoSlot.add(slot);
+    }
+  });
+  toRemove.forEach(id => removeLink(s.id, id));
+}
 
 // --- Verknüpfungen-Modal (vom Song-Menü aus: "🔗 Verknüpfungen") ----------
 function manageLinks(s) {
-  let autoTried = false;
   const body = h('div', { class: 'link-manage' });
   const isPlaying = (l) => mp.kind === 'link' && mp.link && mp.link.id === l.id;
+  let manualKind = 'orig';
+
+  function linkRow(l) {
+    return h('div', { class: 'pick-row' },
+      h('span', { class: 'type-icon', text: linkIcon(l) }),
+      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playLinkInMiniPlayer(l) },
+        h('div', { class: 'name', text: l.title || l.url }),
+        h('div', { class: 'sub', text: linkSourceLabel(l) + (l.auto ? ' · Vorschlag' : ' · manuell hinzugefügt') })),
+      h('button', { class: 'more', text: isPlaying(l) ? '⏸' : '▶', title: 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)', onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }),
+      h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); window.open(l.url, '_blank', 'noopener'); } }),
+      h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } }));
+  }
+  function section(title, list) {
+    const wrap = h('div');
+    wrap.append(h('div', { class: 'sub', style: 'padding:8px 6px 2px; font-weight:600;', text: title }));
+    if (!list.length) wrap.append(h('div', { class: 'empty-note', text: 'Noch keine Verknüpfung.' }));
+    list.forEach(l => wrap.append(linkRow(l)));
+    return wrap;
+  }
 
   function draw() {
     body.innerHTML = '';
     const links = songLinks(s.id);
-    if (!links.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Verknüpfungen.' }));
-    links.forEach(l => {
-      body.append(h('div', { class: 'pick-row' },
-        h('span', { class: 'type-icon', text: linkIcon(l) }),
-        h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playLinkInMiniPlayer(l) },
-          h('div', { class: 'name', text: l.title || l.url }),
-          h('div', { class: 'sub', text: linkKindLabel(l) + (l.auto ? ' · Vorschlag' : '') })),
-        h('button', { class: 'more', text: isPlaying(l) ? '⏸' : '▶', title: 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)', onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }),
-        h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); window.open(l.url, '_blank', 'noopener'); } }),
-        h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } })));
-    });
+    body.append(section('🎤 Original (mit Gesang)', links.filter(l => linkGroup(l) === 'orig')));
+    body.append(section('🎧 Karaoke / Playback', links.filter(l => linkGroup(l) === 'karaoke')));
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => searchSuggestions() },
       h('span', { text: '🔍' }), h('span', { text: 'Vorschläge suchen (YouTube/Spotify) …' })));
     const manualInput = h('input', { type: 'text', placeholder: 'YouTube- oder Spotify-Link einfügen …', style: 'width:100%; margin-top:8px;' });
+    const kindOrig = h('button', { class: manualKind === 'orig' ? 'on' : '', text: '🎤 Original', onclick: () => { manualKind = 'orig'; kindOrig.classList.add('on'); kindKaraoke.classList.remove('on'); } });
+    const kindKaraoke = h('button', { class: manualKind === 'karaoke' ? 'on' : '', text: '🎧 Karaoke', onclick: () => { manualKind = 'karaoke'; kindKaraoke.classList.add('on'); kindOrig.classList.remove('on'); } });
     body.append(h('div', { style: 'padding:9px 6px;' }, manualInput,
+      h('div', { style: 'display:flex; gap:6px; margin-top:6px;' }, kindOrig, kindKaraoke),
       h('button', { text: 'Hinzufügen', style: 'margin-top:6px;', onclick: () => addManual(manualInput.value) })));
     if (!CONFIG.YOUTUBE_API_KEY && !(CONFIG.SPOTIFY_CLIENT_ID && CONFIG.SPOTIFY_CLIENT_SECRET)) {
       body.append(h('div', { class: 'empty-note', text: 'Automatische Vorschläge sind noch nicht eingerichtet (kein API-Schlüssel hinterlegt). Manuelles Verlinken über einen eingefügten Link funktioniert bereits.' }));
@@ -3693,7 +3748,7 @@ function manageLinks(s) {
     const p = parseMediaUrl(raw);
     if (!p) { toast('Das sieht nicht nach einem YouTube- oder Spotify-Link aus.'); return; }
     const title = (prompt('Titel (optional):', '') || '').trim();
-    addLink(s.id, Object.assign(p, { kind: 'manual', title: title || (p.type === 'yt' ? 'YouTube-Link' : 'Spotify-Link') }));
+    addLink(s.id, Object.assign(p, { kind: manualKind, title: title || (p.type === 'yt' ? 'YouTube-Link' : 'Spotify-Link') }));
     draw();
   }
 
@@ -3709,23 +3764,27 @@ function manageLinks(s) {
     const sec = h('div', { class: 'link-suggestions' }, h('div', { class: 'sub', style: 'padding:6px;', text: 'Vorschläge – zum Hinzufügen antippen:' }));
     good.forEach(sg => sec.append(h('div', { class: 'pick-row', onclick: () => { addLink(s.id, { type: sg.type, mediaId: sg.mediaId, url: sg.url, title: sg.title, kind: sg.kind, auto: 1 }); draw(); } },
       h('span', { class: 'type-icon', text: linkIcon(sg) }),
-      h('div', { class: 'mid' }, h('div', { class: 'name', text: sg.title }), h('div', { class: 'sub', text: linkKindLabel(sg) })),
+      h('div', { class: 'mid' }, h('div', { class: 'name', text: sg.title }), h('div', { class: 'sub', text: linkSourceLabel(sg) + ' · ' + linkKindLabel(sg) })),
       h('span', { text: '＋' }))));
     body.append(sec);
   }
 
-  // Erster Aufruf für diesen Song (noch keine Verknüpfungen, Schlüssel vorhanden):
-  // automatisch nach Original + Karaoke suchen und den jeweils besten Treffer verlinken.
+  // Erster Aufruf für diesen Song: automatisch nach Original + Karaoke suchen und je Quelle
+  // (YouTube/Spotify) den besten, thematisch passenden Treffer verlinken -- höchstens 1x pro
+  // Song, dauerhaft über s.alnk vermerkt (nicht nur anhand der aktuell geladenen Verknüpfungen,
+  // da diese kurz nach einem Neuladen der Seite lokal noch leer sein können, bevor der Stand aus
+  // Drive nachgeladen ist -- sonst würde hier ein zweites Mal gesucht und es entstünden Duplikate).
   async function autoLinkIfEmpty() {
-    if (autoTried || songLinks(s.id).length) return;
+    const cur = sget(s.id);
+    if (!cur || cur.alnk || songLinks(s.id).length) return;
     if (!CONFIG.YOUTUBE_API_KEY && !(CONFIG.SPOTIFY_CLIENT_ID && CONFIG.SPOTIFY_CLIENT_SECRET)) return;
-    autoTried = true;
+    sTouch(s.id, x => { x.alnk = 1; });
     const note = h('div', { class: 'empty-note', text: 'Suche automatisch nach Original & Karaoke …' });
     body.append(note);
     let res = [];
     try { res = await suggestLinksFor(s.n); } catch (e) { /* still let user use the manual search button */ }
     const seen = new Set();
-    res.filter(x => !x.error).forEach(sg => {
+    res.filter(x => !x.error && looksRelevant(s.n, x.title)).forEach(sg => {
       const key = sg.type + ':' + sg.kind;
       if (seen.has(key)) return;
       seen.add(key);
@@ -3734,6 +3793,7 @@ function manageLinks(s) {
     draw();
   }
 
+  dedupeLinksInPlace(s);
   draw();
   const api = openModal({ title: 'Verknüpfungen von «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
   api.onClose = () => mp.listeners.delete(draw);   // Wiedergabe im Mini-Player läuft nach dem Schliessen weiter
