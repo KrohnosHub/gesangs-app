@@ -13,13 +13,18 @@ Seit v2.0 besteht die App nicht mehr nur aus `index.html`. **Alle folgenden Date
 | `manifest.webmanifest` + `icons/` | Installation als App auf Handy/Tablet («Zum Startbildschirm») |
 | `vendor/` | pdf.js und pdf-lib lokal (kein CDN mehr nötig – Voraussetzung für Offline) inkl. Lizenzdateien |
 
-Am einfachsten: `gesangs-app-v2.3.zip` entpacken und den **Inhalt** (nicht den Ordner selbst) im GitHub-Webinterface per «Add file → Upload files» hochladen (Ordner lassen sich dort per Drag & Drop mitziehen).
+Die Dateien liegen bereits entpackt in `D:\OneDrive\Musik\Gesangs-App` (bei jeder neuen Version wird die Vorversion zuerst nach `Archiv\vALT` verschoben). Für GitHub Pages einfach den **Inhalt** dieses Ordners (nicht den Ordner selbst, und nicht `Archiv/`) im GitHub-Webinterface per «Add file → Upload files» hochladen (Ordner lassen sich dort per Drag & Drop mitziehen).
 
 In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ «Webanwendung», JavaScript-Ursprung = `https://krohnoshub.github.io`). **Sie ist in dieser Lieferung bereits auf `159994249880-flb4nhh2aq51tspov0d7nv787hir84e5…` gesetzt** und wurde vor der Auslieferung geprüft.
 
 **Wichtig beim Umstieg:** Ab v2.0 speichern Notizen im Format v3. Ältere App-Versionen (v1.x) können Textfelder/Symbole daraus nicht darstellen. Bitte alle Geräte auf v2.0 aktualisieren (Seite einmal neu laden; ggf. zweimal, bis der Service Worker die neue Version übernommen hat).
 
 ## Änderungslog
+
+### v2.3.1 – Song-Aktionen als sichtbare 2. Menüleiste (23.09.2026)
+
+- Beim Öffnen eines Songs erscheint jetzt direkt unter der Zeichenwerkzeugleiste eine **zweite Leiste** mit allen Song-Aktionen (Favorit, Umbenennen, Verschieben, Tags, Setliste, Blätter verwalten, Verknüpfungen, Aufnahmen & Backing-Track, Offline speichern, Löschen) – ohne erst über das ⋯-Menü gehen zu müssen. Das ⋯-Menü in der Song-Liste bleibt zusätzlich bestehen (nützlich, um einen Song zu bearbeiten, ohne ihn zu öffnen).
+- Reine UI-Änderung, keine Datenformat-Änderung.
 
 ### v2.3.0 – Aufnahme mit Pitch-Feedback, Backing-Track (22.09.2026)
 
