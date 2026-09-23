@@ -432,7 +432,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.3.1';
+const APP_VERSION = '2.3.2';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2023,7 +2023,7 @@ const selObj = () => selId ? (pageArrRO().find(o => o.id === selId) || null) : n
 // ---------------------------------------------------------------
 // Kein CSS-mix-blend-mode mehr (auf manchen Handy-Browsern wurde die Ink-Ebene damit unsichtbar):
 // Stift/Text/Symbole liegen normal auf dem Ink-Canvas, der Marker wird per Canvas-"multiply" direkt ins Blatt gerechnet.
-let inkCache = null, hlCache = null, inkCacheValid = false, inkKey = '', inkRaf = 0, hlHasAny = false, hlWasLive = false;
+let inkCache = null, hlCache = null, inkCacheValid = false, inkKey = '', inkRaf = 0, inkFallback = 0, hlHasAny = false, hlWasLive = false;
 const invalidateInk = () => { inkCacheValid = false; };
 const isHlObj = (o) => !!(o.hl || o.er);                 // Marker (und alte Radierstriche) gehören in die Marker-Ebene
 function paintBase(liveHl) {
@@ -2078,7 +2078,21 @@ function redrawInk() {
     inkCtx.restore();
   }
 }
-function requestInk() { if (inkRaf) return; inkRaf = requestAnimationFrame(() => { inkRaf = 0; redrawInk(); }); }
+function inkTick() {
+  if (inkRaf) cancelAnimationFrame(inkRaf);
+  if (inkFallback) clearTimeout(inkFallback);
+  inkRaf = 0; inkFallback = 0;
+  redrawInk();
+}
+// Auf manchen Handy-Browsern (beobachtet: Samsung Internet auf Android) bleibt requestAnimationFrame
+// während/nach Touch-Zeichnen gelegentlich aus – der Strich wird zwar gespeichert (und ist nach Sync
+// auf anderen Geräten sichtbar), aber lokal nie neu gezeichnet. Timeout-Sicherheitsnetz erzwingt die
+// Aktualisierung spätestens nach 150ms, egal ob rAF feuert oder nicht.
+function requestInk() {
+  if (inkRaf || inkFallback) return;
+  inkRaf = requestAnimationFrame(inkTick);
+  inkFallback = setTimeout(inkTick, 150);
+}
 
 // ---------------------------------------------------------------
 // Verlauf (Rückgängig)
@@ -3718,6 +3732,23 @@ async function trashAudio(item) {
   cachedIds.delete(item.id); await safe(IDB.del('blobs', item.id));
 }
 
+// --- YouTube-IFrame-API einmalig laden (für Mitspielen mit einer verlinkten Karaoke-Version) ---
+let ytApiPromise = null;
+function loadYouTubeApi() {
+  if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve, reject) => {
+    const prevCb = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prevCb) try { prevCb(); } catch (e) {} resolve(window.YT); };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => reject(new Error('YouTube-Player konnte nicht geladen werden (offline?)'));
+    document.head.appendChild(s);
+    setTimeout(() => { if (!(window.YT && window.YT.Player)) reject(new Error('YouTube-Player: Zeitüberschreitung (offline?)')); }, 8000);
+  });
+  return ytApiPromise;
+}
+
 // --- Aufnahme-Ansicht (Mikrofon, Live-Tonhöhe, Start/Stop, Speichern) ----------
 function openRecorder(song) {
   let chunks = [], recorder = null, stream = null, actx = null, analyser = null, raf = null;
@@ -3732,17 +3763,63 @@ function openRecorder(song) {
   const startBtn = h('button', { class: 'primary', text: '🔴 Aufnahme starten' });
   const timeEl = h('span', { class: 'sub', text: '' });
   const previewWrap = h('div');
-  const backing = songAudio(song.id, 'backing')[0] || null;
-  const backingChk = h('input', { type: 'checkbox', checked: true });
-  const backingEl = backing ? h('audio', { style: 'display:none;' }) : null;
-  const backingRow = backing ? h('label', { class: 'sub', style: 'display:flex; align-items:center; gap:6px; cursor:pointer;' },
-    backingChk, h('span', { text: '🎵 Mit Backing-Track «' + backing.name + '» mithören (über Kopfhörer, damit das Mikrofon ihn nicht mit aufnimmt)' })) : null;
+
+  // --- Mitspielen: Backing-Track-Datei ODER eine verlinkte YouTube-Version (z. B. Karaoke) ---
+  const fileBacking = songAudio(song.id, 'backing')[0] || null;
+  const ytBackingLinks = songLinks(song.id).filter(l => l.type === 'yt');
+  const hasBackingChoice = !!(fileBacking || ytBackingLinks.length);
+  // Vorauswahl: bevorzugt eine verlinkte Karaoke-Version, sonst die Datei, sonst irgendeinen YouTube-Link
+  let backingMode = 'none';
+  const karaokeLink = ytBackingLinks.find(l => l.kind === 'karaoke');
+  if (karaokeLink) backingMode = karaokeLink.id;
+  else if (fileBacking) backingMode = 'file';
+  else if (ytBackingLinks.length) backingMode = ytBackingLinks[0].id;
+
+  const backingEl = fileBacking ? h('audio', { style: 'display:none;' }) : null;
+  const ytHost = h('div', { class: 'link-embed yt', style: 'display:none;' });
+  let ytPlayer = null, ytPlayerLinkId = null;
+
+  const backingSel = hasBackingChoice ? h('select', {}) : null;
+  if (backingSel) {
+    backingSel.append(h('option', { value: 'none', text: 'Nicht mitspielen' }));
+    if (fileBacking) backingSel.append(h('option', { value: 'file', text: '🎵 Backing-Track (Datei): ' + fileBacking.name }));
+    ytBackingLinks.forEach(l => backingSel.append(h('option', { value: l.id, text: '▶ ' + (l.title || 'YouTube') + ' (' + linkKindLabel(l) + ')' })));
+    backingSel.value = backingMode;
+    backingSel.addEventListener('change', () => { backingMode = backingSel.value; updateBackingUi(); });
+  }
+  const backingRow = hasBackingChoice ? h('div', { class: 'sub', style: 'display:flex; align-items:center; gap:6px; flex-wrap:wrap;' },
+    h('span', { text: '🎧 Mitspielen mit:' }), backingSel,
+    h('span', { text: '(über Kopfhörer, damit das Mikrofon es nicht mit aufnimmt)' })) : null;
+
+  function updateBackingUi() {
+    ytHost.style.display = 'none';
+    if (backingMode !== 'none' && backingMode !== 'file') {
+      const link = ytBackingLinks.find(l => l.id === backingMode);
+      if (link) { ytHost.style.display = ''; ensureYtPlayer(link); }
+    }
+  }
+  function ensureYtPlayer(link) {
+    if (ytPlayerLinkId === link.id) return Promise.resolve(ytPlayer);
+    ytHost.innerHTML = '';
+    const mount = h('div');
+    ytHost.append(mount);
+    return loadYouTubeApi().then(YT => new Promise((resolve) => {
+      if (ytPlayer && ytPlayer.destroy) try { ytPlayer.destroy(); } catch (e) {}
+      ytPlayer = new YT.Player(mount, {
+        videoId: link.mediaId,
+        playerVars: { playsinline: 1 },
+        events: { onReady: () => { ytPlayerLinkId = link.id; resolve(ytPlayer); } }
+      });
+    })).catch(e => { ytPlayer = null; ytPlayerLinkId = null; toast('YouTube-Backing: ' + e.message); return null; });
+  }
+
   const body = h('div', { class: 'recorder' },
     statusEl,
     h('div', { class: 'tuner' }, noteEl, centsEl, h('div', { class: 'tuner-meter' }, needle)),
     canvas,
     h('div', { style: 'display:flex; align-items:center; gap:10px; margin-top:8px;' }, startBtn, timeEl),
-    backingRow, backingEl, previewWrap);
+    backingRow, backingEl, ytHost, previewWrap);
+  updateBackingUi();
 
   const LO = 48, HI = 84; // Anzeigebereich C3–C6 (typische Gesangslage)
   function drawTrace() {
@@ -3806,8 +3883,11 @@ function openRecorder(song) {
     recorder.start();
     recording = true; pitchHist = [];
     startBtn.textContent = '⏹ Aufnahme beenden'; startBtn.classList.add('danger'); startBtn.classList.remove('primary');
-    if (backing && backingChk.checked) {
-      loadAudioBlob(backing).then(blob => { backingEl.src = URL.createObjectURL(blob); backingEl.currentTime = 0; return backingEl.play(); }).catch(() => {});
+    if (backingMode === 'file' && fileBacking) {
+      loadAudioBlob(fileBacking).then(blob => { backingEl.src = URL.createObjectURL(blob); backingEl.currentTime = 0; return backingEl.play(); }).catch(() => {});
+    } else if (backingMode !== 'none') {
+      const link = ytBackingLinks.find(l => l.id === backingMode);
+      if (link) ensureYtPlayer(link).then(p => { if (p) try { p.seekTo(0); p.playVideo(); } catch (e) {} });
     }
     const t0 = Date.now();
     timer = setInterval(() => {
@@ -3825,8 +3905,14 @@ function openRecorder(song) {
     if (stream) stream.getTracks().forEach(t => t.stop());
     if (actx) actx.close().catch(() => {});
     if (backingEl && !backingEl.paused) backingEl.pause();
+    if (ytPlayer) try { ytPlayer.pauseVideo(); } catch (e) {}
     stream = null; analyser = null;
     startBtn.textContent = '🔴 Aufnahme starten'; startBtn.classList.remove('danger'); startBtn.classList.add('primary');
+  }
+  function cleanup() {
+    stop();
+    if (ytPlayer && ytPlayer.destroy) try { ytPlayer.destroy(); } catch (e) {}
+    ytPlayer = null; ytPlayerLinkId = null;
   }
   function onStopped() {
     const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
@@ -3858,7 +3944,7 @@ function openRecorder(song) {
   }
 
   const api = openModal({ title: '🔴 Neue Aufnahme – «' + song.n + '»', body, wide: true, buttons: [{ label: 'Schliessen' }] });
-  api.onClose = stop;
+  api.onClose = cleanup;
 }
 
 // --- Übersicht: eigene Aufnahmen + Backing-Track (vom Song-Menü aus) ----------

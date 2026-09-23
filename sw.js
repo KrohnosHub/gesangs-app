@@ -1,6 +1,6 @@
 // Service Worker der Gesangs-App – hält Programm und pdf.js offline bereit.
 // Blätter und Notizen selbst liegen in IndexedDB (nicht hier).
-const VERSION = '2.3.1-20b8dcb4';
+const VERSION = '2.3.2-b3d11655';
 const CACHE = 'gesangs-app-' + VERSION;
 const PRECACHE = [
  "./",
@@ -57,7 +57,11 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
       try {
-        const res = await Promise.race([fetch(req), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 4000))]);
+        // cache:'no-store' statt req direkt weiterzureichen: manche Hosts/Browser liefern sonst
+        // aus dem HTTP-Cache eine veraltete Seite aus, auch wenn der Service Worker selbst
+        // schon "netzwerk zuerst" versucht (beobachtet als Update, das auf dem Handy ausblieb).
+        const freshReq = new Request(req.url, { cache: 'no-store' });
+        const res = await Promise.race([fetch(freshReq), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 4000))]);
         if (res && res.ok) { c.put('index.html', res.clone()); }
         return res;
       } catch (err) {
