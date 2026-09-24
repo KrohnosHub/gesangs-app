@@ -135,6 +135,16 @@
   #songBar button.danger{color:var(--danger); border-color:var(--danger);}
   #songBar .sep{width:1px; height:22px; background:var(--border); margin:0 2px; flex:none;}
   #stampBar.show{display:flex;}
+  #stampBar.text-only .stamp-btn{display:none;}
+  #txtSymBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:#f5f1ea; border-bottom:1px solid var(--border); align-items:center;}
+  body.mode-text #txtSymBar.show{display:flex;}
+  body.perf #txtSymBar{display:none !important;}
+  #txtSymBar button{padding:5px 9px; font-size:14px; min-width:38px;}
+  #txtSymBar .sub{font-size:12px; color:var(--muted); margin-right:4px;}
+  #textSheet .sym{font-weight:700; color:#8e2c1f; padding:0 .08em; font-family:Georgia,"Times New Roman",serif;}
+  #textSheet .sym.dyn{font-style:italic;}
+  #stampBar select{padding:5px 8px; font-size:13px;}
+  body.mode-text #stampBar, body.mode-text #selBar, body.mode-text #layerPop, body.mode-text #dispPop{display:none !important;}
   #stampBar button{padding:5px 9px; font-size:14px; min-width:38px;}
   #stampBar button.on{background:var(--accent); color:#fff; border-color:var(--accent);}
 
@@ -245,15 +255,25 @@
   /* ---------- Mini-Player (ab v2.3.3): spielt Verknüpfungen/Backing-Track ausserhalb von
      Dialogen ab, damit das Notenblatt sichtbar bleibt -- läuft auch im Vollbildmodus weiter,
      siehe Ausnahme bei "Auftrittsmodus" unten (kein body.perf-Eintrag für #miniPlayer). */
-  #miniPlayer{position:fixed; right:10px; bottom:10px; width:min(240px,60vw); background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.3); z-index:90; overflow:hidden;}
-  #miniPlayer.min .mp-mount{max-height:0; padding:0; overflow:hidden;}
-  .mp-bar{display:flex; align-items:center; gap:4px; padding:5px 6px; background:var(--accent-light);}
-  .mp-bar .mp-title{flex:1; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;}
-  .mp-bar button{flex:none; padding:2px 7px; font-size:12px; border-radius:6px;}
+  #miniPlayer{position:fixed; right:10px; bottom:10px; width:min(290px,72vw); background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.3); z-index:90; overflow:hidden; flex-direction:column;}
+  #miniPlayer.min .mp-mount, #miniPlayer.min .mp-hint{max-height:0; padding:0; overflow:hidden; display:none !important;}
+  .mp-bar{display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:5px 6px; background:var(--accent-light);}
+  .mp-bar .mp-title{flex:1 1 100%; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; line-height:1.2;}
+  .mp-bar .mp-name{font-size:12px; font-weight:600;}
+  .mp-bar .mp-src{font-size:10px; color:var(--muted); font-weight:400;}
+  .mp-bar .mp-time-lbl{flex:1; font-size:12px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .mp-bar button{flex:none; padding:3px 10px; font-size:13px; border-radius:6px; min-width:34px;}
+  .mp-hint{display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px 8px 0; font-size:11px; color:var(--muted);}
+  .mp-hint button{padding:3px 8px; font-size:11px;}
   .mp-mount{padding:6px;}
   .mp-mount iframe{width:100%; border:0; border-radius:8px; display:block; aspect-ratio:16/9; height:auto;}
+  .mp-mount .sp-inner iframe{aspect-ratio:auto; height:152px;}
   .mp-mount audio{width:100%; display:block;}
-  @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(200px,58vw);} }
+  .pick-row .name{font-size:14px;}
+  .pick-row .sub{font-size:11.5px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap;}
+  .pick-row .sub .mp-time{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:600;}
+  .pick-row.playing{background:var(--accent-light);}
+  @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(300px, calc(100vw - 12px));} }
 
   /* ---------- Scan ---------- */
   #scanCv{max-width:100%; touch-action:none; background:#222; border-radius:8px; display:block; margin:0 auto;}
@@ -334,7 +354,6 @@
     <div id="sbSheets" class="sb-pane">
       <div id="sbActions">
         <button id="newSongBtn" class="primary">♪ Neuer Song</button>
-        <button id="uploadBtn">+ Blatt</button>
         <button id="scanBtn">📷 Scan</button>
         <button id="newFolderBtn" title="Neuer Ordner">📁＋</button>
       </div>
@@ -377,18 +396,35 @@
 
     <div id="mainViewer" style="display:none; flex:1; flex-direction:column; min-height:0;">
       <div id="toolbar">
-        <select id="txtFontSize" class="txt-tool" title="Schriftgrösse">
-          <option value="16">Schrift: klein</option>
-          <option value="20" selected>Schrift: normal</option>
-          <option value="24">Schrift: gross</option>
-          <option value="28">Schrift: sehr gross</option>
-          <option value="34">Schrift: riesig</option>
+        <select id="txtFont" class="txt-tool" title="Schrift der markierten Zeilen/Absätze">
+          <option value="sans">Schrift: Standard</option>
+          <option value="serif">Schrift: Serif</option>
+          <option value="mono">Schrift: Schreibmaschine</option>
         </select>
-        <select id="txtLineHeight" class="txt-tool" title="Zeilenabstand">
-          <option value="1.3">Zeilenabstand: eng</option>
-          <option value="1.6">Zeilenabstand: normal</option>
-          <option value="1.9" selected>Zeilenabstand: weit</option>
-          <option value="2.3">Zeilenabstand: sehr weit</option>
+        <select id="txtFontSize" class="txt-tool" title="Schriftgrösse der markierten Zeilen/Absätze">
+          <option value="12">Grösse 12</option>
+          <option value="14">Grösse 14</option>
+          <option value="16">Grösse 16</option>
+          <option value="18">Grösse 18</option>
+          <option value="20" selected>Grösse 20</option>
+          <option value="24">Grösse 24</option>
+          <option value="28">Grösse 28</option>
+          <option value="34">Grösse 34</option>
+          <option value="40">Grösse 40</option>
+          <option value="48">Grösse 48</option>
+        </select>
+        <select id="txtLineHeight" class="txt-tool" title="Zeilenabstand der markierten Zeilen/Absätze">
+          <option value="1">Zeilenabstand 1,0</option>
+          <option value="1.3">Zeilenabstand 1,3</option>
+          <option value="1.6">Zeilenabstand 1,6</option>
+          <option value="1.9" selected>Zeilenabstand 1,9</option>
+          <option value="2.3">Zeilenabstand 2,3</option>
+          <option value="2.8">Zeilenabstand 2,8</option>
+        </select>
+        <select id="txtAlign" class="txt-tool" title="Ausrichtung der markierten Zeilen/Absätze">
+          <option value="left">Links</option>
+          <option value="center">Zentriert</option>
+          <option value="right">Rechts</option>
         </select>
         <button id="txtBold" class="tool txt-tool" title="Fett (Strg+B)"><b>F</b></button>
         <button id="txtItalic" class="tool txt-tool" title="Kursiv (Strg+I)"><i>K</i></button>
@@ -399,6 +435,7 @@
           <option value="ref">Refrain</option>
           <option value="bri">Bridge</option>
         </select>
+        <button id="txtSym" class="tool txt-tool" title="Gesangssymbole (Atem, Fermate, Dynamik …) in den Text einfügen">♪ Symbole</button>
         <button id="txtChord" class="tool txt-tool" title="Akkord an der Cursorposition einfügen (vorhandenen Akkord antippen = ändern/löschen)">🎸 Akkord</button>
         <button id="txtTrDown" class="tool txt-tool" title="Alle Akkorde einen Halbton tiefer">♭ −½</button>
         <button id="txtTrUp" class="tool txt-tool" title="Alle Akkorde einen Halbton höher">♯ +½</button>
@@ -444,6 +481,7 @@
       </div>
       <div id="songBar" style="display:none;"></div>
       <div id="stampBar"></div>
+      <div id="txtSymBar"></div>
       <div id="sheetTabs" style="display:none;"></div>
 
       <div id="canvasArea">
@@ -516,7 +554,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.6.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -603,17 +641,82 @@ function menuSheet(title, items) {
 // wird hier aber erst zur Laufzeit aufgerufen (Function-Hoisting über die
 // gesamte zusammengebaute Datei hinweg) -- daher unproblematisch.
 // ---------------------------------------------------------------
-let mp = { el: null, mount: null, titleEl: null, link: null, kind: null, ytPlayer: null, audioEl: null, audioItem: null, listeners: new Set() };
+let mp = { el: null, mount: null, titleEl: null, srcEl: null, timeEl: null, playBtn: null, hintEl: null, link: null, kind: null, ytPlayer: null, audioEl: null, audioItem: null, spCtrl: null, spState: null, listeners: new Set(), lastSig: '' };
 function mpNotify() { mp.listeners.forEach(fn => { try { fn(); } catch (e) {} }); }
+const fmtTime = (sec) => {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  sec = Math.floor(sec);
+  const hh = Math.floor(sec / 3600), mm = Math.floor((sec % 3600) / 60), ss = String(sec % 60).padStart(2, '0');
+  return hh ? hh + ':' + String(mm).padStart(2, '0') + ':' + ss : mm + ':' + ss;
+};
+// Einheitlicher Zustand der aktuellen Wiedergabe (YouTube, Spotify, Audio-Datei): {t, dur, playing} in Sekunden
+function mpState() {
+  try {
+    if (mp.kind === 'audio' && mp.audioEl) return { t: mp.audioEl.currentTime || 0, dur: isFinite(mp.audioEl.duration) ? mp.audioEl.duration : 0, playing: !mp.audioEl.paused };
+    if (mp.kind === 'link' && mp.ytPlayer && typeof mp.ytPlayer.getCurrentTime === 'function') {
+      const st = typeof mp.ytPlayer.getPlayerState === 'function' ? mp.ytPlayer.getPlayerState() : 1;
+      return { t: mp.ytPlayer.getCurrentTime() || 0, dur: (mp.ytPlayer.getDuration && mp.ytPlayer.getDuration()) || 0, playing: st === 1 || st === 3 };
+    }
+    if (mp.kind === 'link' && mp.spState) {
+      const d = mp.spState, t = (d.position || 0) / 1000 + (!d.isPaused && d._at ? (Date.now() - d._at) / 1000 : 0);
+      return { t: d.duration ? Math.min(t, d.duration / 1000) : t, dur: (d.duration || 0) / 1000, playing: !d.isPaused };
+    }
+  } catch (e) {}
+  return null;
+}
+const mpTimeLabel = () => { const s = mpState(); return s ? fmtTime(s.t) + (s.dur ? ' / ' + fmtTime(s.dur) : '') : ''; };
+const mpCurrentId = () => mp.kind === 'link' && mp.link ? mp.link.id : (mp.kind === 'audio' && mp.audioItem ? mp.audioItem.id : null);
+function mpPause() {
+  try {
+    if (mp.audioEl) mp.audioEl.pause();
+    else if (mp.ytPlayer && mp.ytPlayer.pauseVideo) mp.ytPlayer.pauseVideo();
+    else if (mp.spCtrl) mp.spCtrl.pause();
+  } catch (e) {}
+  setTimeout(mpTick, 50);
+}
+function mpResume() {
+  try {
+    if (mp.audioEl) mp.audioEl.play().catch(() => {});
+    else if (mp.ytPlayer && mp.ytPlayer.playVideo) mp.ytPlayer.playVideo();
+    else if (mp.spCtrl) mp.spCtrl.resume();
+  } catch (e) {}
+  setTimeout(mpTick, 50);
+}
+// Pause/Fortsetzen an der aktuellen Stelle (nicht von vorne)
+function mpToggle() {
+  const s = mpState();
+  if (mp.spCtrl && (!s || !mp.spState)) { try { mp.spCtrl.togglePlay(); } catch (e) {} setTimeout(mpTick, 50); return; }
+  if (s && s.playing) mpPause(); else mpResume();
+}
+// Laufend: Zeitanzeige im Mini-Player, in offenen Listen (.mp-time) und im Auftrittsmodus
+function mpTick() {
+  if (!mp.el || mp.el.style.display === 'none') return;
+  const s = mpState(), lbl = mpTimeLabel(), id = mpCurrentId();
+  mp.timeEl.textContent = lbl;
+  mp.playBtn.textContent = s && s.playing ? '❚❚' : '▶';
+  mp.playBtn.title = s && s.playing ? 'Pause' : 'Fortsetzen';
+  document.querySelectorAll('.mp-time').forEach(el => { el.textContent = el.dataset.mpid === id ? lbl : ''; });
+  if (typeof perf !== 'undefined' && perf && typeof updatePerfPage === 'function') updatePerfPage();
+  const sig = id + '|' + !!(s && s.playing);
+  if (sig !== mp.lastSig) { mp.lastSig = sig; mpNotify(); }
+}
+setInterval(mpTick, 500);
 function ensureMiniPlayer() {
   if (mp.el) return mp;
-  mp.titleEl = h('div', { class: 'mp-title', text: '', title: 'Ein-/Ausklappen', onclick: () => mp.el.classList.toggle('min') });
-  mp.mount = h('div', { class: 'mp-mount' });
+  mp.titleEl = h('span', { class: 'mp-name', text: '' });
+  mp.srcEl = h('span', { class: 'mp-src', text: '' });
+  mp.timeEl = h('span', { class: 'mp-time-lbl', text: '' });
+  mp.playBtn = h('button', { text: '❚❚', title: 'Pause', onclick: () => mpToggle() });
+  mp.hintEl = h('div', { class: 'mp-hint', style: 'display:none;' });
   mp.el = h('div', { id: 'miniPlayer', style: 'display:none;' },
-    h('div', { class: 'mp-bar' }, mp.titleEl,
-      h('button', { text: '↗', title: 'Extern öffnen', onclick: () => { if (mp.link) window.open(mp.link.url, '_blank', 'noopener'); } }),
-      h('button', { text: '✕', title: 'Player schliessen', onclick: () => stopMiniPlayer() })),
-    mp.mount);
+    h('div', { class: 'mp-bar' },
+      h('div', { class: 'mp-title', title: 'Ein-/Ausklappen', onclick: () => mp.el.classList.toggle('min') }, mp.titleEl, mp.srcEl),
+      mp.timeEl,
+      mp.playBtn,
+      h('button', { text: '■', title: 'Stoppen', onclick: () => stopMiniPlayer() }),
+      h('button', { text: '↗', title: 'Extern öffnen', onclick: () => { if (mp.link) window.open(mp.link.url, '_blank', 'noopener'); } })),
+    mp.hintEl,
+    mp.mount = h('div', { class: 'mp-mount' }));
   document.body.append(mp.el);
   return mp;
 }
@@ -621,15 +724,26 @@ function stopMiniPlayer() {
   if (!mp.el) return;
   if (mp.ytPlayer && mp.ytPlayer.destroy) try { mp.ytPlayer.destroy(); } catch (e) {}
   mp.ytPlayer = null;
+  if (mp.spCtrl && mp.spCtrl.destroy) try { mp.spCtrl.destroy(); } catch (e) {}
+  mp.spCtrl = null; mp.spState = null;
   if (mp.audioEl) { try { mp.audioEl.pause(); } catch (e) {} mp.audioEl = null; }
   mp.mount.innerHTML = '';
+  mp.hintEl.style.display = 'none'; mp.hintEl.innerHTML = '';
   mp.el.style.display = 'none';
   mp.link = null; mp.kind = null; mp.audioItem = null;
+  document.querySelectorAll('.mp-time').forEach(el => { el.textContent = ''; });
+  if (typeof perf !== 'undefined' && perf && typeof updatePerfPage === 'function') updatePerfPage();
+  mp.lastSig = '';
   mpNotify();
 }
-// Für die Verknüpfungen-Liste: Antippen = abspielen, nochmals antippen = stoppen (Toggle).
+function mpSetTitle(title, src) {
+  mp.titleEl.textContent = title || 'Wiedergabe';
+  mp.srcEl.textContent = src ? ' · ' + src : '';
+}
+// Für die Listen (Verknüpfungen, Aufnahmen): Antippen = abspielen; läuft derselbe Eintrag schon,
+// wird pausiert bzw. an der gleichen Stelle fortgesetzt (nicht mehr von vorne).
 function playLinkInMiniPlayer(link) {
-  if (mp.kind === 'link' && mp.link && mp.link.id === link.id) { stopMiniPlayer(); return; }
+  if (mp.kind === 'link' && mp.link && mp.link.id === link.id) { mpToggle(); return; }
   startMiniPlayerLink(link);
 }
 // Startet/setzt eine Verknüpfung von vorne fort -- für den Aufnahme-Mitspiel-Start.
@@ -642,34 +756,89 @@ function startMiniPlayerLink(link) {
   }
   stopMiniPlayer(); ensureMiniPlayer();
   mp.link = link; mp.kind = 'link';
-  mp.titleEl.textContent = link.title || 'Wiedergabe';
+  mpSetTitle(link.title, link.type === 'yt' ? 'YouTube' : 'Spotify');
   mp.el.style.display = 'flex'; mp.el.classList.remove('min');
   if (link.type === 'yt') {
     const inner = h('div');
     mp.mount.append(inner);
     loadYouTubeApi().then(YT => {
-      mp.ytPlayer = new YT.Player(inner, { videoId: link.mediaId, playerVars: { playsinline: 1 }, events: { onReady: (e) => e.target.playVideo() } });
+      if (mp.link !== link) return;
+      mp.ytPlayer = new YT.Player(inner, { videoId: link.mediaId, playerVars: { playsinline: 1 }, events: { onReady: (e) => e.target.playVideo(), onStateChange: () => mpTick() } });
       mpNotify();
     }).catch(e => { toast('YouTube: ' + e.message); stopMiniPlayer(); });
-  } else {
-    mp.mount.append(h('iframe', {
-      src: 'https://open.spotify.com/embed/track/' + link.mediaId + '?utm_source=generator&autoplay=1',
-      allow: 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
-    }));
-  }
+  } else startSpotifyInMiniPlayer(link);
   mpNotify();
+}
+// Spotify: über die offizielle iFrame-API (Pause/Fortsetzen, Abspielzeit). Spotify lässt das
+// automatische Starten aus einer Web-App nicht immer zu (v. a. auf dem Handy, dort im Browser oft
+// nur Vorschau) -- daher Hinweis + Knopf «In Spotify öffnen»; Fallback ohne API: einfacher Embed.
+const isTouchDevice = () => matchMedia('(pointer:coarse)').matches;
+let spApiPromise = null;
+function loadSpotifyApi() {
+  if (window.__spIFrameAPI) return Promise.resolve(window.__spIFrameAPI);
+  if (spApiPromise) return spApiPromise;
+  spApiPromise = new Promise((resolve, reject) => {
+    const prev = window.onSpotifyIframeApiReady;
+    window.onSpotifyIframeApiReady = (api) => { window.__spIFrameAPI = api; if (prev) try { prev(api); } catch (e) {} resolve(api); };
+    const s = document.createElement('script');
+    s.src = 'https://open.spotify.com/embed/iframe-api/v1'; s.async = true;
+    s.onerror = () => { spApiPromise = null; reject(new Error('Spotify-Player konnte nicht geladen werden (offline?)')); };
+    document.head.append(s);
+    setTimeout(() => { if (!window.__spIFrameAPI) { spApiPromise = null; reject(new Error('Spotify-Player: Zeitüberschreitung')); } }, 8000);
+  });
+  return spApiPromise;
+}
+function spotifyHint(link, text) {
+  mp.hintEl.innerHTML = '';
+  mp.hintEl.append(h('span', { text }), h('button', { text: 'In Spotify öffnen', onclick: () => window.open(link.url, '_blank', 'noopener') }));
+  mp.hintEl.style.display = 'flex';
+}
+function startSpotifyInMiniPlayer(link) {
+  const inner = h('div', { class: 'sp-inner' });
+  mp.mount.append(inner);
+  if (isTouchDevice()) spotifyHint(link, 'Auf dem Handy spielt Spotify im Browser oft nur eine Vorschau oder startet erst nach Antippen im Spotify-Fenster.');
+  const fallback = () => {
+    if (mp.link !== link) return;
+    inner.innerHTML = '';
+    inner.append(h('iframe', { src: 'https://open.spotify.com/embed/track/' + link.mediaId + '?utm_source=generator', allow: 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture' }));
+    spotifyHint(link, 'Zum Starten im Spotify-Fenster auf ▶ tippen.');
+  };
+  loadSpotifyApi().then(api => {
+    if (mp.link !== link) return;
+    api.createController(inner, { uri: 'spotify:track:' + link.mediaId, width: '100%', height: 152 }, (ctrl) => {
+      if (mp.link !== link) { try { ctrl.destroy(); } catch (e) {} return; }
+      mp.spCtrl = ctrl;
+      ctrl.addListener('playback_update', (e) => { mp.spState = Object.assign({}, e && e.data, { _at: Date.now() }); mpTick(); });
+      ctrl.addListener('ready', () => { try { ctrl.play(); } catch (e) {} });
+      // Startet Spotify nicht von selbst (Autoplay blockiert), Hinweis einblenden
+      setTimeout(() => {
+        if (mp.link !== link || mp.spCtrl !== ctrl) return;
+        const st = mp.spState;
+        if (!st || st.isPaused) spotifyHint(link, 'Spotify startet nicht automatisch? Im Spotify-Fenster auf ▶ tippen.');
+        else if (!isTouchDevice()) mp.hintEl.style.display = 'none';
+      }, 4000);
+      mpNotify();
+    });
+  }).catch(fallback);
 }
 function playAudioBlobInMiniPlayer(item, blob) {
   ensureMiniPlayer(); stopMiniPlayer(); ensureMiniPlayer();
   mp.kind = 'audio'; mp.link = null; mp.audioItem = item;
-  mp.titleEl.textContent = item.name || 'Wiedergabe';
+  mpSetTitle(item.name, item.kind === 'backing' ? 'Backing-Track' : (item.kind === 'take' ? 'Aufnahme' : ''));
   mp.el.style.display = 'flex'; mp.el.classList.remove('min');
   const audioEl = h('audio', { controls: true });
   mp.audioEl = audioEl; mp.mount.append(audioEl);
   audioEl.src = URL.createObjectURL(blob);
+  ['play', 'pause', 'loadedmetadata', 'ended'].forEach(ev => audioEl.addEventListener(ev, () => mpTick()));
   audioEl.play().catch(() => {});
   mpNotify();
   return audioEl;
+}
+// Aufnahmen/Backing-Track aus einer Liste: gleicher Eintrag = Pause/Fortsetzen, sonst neu laden
+async function playAudioItemToggle(item) {
+  if (mp.kind === 'audio' && mp.audioItem && mp.audioItem.id === item.id && mp.audioEl) { mpToggle(); return; }
+  try { playAudioBlobInMiniPlayer(item, await loadAudioBlob(item)); }
+  catch (e) { toast('Audio konnte nicht geladen werden: ' + e.message); }
 }
 
 // ---------------------------------------------------------------
@@ -2131,7 +2300,13 @@ const DYN = { pp: 'pp', p: 'p', mp: 'mp', mf: 'mf', f: 'f', ff: 'ff' };
 const visLayer = (id) => !hiddenLayers.has(id || 'e');
 const pageArr = (p = currentPage) => annotData.pages[String(p)] || (annotData.pages[String(p)] = []);
 const pageArrRO = (p = currentPage) => annotData.pages[String(p)] || [];
-const objSize = () => widthVal;                          // Grösse für Text/Symbole aus dem Schieber (1–10)
+// Grösse für Symbole und Textfelder (ab v2.6.0 eigene Auswahl statt des Strichstärke-Schiebers; in px bei 900 px Seitenbreite)
+const OBJ_SIZES = {
+  stamp: [['xs', 'sehr klein', 9], ['s', 'klein', 12], ['m', 'mittel', 15], ['l', 'gross', 20], ['xl', 'sehr gross', 26]],
+  text: [['xs', 'sehr klein', 9], ['s', 'klein', 12], ['m', 'mittel', 15], ['l', 'gross', 19], ['xl', 'sehr gross', 24]]
+};
+const objSz = { stamp: lsGet('gapp_stampsz') || 's', text: lsGet('gapp_textsz') || 'm' };
+const objSizePx = (kind) => { const row = OBJ_SIZES[kind].find(r => r[0] === objSz[kind]) || OBJ_SIZES[kind][1]; return row[2]; };
 
 // ---------------------------------------------------------------
 // Zeichnen der Objekte (auch für den PDF-Export genutzt)
@@ -2430,7 +2605,7 @@ function textDialog(existing, pos) {
       const v = ta.value.replace(/\s+$/, '');
       if (!v) return;
       if (existing) { if (v !== existing.s) editObject(existing, x => { x.s = v; }); }
-      else addObject({ id: uid('o'), l: activeLayer, t: 'x', x: r5(pos.x), y: r5(pos.y), s: v, z: r5((10 + objSize() * 3) / REF_W), c: color });
+      else addObject({ id: uid('o'), l: activeLayer, t: 'x', x: r5(pos.x), y: r5(pos.y), s: v, z: r5(objSizePx('text') / REF_W), c: color });
     }
   });
   openModal({ title: existing ? 'Text bearbeiten' : 'Text einfügen', body: [ta], buttons });
@@ -2578,7 +2753,7 @@ function endPointer(e, cancelled) {
       if (hit && hit.t === 'x') { selId = hit.id; textDialog(hit); }
       else textDialog(null, a.pt);
     } else {
-      addObject({ id: uid('o'), l: activeLayer, t: 'm', k: stampKind, x: r5(a.pt.x), y: r5(a.pt.y), z: r5((14 + objSize() * 4) / REF_W), c: color });
+      addObject({ id: uid('o'), l: activeLayer, t: 'm', k: stampKind, x: r5(a.pt.x), y: r5(a.pt.y), z: r5(objSizePx('stamp') / REF_W), c: color });
     }
   }
 }
@@ -2592,7 +2767,9 @@ function setTool(t) {
   tool = t; lsSet('gapp_tool', t);
   if (t !== 'select') selId = null;
   document.querySelectorAll('#toolbar .tool[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
-  $('stampBar').classList.toggle('show', t === 'stamp');
+  $('stampBar').classList.toggle('show', t === 'stamp' || t === 'text');
+  $('stampBar').classList.toggle('text-only', t === 'text');
+  fillObjSizeSel();
   stack.style.cursor = t === 'select' ? 'default' : (t === 'eraser' ? 'cell' : 'crosshair');
   updateSelBar(); requestInk();
 }
@@ -2606,9 +2783,21 @@ document.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', ()
 $('widthRange').value = widthVal;
 $('widthRange').addEventListener('input', (e) => { widthVal = Number(e.target.value); lsSet('gapp_width', widthVal); });
 
+const objSizeSel = h('select', { id: 'objSizeSel', title: 'Grösse neuer Symbole bzw. Textfelder' });
+function fillObjSizeSel() {
+  const kind = tool === 'text' ? 'text' : 'stamp';
+  objSizeSel.innerHTML = '';
+  OBJ_SIZES[kind].forEach(([k, lbl]) => objSizeSel.append(h('option', { value: k, text: (kind === 'text' ? 'Textgrösse: ' : 'Symbolgrösse: ') + lbl })));
+  objSizeSel.value = objSz[kind];
+}
+objSizeSel.addEventListener('change', () => {
+  const kind = tool === 'text' ? 'text' : 'stamp';
+  objSz[kind] = objSizeSel.value; lsSet(kind === 'text' ? 'gapp_textsz' : 'gapp_stampsz', objSizeSel.value);
+});
 (function buildStampBar() {
   const bar = $('stampBar');
-  STAMPS.forEach(([k, lbl, title]) => bar.append(h('button', { 'data-k': k, text: lbl, title, onclick: () => { stampKind = k; lsSet('gapp_stamp', k); markStamp(); } })));
+  bar.append(objSizeSel);
+  STAMPS.forEach(([k, lbl, title]) => bar.append(h('button', { class: 'stamp-btn', 'data-k': k, text: lbl, title, onclick: () => { stampKind = k; lsSet('gapp_stamp', k); markStamp(); } })));
   function markStamp() { bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === stampKind)); }
   markStamp();
 })();
@@ -2956,6 +3145,8 @@ function updatePerfPage() {
   if (!perf) return;
   let t = `${currentPage} / ${totalPages}`;
   if (perfCtx && lib.setlists[perfCtx.setId]) t += ` · Lied ${perfCtx.idx + 1}/${lib.setlists[perfCtx.setId].it.length}`;
+  const pl = mpTimeLabel();
+  if (pl) t += ' · ♫ ' + pl;
   $('perfPage').textContent = t;
 }
 function enterPerf() {
@@ -3205,7 +3396,7 @@ async function requireOnline(what) {
 }
 async function triggerUpload() { if (await requireOnline('«Blatt hinzufügen»')) $('fileInput').click(); }
 async function triggerScan() { if (await requireOnline('Scannen')) openScan(); }
-$('uploadBtn').addEventListener('click', triggerUpload);
+// «+ Blatt» in der Seitenleiste entfällt ab v2.6.0 (Song zuerst): Hochladen über «Blätter verwalten» eines Songs
 $('fileInput').addEventListener('change', (e) => { if (e.target.files.length) uploadFiles(e.target.files); e.target.value = ''; });
 
 // ---------------------------------------------------------------
@@ -3647,8 +3838,7 @@ async function exportPdf() {
     const bytes = await buildAnnotatedPdfBytes(f, currentBlob, annotData, { img: currentImg });
     const outName = f.name.replace(/\.[^.]+$/, '') + ' (annotiert).pdf';
     setStatus('');
-    await deliverFile(new File([bytes], outName, { type: 'application/pdf' }));
-    toast('PDF exportiert: ' + outName);
+    exportDialog(bytes, outName, outName, f);
   } catch (e) { fail('Export fehlgeschlagen', e); }
 }
 $('exportBtn').addEventListener('click', exportPdf);
@@ -3844,16 +4034,18 @@ function dedupeLinksInPlace(s) {
 // --- Verknüpfungen-Modal (vom Song-Menü aus: "🔗 Verknüpfungen") ----------
 function manageLinks(s) {
   const body = h('div', { class: 'link-manage' });
-  const isPlaying = (l) => mp.kind === 'link' && mp.link && mp.link.id === l.id;
+  const isLoaded = (l) => mp.kind === 'link' && mp.link && mp.link.id === l.id;
+  const isPlaying = (l) => { if (!isLoaded(l)) return false; const st = mpState(); return st ? st.playing : true; };
   let manualKind = 'orig';
 
   function linkRow(l) {
-    return h('div', { class: 'pick-row' },
+    return h('div', { class: 'pick-row' + (isLoaded(l) ? ' playing' : '') },
       h('span', { class: 'type-icon', text: linkIcon(l) }),
       h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playLinkInMiniPlayer(l) },
         h('div', { class: 'name', text: l.title || l.url }),
-        h('div', { class: 'sub', text: linkSourceLabel(l) + (l.auto ? ' · Vorschlag' : ' · manuell hinzugefügt') })),
-      h('button', { class: 'more', text: isPlaying(l) ? '⏸' : '▶', title: 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)', onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }),
+        h('div', { class: 'sub' }, h('span', { text: linkSourceLabel(l) }), h('span', { class: 'mp-time', 'data-mpid': l.id, text: isLoaded(l) ? mpTimeLabel() : '' }))),
+      h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }),
+      isLoaded(l) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
       h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); window.open(l.url, '_blank', 'noopener'); } }),
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } }));
   }
@@ -4083,10 +4275,7 @@ function openRecorder(song) {
       if (link) startMiniPlayerLink(link);
     }
   }
-  function pauseBackingPlayback() {
-    if (mp.ytPlayer) try { mp.ytPlayer.pauseVideo(); } catch (e) {}
-    if (mp.audioEl) try { mp.audioEl.pause(); } catch (e) {}
-  }
+  function pauseBackingPlayback() { mpPause(); }
   // Vorhören: sobald eine Mitspiel-Option gewählt ist, direkt im Mini-Player starten
   // (wie bisher schon beim Öffnen der Ansicht), statt erst beim Aufnahmestart.
   if (backingMode !== 'none') startBackingPlayback();
@@ -4218,25 +4407,20 @@ function openRecorder(song) {
 
 // --- Übersicht: eigene Aufnahmen + Backing-Track (vom Song-Menü aus) ----------
 function manageAudio(s) {
-  let playingId = null;
   const body = h('div', { class: 'audio-manage' });
+  // Wiedergabe über den gemeinsamen Mini-Player (Pause/Fortsetzen, Zeitanzeige, läuft nach Schliessen weiter)
+  const isLoaded = (item) => mp.kind === 'audio' && mp.audioItem && mp.audioItem.id === item.id;
+  const isPlaying = (item) => { if (!isLoaded(item)) return false; const st = mpState(); return !!(st && st.playing); };
 
   function audioRow(item) {
-    return h('div', { class: 'pick-row' },
+    return h('div', { class: 'pick-row' + (isLoaded(item) ? ' playing' : '') },
       h('span', { class: 'type-icon', text: item.kind === 'backing' ? '🎵' : '🎤' }),
-      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => { playingId = playingId === item.id ? null : item.id; draw(); } },
+      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playAudioItemToggle(item) },
         h('div', { class: 'name', text: item.name }),
-        h('div', { class: 'sub', text: new Date(item.u).toLocaleString('de-DE') + (cachedIds.has(item.id) ? ' · offline verfügbar' : '') })),
-      h('button', { class: 'more', text: playingId === item.id ? '⏸' : '▶', title: 'Abspielen', onclick: (e) => { e.stopPropagation(); playingId = playingId === item.id ? null : item.id; draw(); } }),
+        h('div', { class: 'sub' }, h('span', { text: new Date(item.u).toLocaleString('de-DE') + (cachedIds.has(item.id) ? ' · offline verfügbar' : '') }), h('span', { class: 'mp-time', 'data-mpid': item.id, text: isLoaded(item) ? mpTimeLabel() : '' }))),
+      h('button', { class: 'more', text: isPlaying(item) ? '❚❚' : '▶', title: 'Abspielen', onclick: (e) => { e.stopPropagation(); playAudioItemToggle(item); } }),
+      isLoaded(item) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeItem(item); } }));
-  }
-  function playerFor(item) {
-    const wrap = h('div', { style: 'padding:0 6px 8px;' });
-    const audioEl = h('audio', { controls: true, style: 'width:100%;' });
-    wrap.append(audioEl);
-    loadAudioBlob(item).then(blob => { audioEl.src = URL.createObjectURL(blob); audioEl.play().catch(() => {}); })
-      .catch(e => wrap.append(h('div', { class: 'empty-note', text: 'Konnte nicht geladen werden: ' + e.message })));
-    return wrap;
   }
   function draw() {
     body.innerHTML = '';
@@ -4244,13 +4428,13 @@ function manageAudio(s) {
     const backing = songAudio(s.id, 'backing');
     body.append(h('div', { class: 'sub', style: 'padding:6px 6px 2px; font-weight:600;', text: '🎤 Eigene Aufnahmen' }));
     if (!takes.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Aufnahme.' }));
-    takes.forEach(t => { body.append(audioRow(t)); if (playingId === t.id) body.append(playerFor(t)); });
+    takes.forEach(t => body.append(audioRow(t)));
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => { api.close(); openRecorder(s); } },
       h('span', { text: '🔴' }), h('span', { text: 'Neue Aufnahme …' })));
 
     body.append(h('div', { class: 'sub', style: 'padding:12px 6px 2px; font-weight:600;', text: '🎵 Backing-Track' }));
     if (!backing.length) body.append(h('div', { class: 'empty-note', text: 'Kein Backing-Track hinterlegt.' }));
-    else backing.forEach(b => { body.append(audioRow(b)); if (playingId === b.id) body.append(playerFor(b)); });
+    else backing.forEach(b => body.append(audioRow(b)));
     const inp = h('input', { type: 'file', accept: 'audio/*', style: 'display:none;' });
     inp.addEventListener('change', () => { if (inp.files[0]) uploadBacking(inp.files[0]); inp.value = ''; });
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() },
@@ -4260,7 +4444,7 @@ function manageAudio(s) {
     if (!confirm('«' + item.name + '» wirklich entfernen?')) return;
     await trashAudio(item);
     removeAudioMeta(s.id, item.id);
-    if (playingId === item.id) playingId = null;
+    if (isLoaded(item)) stopMiniPlayer();
     draw();
   }
   async function uploadBacking(file) {
@@ -4277,7 +4461,9 @@ function manageAudio(s) {
   }
 
   draw();
+  mp.listeners.add(draw);
   const api = openModal({ title: '🎙 Aufnahmen & Backing-Track – «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+  api.onClose = () => mp.listeners.delete(draw);
 }
 
 
@@ -4528,6 +4714,19 @@ function transposeChord(c, k, german = false) {
 }
 const chordSpan = (c) => `<span class="ch" data-c="${escapeHtml(c)}" contenteditable="false"></span>`;
 
+// Schriftfamilien pro Absatz (ab v2.6.0) – im PDF: Helvetica / Times / Courier
+const TXT_FONTS = { sans: '', serif: 'Georgia, "Times New Roman", serif', mono: '"Courier New", Courier, monospace' };
+const fontFamKey = (ff) => /courier|mono/i.test(ff || '') ? 'mono' : (/georgia|times|(^|[^-])serif/i.test(ff || '') ? 'serif' : 'sans');
+// Gesangssymbole im Text (dieselben wie auf PDF/Bild-Blättern), als nicht editierbares Zeichen
+const symGlyph = (k) => { const r = STAMPS.find(x => x[0] === k); return r ? r[1] : '?'; };
+const symSpan = (k) => `<span class="sym${DYN[k] ? ' dyn' : ''}" data-k="${escapeHtml(k)}" contenteditable="false">${escapeHtml(symGlyph(k))}</span>`;
+// Reiner Liedtext eines Absatzes (ohne Akkorde/Symbole) – für Zeitstempel-Abgleich und Vorschau
+function plainLineText(p) {
+  const c = p.cloneNode(true);
+  c.querySelectorAll('.ch,.sym').forEach(x => x.remove());
+  return c.textContent;
+}
+
 // --- Klartext (z. B. aus der Lyrics-Suche oder eingefügt) → Dokument -----------------------
 // Erkennt Abschnittstitel ("[Refrain]", "Strophe 2:", "Bridge"), Akkordzeilen über dem Text
 // (Schreibweise wie auf Akkord-Webseiten) und ChordPro-Akkorde im Text ("[Am]Hallo").
@@ -4595,13 +4794,14 @@ function sanitizeTextDoc(root) {
     if (!TXT_ALLOWED.has(el.tagName)) { el.replaceWith(document.createTextNode(el.textContent || '')); return; }
     [...el.attributes].forEach(a => {
       const n = a.name.toLowerCase();
-      if (n === 'class' || n === 'data-c') return;
-      if (n === 'contenteditable' && el.classList.contains('ch')) return;
+      if (n === 'class' || n === 'data-c' || n === 'data-k') return;
+      if (n === 'contenteditable' && (el.classList.contains('ch') || el.classList.contains('sym'))) return;
       if (n === 'style' && !/url\(|expression|javascript:/i.test(a.value)) return;
       el.removeAttribute(a.name);
     });
   });
   root.querySelectorAll('.ch').forEach(el => { el.textContent = ''; el.setAttribute('contenteditable', 'false'); });
+  root.querySelectorAll('.sym').forEach(el => { el.textContent = symGlyph(el.dataset.k); el.setAttribute('contenteditable', 'false'); el.classList.toggle('dyn', !!DYN[el.dataset.k]); });
   return root;
 }
 function parseLyricsHtml(raw) {
@@ -4620,6 +4820,7 @@ function parseLyricsHtml(raw) {
 // --- Editor-Anbindung --------------------------------------------------------
 const textSheetEl = $('textSheet');
 const txtFontSizeSel = $('txtFontSize'), txtLineHeightSel = $('txtLineHeight'), txtBlockSel = $('txtBlock');
+const txtFontSel = $('txtFont'), txtAlignSel = $('txtAlign');
 const txtBoldBtn = $('txtBold'), txtItalicBtn = $('txtItalic'), txtUnderlineBtn = $('txtUnderline');
 let txtFs = DEFAULT_TXT_FONT_SIZE, txtLh = DEFAULT_TXT_LINE_HEIGHT, textLrc = '';
 let textBaseMd5 = null, textEditVer = 0, lastTxtRange = null;
@@ -4631,7 +4832,7 @@ function applyTxtStyle() {
 }
 function setSelValue(sel, v) {
   const s = String(v);
-  if (![...sel.options].some(o => o.value === s)) sel.append(h('option', { value: s, text: sel === txtFontSizeSel ? 'Schrift: ' + s + ' px' : 'Zeilenabstand: ' + s }));
+  if (![...sel.options].some(o => o.value === s)) sel.append(h('option', { value: s, text: sel === txtFontSizeSel ? 'Grösse ' + s : 'Zeilenabstand ' + s }));
   sel.value = s;
 }
 function loadTextSheet(rawHtmlContent) {
@@ -4639,9 +4840,8 @@ function loadTextSheet(rawHtmlContent) {
   txtFs = parsed.fontSize; txtLh = parsed.lineHeight; textLrc = parsed.lrc;
   textSheetEl.innerHTML = parsed.html;
   applyTxtStyle();
-  setSelValue(txtFontSizeSel, txtFs);
-  setSelValue(txtLineHeightSel, txtLh);
   lastTxtRange = null;
+  reflectParaFormat(null);
 }
 function serializeTextSheet() {
   const c = textSheetEl.cloneNode(true);
@@ -4691,13 +4891,48 @@ function updateTxtButtonStates() {
   } catch (e) {}
   const b = selectedBlocks();
   txtBlockSel.value = b.length ? (['lbl', 'ref', 'bri'].find(c => b[0].classList.contains(c)) || '') : '';
+  reflectParaFormat(b[0] || null);
+}
+// Auswahlfelder zeigen das Format des (ersten) markierten Absatzes bzw. die Grundeinstellung
+function paraFmtOf(p) {
+  const st = (p && p.style) || {};
+  let px = txtFs;
+  if (/em$/.test(st.fontSize || '')) px = Math.round((parseFloat(st.fontSize) || 1) * txtFs);
+  else if (/px$/.test(st.fontSize || '')) px = Math.round(parseFloat(st.fontSize));
+  return { px, lh: parseFloat(st.lineHeight) || txtLh, fam: fontFamKey(st.fontFamily), align: st.textAlign || 'left' };
+}
+function reflectParaFormat(p) {
+  const f = paraFmtOf(p);
+  setSelValue(txtFontSizeSel, f.px); setSelValue(txtLineHeightSel, f.lh);
+  txtFontSel.value = f.fam; txtAlignSel.value = f.align;
 }
 document.addEventListener('selectionchange', updateTxtButtonStates);
 try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
 
 textSheetEl.addEventListener('input', () => { if (ready && sheetKind === 'text') { ensureParagraphs(); queueTextSave(); } });
-txtFontSizeSel.addEventListener('change', () => { if (sheetKind !== 'text') return; txtFs = parseFloat(txtFontSizeSel.value) || DEFAULT_TXT_FONT_SIZE; applyTxtStyle(); queueTextSave(); });
-txtLineHeightSel.addEventListener('change', () => { if (sheetKind !== 'text') return; txtLh = parseFloat(txtLineHeightSel.value) || DEFAULT_TXT_LINE_HEIGHT; applyTxtStyle(); queueTextSave(); });
+// Format pro Absatz (ab v2.6.0): gilt für die markierten Absätze bzw. den Absatz mit dem Cursor;
+// ohne Cursor im Text für alle Absätze. Grösse wird relativ (em) zur Grundgrösse gespeichert, damit
+// die Vergrösserung im Auftrittsmodus weiterhin für alle Zeilen wirkt.
+function applyParaStyle(prop, val) {
+  if (!txtEditable()) return;
+  ensureParagraphs();
+  let blocks = selectedBlocks();
+  if (!blocks.length) { blocks = [...textSheetEl.children]; toast('Für das ganze Blatt übernommen – für einzelne Zeilen zuerst hineintippen oder markieren.', 2600); }
+  blocks.forEach(p => {
+    const v = typeof val === 'function' ? val(p) : val;
+    if (v == null || v === '') p.style.removeProperty(prop); else p.style.setProperty(prop, v);
+    if (!p.getAttribute('style')) p.removeAttribute('style');
+  });
+  if (currentTxtRange()) restoreTxtRange();
+  queueTextSave();
+}
+txtFontSizeSel.addEventListener('change', () => {
+  const px = parseFloat(txtFontSizeSel.value) || txtFs, em = Math.round(px / txtFs * 1000) / 1000;
+  applyParaStyle('font-size', Math.abs(em - 1) < 0.001 ? '' : em + 'em');
+});
+txtLineHeightSel.addEventListener('change', () => { const v = parseFloat(txtLineHeightSel.value); applyParaStyle('line-height', Math.abs(v - txtLh) < 0.001 ? '' : String(v)); });
+txtFontSel.addEventListener('change', () => applyParaStyle('font-family', TXT_FONTS[txtFontSel.value] || ''));
+txtAlignSel.addEventListener('change', () => applyParaStyle('text-align', txtAlignSel.value === 'left' ? '' : txtAlignSel.value));
 function txtCmd(cmd) {
   if (!txtEditable()) return;
   restoreTxtRange();
@@ -4756,6 +4991,30 @@ function transposeAll(k) {
   queueTextSave();
   toast((k > 0 ? 'Einen Halbton höher' : 'Einen Halbton tiefer') + ' – z. B. ' + chords[0].dataset.c, 1500);
 }
+// Gesangssymbole an der Cursorposition einfügen (ab v2.6.0; gleiche Symbole wie auf PDF/Bild-Blättern)
+function insertSymbol(k) {
+  if (!txtEditable()) return;
+  const r = restoreTxtRange();
+  const tmp = document.createElement('div'); tmp.innerHTML = symSpan(k);
+  const span = tmp.firstChild;
+  if (r && textSheetEl.contains(r.commonAncestorContainer)) {
+    r.deleteContents(); r.insertNode(span);
+    r.setStartAfter(span); r.collapse(true);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    lastTxtRange = r.cloneRange();
+  } else {
+    let p = textSheetEl.lastElementChild;
+    if (!p) { p = document.createElement('p'); textSheetEl.append(p); }
+    p.append(span);
+  }
+  queueTextSave();
+}
+(function buildTxtSymBar() {
+  const bar = $('txtSymBar');
+  bar.append(h('span', { class: 'sub', text: 'Symbol an der Cursorposition einfügen:' }));
+  STAMPS.forEach(([k, lbl, title]) => bar.append(h('button', { 'data-k': k, text: lbl, title, onmousedown: (e) => e.preventDefault(), onclick: () => insertSymbol(k) })));
+})();
+$('txtSym').addEventListener('click', () => { const on = $('txtSymBar').classList.toggle('show'); $('txtSym').classList.toggle('on', on); });
 $('txtChord').addEventListener('click', () => insertChord());
 $('txtTrUp').addEventListener('click', () => transposeAll(1));
 $('txtTrDown').addEventListener('click', () => transposeAll(-1));
@@ -4929,11 +5188,11 @@ async function resolveTextConflict(id, how) {
   } catch (e) { syncFail(e); }
 }
 
-// Neues Text-Blatt direkt anlegen (ohne es zu öffnen), z. B. für Konflikt-Kopie oder Umwandlung
-async function createTextSheetFile(songId, name, html, { afterId = null, atIndex = null } = {}) {
-  const file = new File([html], name, { type: TXT_MIME });
+// Neue Datei als Blatt eines Songs anlegen (ohne sie zu öffnen), z. B. Konflikt-Kopie, Umwandlung,
+// exportiertes PDF. afterId: direkt hinter diesem Blatt einsortieren; atIndex: an dieser Stelle.
+async function createSheetFile(songId, file, { afterId = null, atIndex = null } = {}) {
   const created = await uploadOne(file);
-  const f = { id: created.id, name: created.name || name, mimeType: TXT_MIME, modifiedTime: created.modifiedTime, createdTime: created.createdTime, md5Checksum: created.md5Checksum };
+  const f = { id: created.id, name: created.name || file.name, mimeType: created.mimeType || file.type, modifiedTime: created.modifiedTime, createdTime: created.createdTime, md5Checksum: created.md5Checksum };
   if (!files.some(x => x.id === f.id)) files.push(f);
   attachSheet(songId, f.id);
   if (afterId || atIndex != null) sTouch(songId, s => {
@@ -4942,11 +5201,14 @@ async function createTextSheetFile(songId, name, html, { afterId = null, atIndex
     if (i < 0 || i > s.sheets.length) i = s.sheets.length;
     s.sheets.splice(i, 0, f.id);
   });
-  await safe(IDB.put('blobs', f.id, { buf: textBuf(html), mime: TXT_MIME, md5: f.md5Checksum || null, name: f.name, dirty: 0 }));
+  await safe(IDB.put('blobs', f.id, { buf: await file.arrayBuffer(), mime: f.mimeType, md5: f.md5Checksum || null, name: f.name, dirty: 0 }));
   cachedIds.add(f.id);
   safe(IDB.put('kv', 'files', files));
   renderSidebar();
   return f;
+}
+function createTextSheetFile(songId, name, html, opts = {}) {
+  return createSheetFile(songId, new File([html], name, { type: TXT_MIME }), opts);
 }
 
 // --- PDF-Export eines Text-Blatts (Formatierung, Abschnitte, Akkorde: siehe 15_textpdf.js) ---
@@ -4957,11 +5219,31 @@ async function exportTextSheetPdf() {
   try {
     setStatus('Exportiere …', 'saving');
     const bytes = await buildTextSheetPdf(songName, serializeTextSheet());
-    const outName = songName.replace(/[\\/]+/g, '-') + ' – Text.pdf';
     setStatus('');
-    await deliverFile(new File([bytes], outName, { type: 'application/pdf' }));
-    toast('PDF exportiert: ' + outName);
+    exportDialog(bytes, songName.replace(/[\\/]+/g, '-') + ' – Text.pdf', f.name.replace(/\.[^.]+$/, '') + ' (PDF).pdf', f);
   } catch (e) { fail('Export fehlgeschlagen', e); }
+}
+// Nach dem Erzeugen: herunterladen und/oder direkt als weiteres Blatt im Song ablegen (ab v2.6.0)
+function exportDialog(bytes, downloadName, sheetName, srcFile) {
+  const sid = currentSongId && sget(currentSongId) ? currentSongId : null;
+  const buttons = [{ label: 'Abbrechen' }];
+  if (sid) buttons.push({ label: '📄 Als Blatt zum Song hinzufügen', fn: () => { attachExportedPdf(sid, bytes, sheetName, srcFile); } });
+  buttons.push({ label: '⤓ Herunterladen', primary: true, fn: () => { deliverFile(new File([bytes], downloadName, { type: 'application/pdf' })).then(() => toast('PDF exportiert: ' + downloadName)); } });
+  openModal({
+    title: '⤓ PDF exportiert', buttons,
+    body: [h('p', { style: 'margin-top:0;', text: 'Das PDF ist fertig (' + Math.max(1, Math.round(bytes.length / 1024)) + ' KB).' }),
+      sid ? h('p', { class: 'sub', style: 'font-size:12.5px; color:var(--muted);', text: '«Als Blatt hinzufügen» legt es als «' + sheetName + '» direkt hinter dem aktuellen Blatt in «' + sget(sid).n + '» ab (in Drive gespeichert und offline verfügbar).' }) : null]
+  });
+}
+async function attachExportedPdf(sid, bytes, name, srcFile) {
+  if (!(await requireOnline('Als Blatt hinzufügen'))) return;
+  try {
+    setStatus('Speichere Blatt …', 'saving');
+    const nf = await createSheetFile(sid, new File([bytes], name, { type: 'application/pdf' }), { afterId: srcFile ? srcFile.id : null });
+    setStatus('Blatt hinzugefügt', 'ok');
+    renderSheetTabs();
+    toast('Als Blatt «' + nf.name + '» zum Song hinzugefügt');
+  } catch (e) { fail('Blatt konnte nicht hinzugefügt werden', e); }
 }
 // Datei an den Nutzer ausliefern: auf Touch-Geräten über "Teilen", sonst als Download
 async function deliverFile(file) {
@@ -4988,6 +5270,7 @@ function collectTextRuns(node, st, out) {
     if (n.nodeType === 3) { if (n.textContent) out.push({ t: 'x', s: n.textContent, st }); continue; }
     if (n.nodeType !== 1) continue;
     if (n.classList.contains('ch')) { out.push({ t: 'c', c: n.dataset.c || n.getAttribute('data-c') || '' }); continue; }
+    if (n.classList.contains('sym')) { out.push({ t: 's', k: n.dataset.k || n.getAttribute('data-k') || '' }); continue; }
     if (n.tagName === 'BR') { out.push({ t: 'br' }); continue; }
     const s2 = Object.assign({}, st), cs = n.style || {}, tg = n.tagName;
     if (tg === 'B' || tg === 'STRONG' || /bold|[6-9]00/.test(cs.fontWeight || '')) s2.b = true;
@@ -4997,21 +5280,47 @@ function collectTextRuns(node, st, out) {
   }
   return out;
 }
+// Absatzformat (ab v2.6.0 pro Absatz): Grössenfaktor, Zeilenabstand, Schriftfamilie, Ausrichtung
+function paraFormat(n, baseFs, baseLh) {
+  const st = n.style || {};
+  let mult = 1;
+  if (/em$/.test(st.fontSize || '')) mult = parseFloat(st.fontSize) || 1;
+  else if (/px$/.test(st.fontSize || '')) mult = (parseFloat(st.fontSize) || baseFs) / baseFs;
+  return { mult, lh: parseFloat(st.lineHeight) || baseLh, fam: fontFamKey(st.fontFamily), align: st.textAlign || 'left' };
+}
+const SYM_WIDE = { cresc: 1.7, decresc: 1.7, slur: 1.7, caesura: 0.9 };
+const symWidthFactor = (k) => SYM_WIDE[k] || (DYN[k] ? 0.5 + 0.45 * k.length : 1);
 
 async function buildTextSheetPdf(songName, html) {
   const { PDFDocument, StandardFonts, rgb } = await loadPdfLib();
   const parsed = parseLyricsHtml(html);
   const root = document.createElement('div'); root.innerHTML = parsed.html;
   const doc = await PDFDocument.create();
-  const F = {
-    r: await doc.embedFont(StandardFonts.Helvetica), b: await doc.embedFont(StandardFonts.HelveticaBold),
-    i: await doc.embedFont(StandardFonts.HelveticaOblique), bi: await doc.embedFont(StandardFonts.HelveticaBoldOblique)
+  const SF = StandardFonts, fontCache = {};
+  const FAM = {
+    sans: [SF.Helvetica, SF.HelveticaBold, SF.HelveticaOblique, SF.HelveticaBoldOblique],
+    serif: [SF.TimesRoman, SF.TimesRomanBold, SF.TimesRomanItalic, SF.TimesRomanBoldItalic],
+    mono: [SF.Courier, SF.CourierBold, SF.CourierOblique, SF.CourierBoldOblique]
   };
-  const fontOf = (st) => st.b && st.i ? F.bi : st.b ? F.b : st.i ? F.i : F.r;
+  const embed = async (name) => fontCache[name] || (fontCache[name] = await doc.embedFont(name));
+  // alle benötigten Schriften vorab einbetten (Messen/Zeichnen ist danach synchron)
+  const famsUsed = new Set(['sans']);
+  root.querySelectorAll('p,div').forEach(n => famsUsed.add(fontFamKey(n.style && n.style.fontFamily)));
+  for (const f of famsUsed) for (const nm of FAM[f]) await embed(nm);
+  const fontOf = (st, fam) => { const L = FAM[fam || 'sans']; return fontCache[L[st.b && st.i ? 3 : st.b ? 1 : st.i ? 2 : 0]]; };
+  const FB = fontCache[SF.HelveticaBold], FR = fontCache[SF.Helvetica];
+  // Symbole (Atem, Fermate, Dynamik …) wie auf den Blättern gezeichnet, als kleine Bilder
+  const symImg = {};
+  for (const el of root.querySelectorAll('.sym')) {
+    const k = el.dataset.k;
+    if (!k || symImg[k]) continue;
+    const wf = symWidthFactor(k), c = document.createElement('canvas');
+    c.width = Math.round(64 * wf); c.height = 64;
+    drawStamp(c.getContext('2d'), { k, x: c.width / 2, y: 32, z: 40, c: '#8e2c1f' }, 1);
+    symImg[k] = await doc.embedPng(new Uint8Array(await (await canvasBlob(c, 'image/png')).arrayBuffer()));
+  }
   const W = 595.28, H = 841.89, M = 54, MAXW = W - 2 * M;
   const size = clamp(parsed.fontSize * 0.72, 9, 30);
-  const lineGap = size * parsed.lineHeight * 0.8;
-  const chordSize = size * 0.72, chordH = chordSize * 1.2;
   const accent = rgb(0x6b / 255, 0x4f / 255, 0x3b / 255), muted = rgb(0x8a / 255, 0x81 / 255, 0x78 / 255);
   const ink = rgb(0x2a / 255, 0x26 / 255, 0x22 / 255), chordCol = rgb(0x24 / 255, 0x71 / 255, 0xa3 / 255), refBar = rgb(0xc9 / 255, 0xb2 / 255, 0x9b / 255);
   const title = sanitizeForPdf(songName);
@@ -5019,11 +5328,11 @@ async function buildTextSheetPdf(songName, html) {
   // Absätze sammeln (auch lose Textknoten auf oberster Ebene)
   const paras = [];
   root.childNodes.forEach(n => {
-    if (n.nodeType === 3) { if (n.textContent.trim()) paras.push({ cls: '', runs: [{ t: 'x', s: n.textContent, st: {} }] }); return; }
+    if (n.nodeType === 3) { if (n.textContent.trim()) paras.push({ cls: '', fmt: { mult: 1, lh: parsed.lineHeight, fam: 'sans', align: 'left' }, runs: [{ t: 'x', s: n.textContent, st: {} }] }); return; }
     if (n.nodeType !== 1) return;
     const cls = ['lbl', 'ref', 'bri'].find(c => n.classList.contains(c)) || '';
     const base = cls === 'lbl' ? { b: true } : cls === 'bri' ? { i: true } : {};
-    paras.push({ cls, runs: collectTextRuns(n, base, []) });
+    paras.push({ cls, fmt: paraFormat(n, parsed.fontSize, parsed.lineHeight), runs: collectTextRuns(n, base, []) });
   });
 
   let page, y, pageNo = 0;
@@ -5032,34 +5341,37 @@ async function buildTextSheetPdf(songName, html) {
     y = H - M;
     let ts = pageNo === 1 ? 21 : 13;
     const t = pageNo === 1 ? title : title + ' - Fortsetzung';
-    while (ts > 11 && F.b.widthOfTextAtSize(t, ts) > MAXW) ts -= 1;
-    safeDrawText(page, t, { x: M, y: y - ts * 0.8, size: ts, font: F.b, color: accent });
+    while (ts > 11 && FB.widthOfTextAtSize(t, ts) > MAXW) ts -= 1;
+    safeDrawText(page, t, { x: M, y: y - ts * 0.8, size: ts, font: FB, color: accent });
     y -= ts * 1.25;
     page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1.2, color: accent, opacity: 0.45 });
     y -= size * 1.1;
   }
   const need = (hh) => { if (y - hh < M + 24) startPage(); };
-  const tw = (s, st, sz) => { try { return fontOf(st).widthOfTextAtSize(s, sz); } catch (e) { return s.length * sz * 0.5; } };
+  const tw = (s, st, sz, fam) => { try { return fontOf(st, fam).widthOfTextAtSize(s, sz); } catch (e) { return s.length * sz * 0.5; } };
   startPage();
 
   paras.forEach((p, pi) => {
-    const sz = p.cls === 'lbl' ? size * 0.8 : size;
+    const f = p.fmt, fam = f.fam;
+    const sz = clamp(size * f.mult * (p.cls === 'lbl' ? 0.8 : 1), 5, 60);
+    const lineGap = sz * f.lh * 0.8, chordSize = sz * 0.72, chordH = chordSize * 1.2;
     const x0 = M + (p.cls === 'ref' ? 14 : p.cls === 'bri' ? 22 : 0), maxw = W - M - x0;
-    // Tokens: Wörter/Leerräume mit Stil + daran hängende Akkorde
+    // Tokens: Wörter/Leerräume/Symbole mit Stil + daran hängende Akkorde
     const toks = []; let pend = [];
     for (const r of p.runs) {
       if (r.t === 'c') { pend.push(r.c); continue; }
       if (r.t === 'br') { toks.push({ br: true }); continue; }
+      if (r.t === 's') { toks.push({ s: '', sym: r.k, st: {}, sp: false, w: sz * symWidthFactor(r.k) + sz * 0.15, ch: pend }); pend = []; continue; }
       let s = r.s.replace(/[ \t\r\n]+/g, ' ').replace(/ /g, ' ');
       if (p.cls === 'lbl') s = s.toUpperCase();
       s.split(/( +)/).forEach(part => {
         if (!part) return;
         const tx = sanitizeForPdf(part);
-        toks.push({ s: tx, st: r.st, sp: /^ +$/.test(part), w: tw(tx, r.st, sz), ch: pend }); pend = [];
+        toks.push({ s: tx, st: r.st, sp: /^ +$/.test(part), w: tw(tx, r.st, sz, fam), ch: pend }); pend = [];
       });
     }
     if (pend.length) toks.push({ s: '', st: {}, sp: false, w: 0, ch: pend });
-    const hasText = toks.some(t => !t.br && (t.s.trim() || (t.ch && t.ch.length)));
+    const hasText = toks.some(t => !t.br && (t.s.trim() || t.sym || (t.ch && t.ch.length)));
     if (!hasText) { need(lineGap); y -= lineGap; return; }
     if (p.cls === 'lbl' && pi > 0) y -= size * 0.45;
     // Wörter (zusammenhängende Nicht-Leerraum-Tokens) zu Zeilen umbrechen
@@ -5084,15 +5396,19 @@ async function buildTextSheetPdf(songName, html) {
       const top = hasCh ? chordH : 0;
       need(top + lineGap);
       const base = y - top - sz * 0.9;
-      let x = x0, chordEnd = -1e9;
+      const lw = line.reduce((a, u) => a + u.w, 0);
+      let x = x0 + (f.align === 'center' ? Math.max(0, (maxw - lw) / 2) : f.align === 'right' ? Math.max(0, maxw - lw) : 0), chordEnd = -1e9;
       line.forEach(u => u.parts.forEach(t => {
         if (t.ch && t.ch.length) t.ch.forEach(c => {
           const cx = Math.max(x, chordEnd + 3), cs = sanitizeForPdf(c);
-          safeDrawText(page, cs, { x: cx, y: y - chordSize * 0.9, size: chordSize, font: F.b, color: chordCol });
-          chordEnd = cx + tw(cs, { b: true }, chordSize);
+          safeDrawText(page, cs, { x: cx, y: y - chordSize * 0.9, size: chordSize, font: FB, color: chordCol });
+          chordEnd = cx + tw(cs, { b: true }, chordSize, 'sans');
         });
-        if (t.s && !t.sp) {
-          safeDrawText(page, t.s, { x, y: base, size: sz, font: fontOf(t.st), color: p.cls === 'lbl' ? accent : ink });
+        if (t.sym && symImg[t.sym]) {
+          const wf = symWidthFactor(t.sym), ih = sz * 1.15;
+          page.drawImage(symImg[t.sym], { x: x + sz * 0.07, y: base - sz * 0.22, width: ih * wf, height: ih });
+        } else if (t.s && !t.sp) {
+          safeDrawText(page, t.s, { x, y: base, size: sz, font: fontOf(t.st, fam), color: p.cls === 'lbl' ? accent : ink });
           if (t.st.u) page.drawLine({ start: { x, y: base - sz * 0.13 }, end: { x: x + t.w, y: base - sz * 0.13 }, thickness: Math.max(0.6, sz * 0.05), color: ink });
         }
         x += t.w || 0;
@@ -5102,7 +5418,7 @@ async function buildTextSheetPdf(songName, html) {
     });
   });
   const pages = doc.getPages();
-  pages.forEach((pg, i) => safeDrawText(pg, 'Gesangs-App · Seite ' + (i + 1) + '/' + pages.length, { x: M, y: 30, size: 8, font: F.r, color: muted }));
+  pages.forEach((pg, i) => safeDrawText(pg, 'Gesangs-App · Seite ' + (i + 1) + '/' + pages.length, { x: M, y: 30, size: 8, font: FR, color: muted }));
   doc.setTitle(title + ' - Text'); doc.setCreator('Gesangs-App');
   return new Uint8Array(await doc.save());
 }
@@ -5206,7 +5522,7 @@ async function convertPdfSheet(s, f, after) {
 // ---------------------------------------------------------------
 // Auto-Scroll im Auftrittsmodus für Text-Blätter (ab v2.5.0)
 //   ▶ Scroll:  gleichmässig mit einstellbarem Tempo (px/s, pro Blatt gemerkt: lib.files[id].scr)
-//   ♫ Sync:    läuft synchron zur Wiedergabe im Mini-Player (YouTube-Link oder Audio-Datei) mit,
+//   ♫ Sync:    läuft synchron zur Wiedergabe im Mini-Player (YouTube, Spotify ab v2.6.0, Audio-Datei) mit,
 //              anhand der Zeitstempel (LRC, z. B. von LRCLIB) im Text-Blatt; aktuelle Zeile wird
 //              hervorgehoben. Versatz ±0.5 s (pro Blatt gemerkt: lib.files[id].lro), da Karaoke-
 //              Fassungen oft leicht anders getaktet sind als das Original.
@@ -5273,26 +5589,20 @@ function parseLrc(lrc) {
 }
 // Zeitstempel → Absätze über Textabgleich (robust gegen Korrekturen, Abschnittstitel, Akkorde)
 function mapLrcToParagraphs(lrc) {
-  const ps = [...textSheetEl.children].filter(p => !p.classList.contains('lbl') && normLyr(p.textContent));
+  const ps = [...textSheetEl.children].filter(p => !p.classList.contains('lbl') && normLyr(plainLineText(p)));
   const map = [];
   let ptr = 0;
   for (const e of parseLrc(lrc)) {
     const n = normLyr(e.text);
     if (!n) continue;
     for (let j = ptr; j < Math.min(ps.length, ptr + 8); j++) {
-      const pn = normLyr(ps[j].textContent);
+      const pn = normLyr(plainLineText(ps[j]));
       if (pn === n || (n.length > 3 && pn.length > 3 && (pn.includes(n) || n.includes(pn)))) { map.push({ t: e.t, p: ps[j] }); ptr = j + 1; break; }
     }
   }
   return map;
 }
-function mpTime() {
-  try {
-    if (mp.kind === 'audio' && mp.audioEl) return { t: mp.audioEl.currentTime, playing: !mp.audioEl.paused };
-    if (mp.kind === 'link' && mp.ytPlayer && typeof mp.ytPlayer.getCurrentTime === 'function') return { t: mp.ytPlayer.getCurrentTime() || 0, playing: true };
-  } catch (e) {}
-  return null;
-}
+function mpTime() { return mpState(); }      // YouTube, Spotify (iFrame-API) oder Audio-Datei
 function asSyncStep(dt, max) {
   const tm = mpTime();
   if (!tm || !AS.map) return;
@@ -5332,11 +5642,11 @@ function asOfferLrcSearch() {
 }
 function asOfferPlayback() {
   const sid = currentSongId, items = [];
-  songLinks(sid).filter(l => l.type === 'yt').forEach(l => items.push({ label: '▶ YouTube: ' + (l.title || l.url) + (l.kind === 'karaoke' ? ' (Karaoke)' : ''), fn: () => { startMiniPlayerLink(l); asWaitAndSync(); } }));
+  songLinks(sid).forEach(l => items.push({ label: (l.type === 'yt' ? '▶ YouTube: ' : '♫ Spotify: ') + (l.title || l.url) + (l.kind === 'karaoke' ? ' (Karaoke)' : ''), fn: () => { startMiniPlayerLink(l); asWaitAndSync(); } }));
   songAudio(sid).forEach(a => items.push({ label: (a.kind === 'backing' ? '🎵 Backing-Track: ' : '🎤 Aufnahme: ') + a.name, fn: async () => {
     try { playAudioBlobInMiniPlayer(a, await loadAudioBlob(a)); asWaitAndSync(); } catch (e) { toast('Audio konnte nicht geladen werden: ' + e.message); }
   } }));
-  if (!items.length) { toast('Für «Sync» bitte einen YouTube-Link oder Backing-Track/Aufnahme am Song hinterlegen (Spotify liefert keine Abspielzeit).', 4500); return; }
+  if (!items.length) { toast('Für «Sync» bitte eine Verknüpfung (YouTube/Spotify) oder einen Backing-Track/eine Aufnahme am Song hinterlegen.', 4500); return; }
   menuSheet('♫ Was soll mitlaufen?', items);
 }
 function asWaitAndSync() {
