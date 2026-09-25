@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,6 +42,7 @@
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
+  @supports (height:100dvh){ html,body{height:100dvh;} }   /* ab v2.8.1: sichtbare Höhe (Handy: Adressleiste/Tastatur) */
   body{
     margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     background:var(--bg); color:var(--text); display:flex; flex-direction:column; overflow:hidden;
@@ -209,6 +210,7 @@
     #authBtn{padding:6px 10px; font-size:13px;}
     #syncState{font-size:11px; padding:2px 7px;}
     #notesPanel{max-height:22vh;}
+    #canvasWrap{padding-bottom:48px;}
   }
   #sidebarToggle{display:none;}
   @media (max-width: 800px){
@@ -395,6 +397,9 @@
   .pitch-analysis .sub, .warmup .sub, .journal .sub, .metro .sub, .ref-section .sub{font-size:12px; color:var(--muted);}
   .journal .j-h, .pitch-analysis .pa-spots > .sub{font-size:14px; color:var(--text);}
   .task-row.late .sub{color:var(--danger);}
+  .bt-import .bt-f{display:flex; flex-direction:column; gap:3px; margin:10px 0; font-size:13px;}
+  .bt-import .bt-f.row{flex-direction:row; align-items:center; gap:8px;}
+  .bt-import .sub{font-size:12px; color:var(--muted);}
   .jchip{color:var(--accent);} .jchip.late{color:var(--danger); font-weight:600;}
   @media (max-width: 800px){ .mp-bar button{padding:3px 7px; min-width:30px;} #metroChip{left:auto; right:6px; top:58px; bottom:auto;} .pa-row{grid-template-columns:minmax(80px,2fr) 1fr 1fr; } .pa-row span:nth-child(n+4){display:none;} }
 </style>
@@ -628,7 +633,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.8.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1137,6 +1142,18 @@ function mergeLib(a, b) {
           const amp = new Map();
           [...(x.audio || []), ...(y.audio || [])].forEach(a => { if (a && a.id && (!amp.has(a.id) || (a.u || 0) >= (amp.get(a.id).u || 0))) amp.set(a.id, a); });
           out[key][id].audio = [...amp.values()];
+          // Ab v2.8.1: gelöschte Verknüpfungen/Audio-Anhänge als Grabstein (gone: {id: Zeit}), damit ein
+          // anderes Gerät sie beim Zusammenführen nicht wieder hineinmischt; lxk = entfernte Medien
+          // (z. B. 'sp:5PJh…'), die nie wieder automatisch verlinkt werden.
+          const gone = Object.assign({}, x.gone || {});
+          Object.entries(y.gone || {}).forEach(([k, t]) => { gone[k] = Math.max(gone[k] || 0, t); });
+          const lxk = [...new Set([...(x.lxk || []), ...(y.lxk || [])])];
+          if (Object.keys(gone).length) {
+            out[key][id].gone = gone;
+            out[key][id].links = out[key][id].links.filter(l => !(gone[l.id] >= (l.u || 0)));
+            out[key][id].audio = out[key][id].audio.filter(a => !(gone[a.id] >= (a.u || 0)));
+          }
+          if (lxk.length) { out[key][id].lxk = lxk; out[key][id].links = out[key][id].links.filter(l => !(l.auto && lxk.includes(l.type + ':' + l.mediaId))); }
           // Übungsjournal (ab v2.8.0): Aufgaben und Einträge ebenfalls nach id vereinigt, gelöschte als {id,x:1,u}
           for (const k of ['tasks', 'log']) {
             if (!x[k] && !y[k]) continue;
@@ -1195,14 +1212,24 @@ function attachSheet(songId, fileId, { toFront = false } = {}) {
   libChanged();
 }
 function songLinks(id) { const s = lib.songs[id]; return (s && s.links) || []; }
+const linkKey = (l) => l.type + ':' + l.mediaId;
 function addLink(songId, link) {
+  const s0 = lib.songs[songId];
+  if (link.auto && s0 && (s0.lxk || []).includes(linkKey(link))) return false;     // früher entfernt → nie wieder automatisch
   sTouch(songId, s => {
     s.links = s.links || [];
+    if (!link.auto && s.lxk) s.lxk = s.lxk.filter(k => k !== linkKey(link));      // bewusst von Hand wieder hinzugefügt
     if (!s.links.some(l => l.url === link.url)) s.links.push(Object.assign({ id: uid('lk'), u: Date.now() }, link));
   });
+  return true;
 }
 function removeLink(songId, linkId) {
-  sTouch(songId, s => { s.links = (s.links || []).filter(l => l.id !== linkId); });
+  sTouch(songId, s => {
+    const l = (s.links || []).find(x => x.id === linkId);
+    s.links = (s.links || []).filter(x => x.id !== linkId);
+    s.gone = s.gone || {}; s.gone[linkId] = Date.now();
+    if (l && l.mediaId) s.lxk = [...new Set([...(s.lxk || []), linkKey(l)])];
+  });
 }
 
 // --- Aufnahmen (eigene Takes) + Backing-Track: beide als Audio-Anhänge eines Songs.
@@ -1219,7 +1246,7 @@ function addAudio(songId, item) {
   });
 }
 function removeAudioMeta(songId, id) {
-  sTouch(songId, s => { s.audio = (s.audio || []).filter(x => x.id !== id); });
+  sTouch(songId, s => { s.audio = (s.audio || []).filter(x => x.id !== id); s.gone = s.gone || {}; s.gone[id] = Date.now(); });
 }
 function detachSheet(songId, fileId) {
   const s = lib.songs[songId]; if (!s) return;
@@ -1264,6 +1291,7 @@ function migrateSongs() {
     const mapped = s.it.map(x => lib.songs[x] ? x : (songForFile(x) || ('sg_' + x)));
     if (mapped.some((x, i) => x !== s.it[i])) { s.it = mapped; s.u = Date.now(); changed = true; }
   }
+  if (cleanAllLinks()) changed = true;          // ab v2.8.1: unpassende automatische Verknüpfungen entfernen
   if (changed) libChanged();
 }
 
@@ -2361,11 +2389,26 @@ notesArea.addEventListener('input', () => {
   else annotData.pageNotes[String(currentPage)] = notesArea.value;
   queueSave();
 });
+function applyNotesCollapsed(c) {
+  notesArea.style.display = c ? 'none' : 'block';
+  $('notesArrow').textContent = c ? '▸' : '▾';
+}
 $('notesArrow').addEventListener('click', () => {
-  const collapsed = notesArea.style.display === 'none';
-  notesArea.style.display = collapsed ? 'block' : 'none';
-  $('notesArrow').textContent = collapsed ? '▾' : '▸';
+  const c = notesArea.style.display !== 'none';
+  applyNotesCollapsed(c); lsSet('gapp_notesmin', c ? '1' : '0');       // ab v2.8.1 pro Gerät gemerkt
 });
+applyNotesCollapsed(lsGet('gapp_notesmin') === '1');
+// Handy (ab v2.8.1): Nach dem Tippen in die Notizen schiebt der Browser beim Einblenden der Tastatur
+// die ganze Seite nach oben und lässt sie dort stehen – dann lagen die Notizen über dem Blatt und
+// man konnte nicht mehr bis ganz nach unten scrollen. Seite nach dem Schliessen der Tastatur wieder
+// an ihren Platz setzen (zusätzlich zu 100dvh / interactive-widget=resizes-content im Kopf).
+function resetPageShift() {
+  if (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop) {
+    window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0;
+  }
+}
+notesArea.addEventListener('blur', () => setTimeout(resetPageShift, 250));
+if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (document.activeElement !== notesArea) setTimeout(resetPageShift, 100); });
 
 // ---------------------------------------------------------------
 // Umbenennen / Löschen
@@ -4078,6 +4121,10 @@ function parseMediaUrl(raw) {
   if ((m = s.match(/open\.spotify\.com\/(?:intl-\w+\/)?track\/([A-Za-z0-9]+)/))) {
     return { type: 'sp', mediaId: m[1], url: 'https://open.spotify.com/track/' + m[1] };
   }
+  if ((m = s.match(/^(?:https?:\/\/)?(?:www\.)?x-minus\.pro(\/[^\s#]*)?/i))) {           // ab v2.8.1: x-minus.pro-Seite
+    const path = (m[1] || '/').replace(/\/+$/, '') || '/';
+    return { type: 'xm', mediaId: path, url: 'https://x-minus.pro' + path };
+  }
   return null;
 }
 
@@ -4152,9 +4199,10 @@ async function suggestLinksFor(name) {
   return out;
 }
 
-const linkIcon = (l) => l.type === 'yt' ? '▶' : '♫';
-const linkSourceLabel = (l) => l.type === 'yt' ? 'YouTube' : 'Spotify';
-const linkGroup = (l) => l.kind === 'karaoke' ? 'karaoke' : 'orig';           // 'manual' (Altbestand) fällt unter Original
+const linkIcon = (l) => l.type === 'yt' ? '▶' : l.type === 'xm' ? '🎚' : '♫';
+const linkSourceLabel = (l) => l.type === 'yt' ? 'YouTube' : l.type === 'xm' ? 'x-minus.pro' : 'Spotify';
+const linkGroup = (l) => l.type === 'xm' ? 'xm' : l.kind === 'karaoke' ? 'karaoke' : 'orig';   // 'manual' (Altbestand) fällt unter Original
+const playableLink = (l) => l.type === 'yt' || l.type === 'sp';
 const linkKindLabel = (l) => linkGroup(l) === 'karaoke' ? 'Karaoke' : 'Original';
 
 // --- Groben Bezug zum Songnamen prüfen, bevor ein Suchtreffer automatisch übernommen wird
@@ -4165,12 +4213,35 @@ function normWords(s) {
   return (s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ')
     .split(' ').filter(w => w.length > 2 && !LINK_STOPWORDS.has(w));
 }
+// Ab v2.8.1 strenger: Bei «Interpret - Titel» muss der TITEL passen (mind. die Hälfte seiner Wörter
+// im Treffer), ein anderer Song desselben Interpreten oder etwas völlig anderes reicht nicht.
 function looksRelevant(songName, resultTitle) {
+  const t = ' ' + normWords(resultTitle).join(' ') + ' ';
+  const ratio = (words) => words.filter(w => t.includes(' ' + w + ' ')).length / words.length;
+  const { artist, title } = splitArtistTitle(songName);
+  const tw = normWords(title);
+  if (artist && tw.length) return ratio(tw) >= 0.5;
   const words = normWords(songName);
   if (!words.length) return true;
-  const t = ' ' + normWords(resultTitle).join(' ') + ' ';
-  const hits = words.filter(w => t.includes(' ' + w + ' ')).length;
-  return hits / words.length >= 0.5;
+  return ratio(words) >= 0.5;
+}
+// Automatisch übernommene Verknüpfungen, die nicht zum Song passen, entfernen (auch Altbestand und
+// was ein anderes Gerät noch mitbringt). Von Hand eingefügte Links bleiben unangetastet.
+// Läuft beim Laden/Synchronisieren (migrateSongs) und beim Öffnen der Verknüpfungen.
+function cleanAllLinks() {
+  let changed = false;
+  for (const s of Object.values(lib.songs)) {
+    if (s.d || !s.links || !s.links.length) continue;
+    const bad = s.links.filter(l => l.auto && playableLink(l) && !looksRelevant(s.n, l.title));
+    if (!bad.length) continue;
+    const now = Date.now();
+    s.gone = s.gone || {};
+    bad.forEach(l => { s.gone[l.id] = now; });
+    s.lxk = [...new Set([...(s.lxk || []), ...bad.map(linkKey)])];
+    s.links = s.links.filter(l => !bad.includes(l));
+    s.u = now; changed = true;
+  }
+  return changed;
 }
 
 // --- Doppelte/übermässige Verknüpfungen aufräumen (z. B. nach einer Race Condition, bei der
@@ -4205,10 +4276,10 @@ function manageLinks(s) {
   function linkRow(l) {
     return h('div', { class: 'pick-row' + (isLoaded(l) ? ' playing' : '') },
       h('span', { class: 'type-icon', text: linkIcon(l) }),
-      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playLinkInMiniPlayer(l) },
+      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => (playableLink(l) ? playLinkInMiniPlayer(l) : window.open(l.url, '_blank', 'noopener')) },
         h('div', { class: 'name', text: l.title || l.url }),
         h('div', { class: 'sub' }, h('span', { text: linkSourceLabel(l) }), h('span', { class: 'mp-time', 'data-mpid': l.id, text: isLoaded(l) ? mpTimeLabel() : '' }))),
-      h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }),
+      playableLink(l) ? h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }) : null,
       isLoaded(l) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
       h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); window.open(l.url, '_blank', 'noopener'); } }),
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } }));
@@ -4226,9 +4297,10 @@ function manageLinks(s) {
     const links = songLinks(s.id);
     body.append(section('🎤 Original (mit Gesang)', links.filter(l => linkGroup(l) === 'orig')));
     body.append(section('🎧 Karaoke / Playback', links.filter(l => linkGroup(l) === 'karaoke')));
+    body.append(xmSection(s, links.filter(l => linkGroup(l) === 'xm'), linkRow, draw));
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => searchSuggestions() },
       h('span', { text: '🔍' }), h('span', { text: 'Vorschläge suchen (YouTube/Spotify) …' })));
-    const manualInput = h('input', { type: 'text', placeholder: 'YouTube- oder Spotify-Link einfügen …', style: 'width:100%; margin-top:8px;' });
+    const manualInput = h('input', { type: 'text', placeholder: 'YouTube-, Spotify- oder x-minus.pro-Link einfügen …', style: 'width:100%; margin-top:8px;' });
     const kindOrig = h('button', { class: manualKind === 'orig' ? 'on' : '', text: '🎤 Original', onclick: () => { manualKind = 'orig'; kindOrig.classList.add('on'); kindKaraoke.classList.remove('on'); } });
     const kindKaraoke = h('button', { class: manualKind === 'karaoke' ? 'on' : '', text: '🎧 Karaoke', onclick: () => { manualKind = 'karaoke'; kindKaraoke.classList.add('on'); kindOrig.classList.remove('on'); } });
     body.append(h('div', { style: 'padding:9px 6px;' }, manualInput,
@@ -4242,9 +4314,9 @@ function manageLinks(s) {
 
   function addManual(raw) {
     const p = parseMediaUrl(raw);
-    if (!p) { toast('Das sieht nicht nach einem YouTube- oder Spotify-Link aus.'); return; }
-    const title = (prompt('Titel (optional):', '') || '').trim();
-    addLink(s.id, Object.assign(p, { kind: manualKind, title: title || (p.type === 'yt' ? 'YouTube-Link' : 'Spotify-Link') }));
+    if (!p) { toast('Das sieht nicht nach einem YouTube-, Spotify- oder x-minus.pro-Link aus.'); return; }
+    const title = (prompt('Titel (optional):', p.type === 'xm' ? s.n : '') || '').trim();
+    addLink(s.id, Object.assign(p, { kind: p.type === 'xm' ? 'karaoke' : manualKind, title: title || (p.type === 'yt' ? 'YouTube-Link' : p.type === 'xm' ? s.n : 'Spotify-Link') }));
     draw();
   }
 
@@ -4254,10 +4326,11 @@ function manageLinks(s) {
     let res;
     try { res = await suggestLinksFor(s.n); } catch (e) { draw(); toast('Suche fehlgeschlagen: ' + e.message); return; }
     draw();
-    const good = res.filter(x => !x.error), errs = res.filter(x => x.error);
+    const all = res.filter(x => !x.error), errs = res.filter(x => x.error);
+    const good = all.filter(x => looksRelevant(s.n, x.title)), hidden = all.length - good.length;   // ab v2.8.1: unpassende nie anbieten
     if (errs.length) toast(errs[0].error);
-    if (!good.length) { if (!errs.length) toast('Keine Vorschläge gefunden.'); return; }
-    const sec = h('div', { class: 'link-suggestions' }, h('div', { class: 'sub', style: 'padding:6px;', text: 'Vorschläge – zum Hinzufügen antippen:' }));
+    if (!good.length) { if (!errs.length) toast(hidden ? 'Keine passenden Vorschläge gefunden (' + hidden + ' unpassende ausgeblendet).' : 'Keine Vorschläge gefunden.', 3500); return; }
+    const sec = h('div', { class: 'link-suggestions' }, h('div', { class: 'sub', style: 'padding:6px;', text: 'Vorschläge – zum Hinzufügen antippen:' + (hidden ? ' (' + hidden + ' unpassende ausgeblendet)' : '') }));
     good.forEach(sg => sec.append(h('div', { class: 'pick-row', onclick: () => { addLink(s.id, { type: sg.type, mediaId: sg.mediaId, url: sg.url, title: sg.title, kind: sg.kind, auto: 1 }); draw(); } },
       h('span', { class: 'type-icon', text: linkIcon(sg) }),
       h('div', { class: 'mid' }, h('div', { class: 'name', text: sg.title }), h('div', { class: 'sub', text: linkSourceLabel(sg) + ' · ' + linkKindLabel(sg) })),
@@ -4290,6 +4363,7 @@ function manageLinks(s) {
   }
 
   dedupeLinksInPlace(s);
+  if (cleanAllLinks()) libChanged();
   draw();
   const api = openModal({ title: 'Verknüpfungen von «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
   api.onClose = () => mp.listeners.delete(draw);   // Wiedergabe im Mini-Player läuft nach dem Schliessen weiter
@@ -4603,6 +4677,7 @@ function manageAudio(s) {
   function audioRow(item) {
     const st = item.st;
     const info = new Date(item.u0 || item.u).toLocaleString('de-DE') + (cachedIds.has(item.id) ? ' · offline verfügbar' : '') +
+      (item.kind === 'backing' && item.kt ? ' · Tonart ' + (item.kt > 0 ? '+' : '') + item.kt : '') +
       (item.kind === 'take' && st ? ' · Treffsicherheit ' + st.acc + ' %' + (st.ra != null ? ' (Melodie ' + st.ra + ' %)' : '') : '');
     return h('div', { class: 'pick-row' + (isLoaded(item) ? ' playing' : '') },
       h('span', { class: 'type-icon', text: item.kind === 'backing' ? '🎵' : '🎤' }),
@@ -4631,9 +4706,12 @@ function manageAudio(s) {
     if (!backing.length) body.append(h('div', { class: 'empty-note', text: 'Kein Backing-Track hinterlegt.' }));
     else backing.forEach(b => body.append(audioRow(b)));
     const inp = h('input', { type: 'file', accept: 'audio/*', style: 'display:none;' });
-    inp.addEventListener('change', () => { if (inp.files[0]) uploadBacking(inp.files[0]); inp.value = ''; });
+    // ab v2.8.1 über den Import-Dialog: einheitlicher Name «Interpret_Titel[_±n]», optional Kopie im Ordner
+    inp.addEventListener('change', () => { const f = inp.files[0]; inp.value = ''; if (f) importBackingDialog(s.id, f, draw); });
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() },
-      h('span', { text: '＋' }), h('span', { text: 'Backing-Track hinzufügen …' }), inp));
+      h('span', { text: '＋' }), h('span', { text: 'Backing-Track hinzufügen (Datei, z. B. von x-minus.pro) …' }), inp));
+    body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => xmOpenSearch(s.id) },
+      h('span', { text: '🔎' }), h('span', { text: 'Auf x-minus.pro suchen (Karaoke in allen Tonarten) …' })));
 
     body.append(refSection(s.id, draw));
   }
@@ -4651,17 +4729,6 @@ function manageAudio(s) {
     if (isLoaded(item)) stopMiniPlayer();
     draw();
   }
-  async function uploadBacking(file) {
-    if (!(await requireOnline('Backing-Track hochladen'))) return;
-    setStatus('Backing-Track wird hochgeladen …', 'saving');
-    try {
-      const created = await uploadOne(file);
-      addAudio(s.id, { id: created.id, name: file.name.replace(/\.[^.]+$/, ''), kind: 'backing' });
-      await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType || file.type }, file);
-      setStatus('Backing-Track gespeichert', 'ok'); draw();
-    } catch (e) { fail('Backing-Track: Hochladen fehlgeschlagen', e); }
-  }
-
   draw();
   mp.listeners.add(draw);
   const api = openModal({ title: '🎙 Aufnahmen & Backing-Tracks – «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
@@ -5886,7 +5953,7 @@ function asOfferLrcSearch() {
 }
 function asOfferPlayback() {
   const sid = currentSongId, items = [];
-  songLinks(sid).forEach(l => items.push({ label: (l.type === 'yt' ? '▶ YouTube: ' : '♫ Spotify: ') + (l.title || l.url) + (l.kind === 'karaoke' ? ' (Karaoke)' : ''), fn: () => { startMiniPlayerLink(l); asWaitAndSync(); } }));
+  songLinks(sid).filter(playableLink).forEach(l => items.push({ label: (l.type === 'yt' ? '▶ YouTube: ' : '♫ Spotify: ') + (l.title || l.url) + (l.kind === 'karaoke' ? ' (Karaoke)' : ''), fn: () => { startMiniPlayerLink(l); asWaitAndSync(); } }));
   songAudio(sid).filter(a => a.kind !== 'ref').forEach(a => items.push({ label: (a.kind === 'backing' ? '🎵 Backing-Track: ' : '🎤 Aufnahme: ') + a.name, fn: async () => {
     try { playAudioBlobInMiniPlayer(a, await loadAudioBlob(a)); asWaitAndSync(); } catch (e) { toast('Audio konnte nicht geladen werden: ' + e.message); }
   } }));
@@ -5976,7 +6043,7 @@ async function songInfoText(songId, withNotes) {
   const links = songLinks(songId);
   if (links.length) {
     out.push('Verknüpfungen:');
-    links.forEach(l => out.push('- ' + (l.type === 'yt' ? 'YouTube' : 'Spotify') + (l.kind ? ' (' + (LINK_KIND[l.kind] || l.kind) + ')' : '') + ': ' + (l.title ? l.title + ' – ' : '') + l.url));
+    links.forEach(l => out.push('- ' + linkSourceLabel(l) + (l.kind ? ' (' + (LINK_KIND[l.kind] || l.kind) + ')' : '') + ': ' + (l.title ? l.title + ' – ' : '') + l.url));
     out.push('');
   }
   if (withNotes) {
@@ -7026,7 +7093,7 @@ async function removeRef(songId, silent) {
   stopRefPlayback();
   await trashAudio(item);
   refCache.delete(item.id);
-  sTouch(songId, x => { x.audio = (x.audio || []).filter(a => a.id !== item.id); delete x.ref; });
+  sTouch(songId, x => { x.audio = (x.audio || []).filter(a => a.id !== item.id); x.gone = x.gone || {}; x.gone[item.id] = Date.now(); delete x.ref; });
 }
 
 
@@ -7584,6 +7651,152 @@ function restoreDialog() {
     });
   });
   inp.click();
+}
+
+
+// ---------------------------------------------------------------
+// x-minus.pro + Backing-Track-Import (ab v2.8.1)
+// x-minus.pro hat keine öffentliche Schnittstelle: Die App öffnet die Suche dort (Songname wird
+// zusätzlich in die Zwischenablage kopiert), du lädst den Track – auf Wunsch schon in der passenden
+// Tonart – herunter und importierst ihn hier. Beim Import:
+//   • einheitlicher Dateiname «Interpret_Titel» bzw. «Interpret_Titel_-2» (Transposition in Halbtönen,
+//     aus dem Dateinamen erkannt, falls dort angegeben – sonst im Dialog wählbar),
+//   • Ablage in Google Drive (wie bisher, für alle Geräte) und als Backing-Track am Song,
+//   • am PC (Chrome/Edge) zusätzlich eine Kopie in einem gewählten Ordner, z. B. OneDrive\…\Backing-Tracks
+//     (File System Access API; der Ordner wird einmal gewählt und gemerkt).
+// ---------------------------------------------------------------
+const XM_SEARCH = 'https://x-minus.pro/search?q=';
+
+function safeName(s) { return String(s || '').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim(); }
+// Standard-Dateiname (ohne Endung): «Interpret_Titel» (+ «_-2»/«_+3» bei Transposition)
+function stdTrackName(songName, semi) {
+  const { artist, title } = splitArtistTitle(songName);
+  const base = artist ? safeName(artist) + '_' + safeName(title) : safeName(title || songName);
+  return base + (semi ? '_' + (semi > 0 ? '+' : '') + semi : '');
+}
+// Transposition aus einem Dateinamen lesen (z. B. «… (-2).mp3», «… key -2», «… tone +1», «…_-3.mp3», «… -2 st»)
+function detectSemitones(fileName) {
+  const n = String(fileName || '').replace(/\.[a-z0-9]{2,5}$/i, '').replace(/−/g, '-');
+  const pats = [
+    /(?:key|tone|tonart|pitch|transp\w*|тон\w*|semitones?)\s*[:=]?\s*([+-]\s?\d{1,2})\b/i,
+    /([+-]\d{1,2})\s*(?:st|ht|semitones?|halbt\w*|тон\w*)\b/i,
+    /[([]\s*([+-]\d{1,2})\s*[)\]]/,
+    /[_\s]([+-]\d{1,2})$/
+  ];
+  for (const p of pats) {
+    const m = n.match(p);
+    if (m) { const v = parseInt(m[1].replace(/\s/g, ''), 10); if (v && Math.abs(v) <= 12) return v; }
+  }
+  return 0;
+}
+function xmOpenSearch(songId) {
+  const s = sget(songId); if (!s) return;
+  const q = s.n.replace(/\s*[-–—]\s*/, ' ');
+  try { navigator.clipboard && navigator.clipboard.writeText(q).catch(() => {}); } catch (e) {}
+  window.open(XM_SEARCH + encodeURIComponent(q), '_blank', 'noopener');
+  toast('x-minus.pro geöffnet – «' + q + '» ist in der Zwischenablage (falls die Suche leer ist: einfügen).', 4500);
+}
+
+// --- Ablageordner (am PC) ---------------------------------------------------------------
+const fsaSupported = () => typeof window.showDirectoryPicker === 'function';
+async function btDir() { const d = await safe(IDB.get('kv', 'btDir')); return d || null; }
+async function btDirPermission(dir, ask) {
+  if (!dir || !dir.queryPermission) return false;
+  try {
+    if ((await dir.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+    return ask ? (await dir.requestPermission({ mode: 'readwrite' })) === 'granted' : false;
+  } catch (e) { return false; }
+}
+async function btChooseDir() {
+  try {
+    const dir = await window.showDirectoryPicker({ id: 'gapp-backing', mode: 'readwrite', startIn: 'music' });
+    await safe(IDB.put('kv', 'btDir', dir));
+    return dir;
+  } catch (e) { return null; }       // abgebrochen
+}
+async function btWriteCopy(dir, fileName, blob) {
+  const fh = await dir.getFileHandle(fileName, { create: true });
+  const w = await fh.createWritable();
+  await w.write(blob); await w.close();
+}
+const audioExtOf = (file) => { const m = /\.([a-z0-9]{2,5})$/i.exec(file.name || ''); return m ? '.' + m[1].toLowerCase() : audioExt(file.type || ''); };
+
+// --- Import-Dialog -----------------------------------------------------------------------
+// Wird mit einer bereits gewählten Datei aufgerufen (Dateiauswahl braucht einen direkten Klick).
+async function importBackingDialog(songId, file, onDone) {
+  const s = sget(songId); if (!s || !file) return;
+  const ext = audioExtOf(file);
+  const semiSel = h('select', { title: 'Tonart des Tracks gegenüber dem Original (Halbtöne)' });
+  for (let i = -12; i <= 12; i++) semiSel.append(h('option', { value: String(i), text: i ? (i > 0 ? '+' : '') + i + ' Halbtöne' : 'Originaltonart' }));
+  const det = detectSemitones(file.name);
+  semiSel.value = String(det);
+  const nameIn = h('input', { type: 'text', style: 'width:100%;', value: stdTrackName(s.n, det) });
+  let touched = false;
+  nameIn.addEventListener('input', () => { touched = true; });
+  semiSel.addEventListener('change', () => { if (!touched) nameIn.value = stdTrackName(s.n, parseInt(semiSel.value, 10)); });
+  let dir = fsaSupported() ? await btDir() : null;
+  const cb = h('input', { type: 'checkbox', checked: fsaSupported() || null, disabled: fsaSupported() ? null : true });
+  const dirLbl = h('span', { class: 'sub' });
+  const chooseBtn = h('button', { text: '📁 Ordner wählen …', onclick: async () => { const d = await btChooseDir(); if (d) { dir = d; cb.checked = true; showDir(); } } });
+  function showDir() {
+    if (!fsaSupported()) { dirLbl.textContent = 'Auf diesem Gerät nur Google Drive (Ordner-Ablage geht am PC mit Chrome/Edge).'; chooseBtn.style.display = 'none'; return; }
+    dirLbl.textContent = dir ? 'Ordner: ' + dir.name : 'Noch kein Ordner gewählt (z. B. OneDrive › Musik › Gesangs-App › Backing-Tracks).';
+    chooseBtn.textContent = dir ? '📁 Ändern …' : '📁 Ordner wählen …';
+  }
+  showDir();
+  const body = h('div', { class: 'bt-import' },
+    h('div', { class: 'sub', text: 'Datei: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)' + (det ? ' · Transposition ' + (det > 0 ? '+' : '') + det + ' aus dem Dateinamen erkannt' : '') }),
+    h('label', { class: 'bt-f' }, h('span', { text: 'Tonart' }), semiSel),
+    h('label', { class: 'bt-f' }, h('span', { text: 'Name (ohne Endung «' + ext + '»)' }), nameIn),
+    h('label', { class: 'bt-f row' }, cb, h('span', { text: 'Kopie im Backing-Track-Ordner ablegen' })),
+    h('div', { style: 'display:flex; gap:8px; align-items:center; flex-wrap:wrap;' }, dirLbl, chooseBtn));
+  openModal({
+    title: '🎵 Backing-Track importieren – «' + s.n + '»', body, wide: true,
+    buttons: [{ label: 'Abbrechen' }, { label: 'Importieren', primary: true, fn: () => {
+      const name = safeName(nameIn.value) || stdTrackName(s.n, 0), semi = parseInt(semiSel.value, 10) || 0;
+      // Ordner-Berechtigung muss direkt im Klick angefragt werden (danach folgt der Upload)
+      const wantCopy = cb.checked && fsaSupported();
+      const perm = wantCopy ? (dir ? btDirPermission(dir, true) : btChooseDir().then(d => { dir = d; return !!d; })) : Promise.resolve(false);
+      perm.then(ok => runBackingImport(songId, file, { name, semi, ext, dir: wantCopy && ok ? dir : null })).then(r => { if (onDone) onDone(r); });
+    } }]
+  });
+}
+async function runBackingImport(songId, file, { name, semi = 0, ext, dir = null }) {
+  if (!(await requireOnline('Backing-Track importieren'))) return null;
+  ext = ext || audioExtOf(file);
+  const fname = name + ext, typed = new File([file], fname, { type: file.type || 'audio/mpeg' });
+  setStatus('Backing-Track wird hochgeladen …', 'saving');
+  let created;
+  try {
+    created = await uploadOne(typed);
+    const item = { id: created.id, name, kind: 'backing' };
+    if (semi) item.kt = semi;
+    addAudio(songId, item);
+    await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType || typed.type }, typed);
+  } catch (e) { fail('Backing-Track: Hochladen fehlgeschlagen', e); return null; }
+  let copied = false;
+  if (dir) {
+    try { await btWriteCopy(dir, fname, typed); copied = true; }
+    catch (e) { toast('Kopie im Ordner nicht möglich: ' + e.message, 4000); }
+  }
+  setStatus('Backing-Track gespeichert', 'ok');
+  toast('«' + fname + '» importiert' + (copied ? ' und im Ordner «' + dir.name + '» abgelegt' : ''), 3500);
+  return { id: created.id, fname, copied };
+}
+
+// --- Abschnitt «x-minus.pro» in den Verknüpfungen ---------------------------------------------
+function xmSection(s, list, linkRow, redraw) {
+  const wrap = h('div');
+  wrap.append(h('div', { class: 'sub', style: 'padding:8px 6px 2px; font-weight:600;', text: '🎚 x-minus.pro (Karaoke in allen Tonarten)' }));
+  list.forEach(l => wrap.append(linkRow(l)));
+  wrap.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => xmOpenSearch(s.id) },
+    h('span', { text: '🔎' }), h('span', { text: 'Auf x-minus.pro suchen …' })));
+  const inp = h('input', { type: 'file', accept: 'audio/*', style: 'display:none;' });
+  inp.addEventListener('change', () => { const f = inp.files[0]; inp.value = ''; if (f) importBackingDialog(s.id, f, redraw); });
+  wrap.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() },
+    h('span', { text: '⇩' }), h('span', { text: 'Heruntergeladenen Track als Backing-Track importieren …' }), inp));
+  if (!list.length) wrap.append(h('div', { class: 'empty-note', text: 'Tipp: Die Seite des Tracks bei x-minus.pro kannst du unten als Link einfügen – dann öffnet sie sich hier direkt.' }));
+  return wrap;
 }
 
 </script>

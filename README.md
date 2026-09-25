@@ -21,6 +21,28 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.8.1 – x-minus.pro-Anbindung, Backing-Track-Import mit Standardnamen, unpassende Verknüpfungen, Notizen auf dem Handy (25.09.2026)
+
+- **x-minus.pro** (Karaoke-Tracks in allen Tonarten): In «🔗 Verknüpfungen» gibt es einen eigenen Bereich «🎚 x-minus.pro».
+  - «Auf x-minus.pro suchen» öffnet die Suche mit Interpret und Titel. Der Suchbegriff liegt zusätzlich in der Zwischenablage, falls das Suchfeld dort leer bleibt.
+  - Die Seite eines Tracks kannst du als Link einfügen; Antippen öffnet sie direkt.
+  - Eine direkte Steuerung (Tonart/Tempo dort umrechnen, automatisch herunterladen) ist nicht möglich, weil x-minus.pro keine Schnittstelle anbietet.
+- **Backing-Track importieren** (aus den Verknüpfungen oder unter «🎙 Aufnahmen & Backing-Tracks» → «＋ Backing-Track hinzufügen»):
+  - Einheitlicher Dateiname **«Interpret_Titel»**, bei transponierten Tracks mit Halbtönen, z. B. **«Whiskey Myers_Stone_-2»**.
+  - Die Transposition wird aus dem Dateinamen erkannt, wenn sie dort steht (z. B. «(-2)», «key -2», «_-2», «-2 st»). Sonst wählst du sie im Dialog. Der Name bleibt anpassbar.
+  - Der Track wird in Google Drive abgelegt (für alle Geräte), als Backing-Track am Song gespeichert und zeigt die Tonart in der Liste an.
+  - **Am PC (Chrome/Edge)** wird zusätzlich eine Kopie in einen gewählten Ordner geschrieben, vorgesehen ist `OneDrive\Musik\Gesangs-App\Backing-Tracks`. Den Ordner wählst du einmal, die App merkt ihn sich. Auf dem Handy wird nur in Drive abgelegt (der Browser erlaubt dort keinen Ordnerzugriff).
+- **Unpassende Verknüpfungen werden nie mehr verlinkt:**
+  - Automatisch gefundene Treffer müssen jetzt zum **Titel** des Songs passen (bei «Interpret - Titel»), der Interpret allein reicht nicht.
+  - Unpassende automatische Links (z. B. «The Next Rap God – Dax» bei «Black Label Society - Name In Blood») werden beim Laden entfernt und für diesen Song gesperrt.
+  - Unpassende Treffer erscheinen auch bei «Vorschläge suchen» nicht mehr.
+  - **Ursache des Wiederauftauchens behoben:** Entfernte Verknüpfungen (und entfernte Aufnahmen/Backing-Tracks) wurden bisher beim Abgleich mit einem anderen Gerät, das den alten Stand noch hatte, wieder hineingemischt. Sie werden jetzt als gelöscht vermerkt und kommen nicht mehr zurück. Von Hand kannst du einen Link jederzeit wieder hinzufügen.
+- **Handy: Notizen und PDF:**
+  - Die App nutzt jetzt die tatsächlich sichtbare Bildschirmhöhe (inkl. Adressleiste).
+  - Die Tastatur verkleinert beim Tippen in den Notizen den Inhalt, statt die Seite nach oben zu schieben.
+  - Eine nach dem Tippen stehengebliebene Verschiebung wird zurückgesetzt. Die Notizen liegen damit wieder unter dem Blatt statt darüber, und das Blatt lässt sich bis ganz nach unten scrollen (etwas Luft unten eingerechnet).
+  - Eingeklappte Notizen (▸) bleiben pro Gerät eingeklappt.
+
 ### v2.8.0 – Üben mit Tempo/Tonart/Schleife, Tonhöhenverlauf & Fortschritt, Referenzmelodie, Einsingen & Metronom, Übungsjournal, Backup einspielen (25.09.2026)
 
 - **Üben mit dem Mini-Player (🎚 in der Leiste):**
@@ -331,6 +353,7 @@ Koordinaten in Seitenbreiten (1.0 = volle Breite, `y` ebenfalls in Breiten); `w`
 **Bibliothek** `library.json` im selben Drive-Ordner (ab v2.1):
 
 - `songs` (zentrale Einheit): Name, Ordner, Tags, Favorit, zuletzt geöffnet, `sheets` (Liste der zugehörigen Blatt-IDs), `links` (ab v2.2: Spotify-/YouTube-Verknüpfungen, je `{id, type:'yt'|'sp', kind:'orig'|'karaoke'|'manual', mediaId, title, url, auto?, u}`), `audio` (ab v2.3: Aufnahmen/Backing-Track, je `{id (=Drive-Datei-id), name, kind:'take'|'backing', u}`).
+- ab v2.8.1: `songs[..].gone = {id: Zeit}` (gelöschte Verknüpfungen/Audio-Anhänge, werden beim Zusammenführen herausgefiltert), `songs[..].lxk = ['sp:<id>', …]` (entfernte Medien, nie wieder automatisch verlinkt); Verknüpfungen auch `type:'xm'` (x-minus.pro-Seite, `mediaId` = Pfad); Backing-Tracks mit `kt` (Transposition in Halbtönen).
 - ab v2.8.0: `audio`-Einträge zusätzlich `kind:'ref'` (Referenzmelodie-Datei), `u0` (Aufnahmezeitpunkt) und `st` (Kennzahlen der Tonhöhenanalyse: `acc`, `ra`, `dev`, `bias`, `lo`, `hi` …); `songs[..].ref = {id, name, trk (Spur), tr (Transposition), ofs (Versatz s)}`; `songs[..].tasks = [{id, t, d:'JJJJ-MM-TT', s:'open'|'doing'|'done', c, u, x?}]` und `songs[..].log = [{id, d, m (Minuten), t, u, x?}]` (Zusammenführung nach `id`, Löschen als Marker `x:1`), `tga:1` = Tag «Lehrer-Aufgabe» automatisch gesetzt.
 - `files`: pro Blatt nur noch `sg` (zugehöriger Song), Helligkeit/Kontrast, zuletzt geöffnet.
 - `folders`, `setlists` (Setlisten enthalten jetzt Song-IDs statt Blatt-IDs) wie bisher.
@@ -343,8 +366,9 @@ Jeder Eintrag mit Zeitstempel `u` («neuester Eintrag gewinnt» pro Eintrag; Lö
 
 ## Getestet
 
-Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simuliertem Drive/YouTube/Spotify/lyrics.ovh/LRCLIB/Mikrofon (**≈600 Prüfungen** in 20 Testdateien; Ausführung über `localhost`, teils mit Handy-Emulation: Viewport, Touch, Pixelverhältnis). Stand v2.8.0: **alle bestanden.** Die 3 früher fehlschlagenden Prüfungen im Offline/Sync-Test (Konflikt bei Strichen) lagen am Test selbst: Seit der zweiten Menüleiste lag die Stelle, an der der Test zeichnet, unter dem Notizfeld. Der Test scrollt jetzt vorher, alle 25 Prüfungen bestehen. Die App war nicht betroffen.
+Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simuliertem Drive/YouTube/Spotify/lyrics.ovh/LRCLIB/Mikrofon (**≈640 Prüfungen** in 21 Testdateien; Ausführung über `localhost`, teils mit Handy-Emulation: Viewport, Touch, Pixelverhältnis). Stand v2.8.1: **alle bestanden.** Die 3 früher fehlschlagenden Prüfungen im Offline/Sync-Test (Konflikt bei Strichen) lagen am Test selbst: Seit der zweiten Menüleiste lag die Stelle, an der der Test zeichnet, unter dem Notizfeld. Der Test scrollt jetzt vorher, alle 25 Prüfungen bestehen. Die App war nicht betroffen.
 
+- **v2.8.1 (39, neu):** Standardname (Interpret_Titel, ±Halbtöne, ohne Interpret, unzulässige Zeichen), Transposition aus 9 Dateinamen-Varianten, Import-Dialog (Tonart erkannt, Name folgt der Tonart, Ordner wählen), Drive-Name und Kopie im Ordner mit Standardnamen (nachgebaute Ordner-Schnittstelle), Tonart in der Liste; x-minus-Suche öffnet die richtige Adresse, x-minus-Link speichern/öffnen, nicht im Mini-Player; mit den **echten Verknüpfungen von «Name In Blood»**: «The Next Rap God – Dax» wird beim Laden entfernt und bleibt nach Sync, Zusammenführen mit altem Gerätestand und erneuter automatischer Suche weg, Relevanzregel (Titel muss passen), von Hand entfernte Links/Backing-Tracks kommen über ein anderes Gerät nicht zurück, von Hand wieder hinzufügen geht; Handy: Notizen unter dem Blatt, bis ganz unten scrollbar, Höhe = sichtbarer Bereich, Verschiebung nach dem Tippen zurückgesetzt, Einklappen gemerkt. Angepasste ältere Tests: Backing-Track über den Import-Dialog, Testdaten mit generischen Titeln (würden jetzt zu Recht als unpassend entfernt).
 - **v2.8.0 (107, neu; dazu Aufnahme-Test auf mehrere Backing-Tracks angepasst, 36):** Tonart ±2/−3 Halbtöne (440 → 494/370 Hz) bei gleicher Länge, WSOLA-Dehnung ohne Tonhöhenänderung, Neuabtastung, WAV-Erzeugung. Mini-Player: 🎚-Feld, Tempo 110 % mit erhaltener Tonhöhe, Tonart +1 an einem Stereo-Backing (Ergebnis 466 Hz, Dauer und Stereo erhalten, Tempo bleibt), zurück zum Original, A–B-Schleife springt zurück, Zurücksetzen beim Quellwechsel, YouTube-Stufen (100 → 75 → 50 %), Tonart bei YouTube gesperrt, A–B per seekTo, Spotify-Tempo gesperrt. MIDI (Tempo-Karte, Spurnamen, Kanäle, Schlagzeug ausgelassen), MusicXML (Vorzeichen, Pause, Haltebogen, zweite Stimme ignoriert), MXL-ZIP mit deflate, Melodielinie, deutsche Notennamen. Referenz hochladen, Info, Transponieren, Soll-Ton zur Zeit, zählt nicht als Aufnahme. Tonhöhenanalyse einer Aufnahme mit einem 60 ct zu tiefen Ton: Melodie-Treffer, Umfang, Problemstelle «E4 zu tief» bei 0:01, Zwischenspeicher, Antippen spielt ab. Fortschritt (Tabelle, Trend), Kennzahlen ohne Referenz. Einsingen: Übungstöne, Wiederholungen auf/ab, Auswertung (Oktave egal, 70 ct daneben = rot) und **echter Durchlauf mit simuliertem Mikrofon** (C4-Ton → C getroffen, G nicht, 2/3). Metronom (Takt läuft, Knopf, ±, Tippen = 120 bpm, Stopp, gemerkt). Journal: Aufgaben mit Termin, automatischer Tag rein/raus, überfällig rot, Chip in der Liste, Status-Zyklus, Bearbeiten, Protokoll mit Wochensumme, Löschen als Marker, Übersicht aller Aufgaben, Zusammenführung zweier Geräte, Sync nach Drive. **Blatt umbenennen** (Drive-Name per PATCH geändert). **Backup einspielen:** Backup erstellen, PDF + Text-Blatt + Referenz + Anmerkungen in Drive löschen, Song löschen, über die Oberfläche einspielen → Dateien neu hochgeladen (PDF byte-gleich, Text-Blatt als Fragment), Verweise umgeschrieben, Anmerkungen beim neuen PDF, Song zurückgeholt, Journal erhalten, vorhandenes Blatt nicht doppelt, Blatt öffnet mit Strichen; ZIP-Leser mit deflate und Fehlermeldung.
 
 - **v2.7.0 (33, neu):** neuer Song → Kopf (Titel 24 fett, Interpret 12 kursiv, Leerzeile 12), Lyrics 18, alles zentriert; PDF standardmässig ohne Songtitel-Überschrift (optional mit), Titel fett/Interpret kursiv/zentriert im PDF; Ausrichtung für ganzes Blatt bzw. einzelne Zeile und Speicherung; Notizen bei Text-Blättern bleiben erhalten; Auftrittsmodus: 10 px/s, weisses Blatt über die ganze Länge (auch am Ende), Notizen ein-/ausblendbar und gemerkt; Textfeld mit «Text»-Werkzeug verschieben (ohne Dialog), antippen → bearbeiten inkl. Grösse, Rückgängig; Symbol verschieben; Mini-Player minimieren (Wiedergabe läuft weiter, Einstellung gemerkt), auf dem Handy max. 240 px breit.
@@ -371,6 +395,7 @@ Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simul
 
 ## Nicht getestet (braucht echte Geräte/Konten)
 
+- **Neu in v2.8.1:** Die x-minus.pro-Suchadresse ist geraten (die Seite liess sich von hier aus nicht abrufen). Falls die Suche dort leer bleibt, den Suchbegriff aus der Zwischenablage einfügen. Die Ordner-Ablage am PC bitte einmal mit Chrome/Edge ausprobieren (Ordner `Backing-Tracks` wählen und «Zugriff erlauben» bestätigen). Die Notizen-Korrektur auf dem Handy konnte nur in der Handy-Emulation geprüft werden, nicht auf deinem Samsung-Gerät.
 - **Neu in v2.8.0:**
   - **Tonart-Umrechnung:** mit Testtönen geprüft. Bitte mit einem echten Backing-Track anhören (Klang bei ±3–6 Halbtönen, Rechenzeit auf dem Handy bei langen Songs).
   - **Einsingen und Tonhöhenanalyse:** nur mit simuliertem Mikrofon bzw. Testtönen geprüft. Bitte mit echter Stimme ausprobieren; mit Kopfhörern ist die Erkennung beim «Mitsingen» am zuverlässigsten.
