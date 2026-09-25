@@ -101,6 +101,7 @@
   .file-item .mid{flex:1; min-width:0;}
   .file-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .file-item .sub{font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-item .sub > span:not(.tagchip){margin-right:7px;}
   .file-item .type-icon{width:22px; text-align:center; color:var(--muted); font-size:11px; flex-shrink:0;}
   .file-item .more{border:none; background:none; padding:4px 8px; font-size:18px; line-height:1; color:var(--muted);}
   .file-item .off{font-size:10px; color:var(--ok);}
@@ -241,6 +242,7 @@
   .tuner{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 0 4px;}
   .tuner-note{font-size:40px; font-weight:700; line-height:1;}
   .tuner-cents{font-size:13px; color:var(--muted); min-height:16px;}
+  .tuner-ref{font-size:13px; color:#555; min-height:16px; font-weight:600;}
   .tuner-cents.good{color:var(--ok);}
   .tuner-cents.ok{color:var(--warn);}
   .tuner-cents.bad{color:var(--danger);}
@@ -250,13 +252,14 @@
   .pitch-canvas{width:100%; height:140px; background:var(--accent-light); border-radius:8px;}
   .audio-manage .sub{color:var(--muted);}
   .tagchip{display:inline-block; font-size:10px; padding:1px 6px; border-radius:999px; background:var(--accent-light); color:var(--accent); margin-right:3px;}
-  #toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:rgba(30,26,22,.92); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; z-index:200; display:none; max-width:86vw; text-align:center;}
+  #toast{pointer-events:none; position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:rgba(30,26,22,.92); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; z-index:200; display:none; max-width:86vw; text-align:center;}
 
   /* ---------- Mini-Player (ab v2.3.3): spielt Verknüpfungen/Backing-Track ausserhalb von
      Dialogen ab, damit das Notenblatt sichtbar bleibt -- läuft auch im Vollbildmodus weiter,
      siehe Ausnahme bei "Auftrittsmodus" unten (kein body.perf-Eintrag für #miniPlayer). */
   #miniPlayer{position:fixed; right:10px; bottom:10px; width:min(290px,72vw); background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.3); z-index:90; overflow:hidden; flex-direction:column;}
-  #miniPlayer.min .mp-mount, #miniPlayer.min .mp-hint{max-height:0; padding:0; overflow:hidden; display:none !important;}
+  #miniPlayer.min .mp-mount{max-height:0 !important; padding:0 !important; overflow:hidden;}
+  #miniPlayer.min .mp-hint{display:none !important;}
   .mp-bar{display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:5px 6px; background:var(--accent-light);}
   .mp-bar .mp-title{flex:1 1 100%; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; line-height:1.2;}
   .mp-bar .mp-name{font-size:12px; font-weight:600;}
@@ -273,7 +276,13 @@
   .pick-row .sub{font-size:11.5px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap;}
   .pick-row .sub .mp-time{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:600;}
   .pick-row.playing{background:var(--accent-light);}
-  @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(300px, calc(100vw - 12px));} }
+  /* Handy: Knöpfe nur mit Symbol (Beschriftung als Tooltip), Auswahlfelder schmaler */
+  @media (max-width: 800px){
+    .lbl-t{display:none;}
+    #toolbar button, #songBar button, #perfBar button{padding:6px 9px; min-width:36px;}
+    #toolbar select{max-width:118px; padding-left:6px; padding-right:4px;}
+  }
+  @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(240px, calc(100vw - 12px));} }
 
   /* ---------- Scan ---------- */
   #scanCv{max-width:100%; touch-action:none; background:#222; border-radius:8px; display:block; margin:0 auto;}
@@ -297,7 +306,7 @@
   #textSheet p:has(.ch){padding-top:.75em;}
   #textSheet p.cur{background:rgba(241,196,15,.28);}
   .perf-txt{display:none !important;}
-  body.mode-text .perf-txt{display:inline-flex !important;}
+  body.mode-text .perf-txt{display:inline-flex !important; gap:.3em; align-items:center;}
   .perf-sync{display:none !important;}
   body.mode-text.as-sync .perf-sync{display:inline-flex !important;}
   #perfSpeed{min-width:62px; text-align:center; font-size:12px;}
@@ -317,7 +326,12 @@
   body.perf.mode-text #canvasWrap{overflow:auto;}
   body.perf #canvasStack{box-shadow:none;}
   body.perf #textSheet{box-shadow:none;}
-  body.perf.mode-text #textSheet{width:min(1100px, 94vw); padding:34px 5vw; margin:24px auto;}
+  body.perf.mode-text #textSheet{width:min(1100px, 94vw); padding:34px 5vw; margin:24px auto; align-self:flex-start; height:auto;}   /* weiss über die ganze Länge (nicht nur Bildschirmhöhe) */
+  #perfNotes{display:none; position:absolute; left:10px; bottom:calc(36px + env(safe-area-inset-bottom)); width:min(520px, calc(100vw - 20px)); max-height:36vh; overflow:auto; pointer-events:auto; background:rgba(255,252,240,.95); color:#22201d; border-radius:10px; padding:10px 12px; font-size:15px; line-height:1.45; box-shadow:0 4px 18px rgba(0,0,0,.35);}
+  #perfNotes.show{display:block;}
+  #perfNotes .pn-h{font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.05em; margin:6px 0 2px;}
+  #perfNotes .pn-h:first-child{margin-top:0;}
+  #perfNotes .pn-t{white-space:pre-wrap;}
   body.perf .popover{top:64px !important;}
   #perfUI{position:fixed; inset:0; pointer-events:none; display:none; z-index:60;}
   body.perf #perfUI{display:block;}
@@ -330,6 +344,59 @@
   #perfBar .ttl{flex:1; min-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;}
   #perfBar input[type=range]{width:110px;}
   #perfPage{position:absolute; right:10px; bottom:calc(8px + env(safe-area-inset-bottom)); background:rgba(0,0,0,.55); color:#fff; font-size:12px; padding:3px 9px; border-radius:999px;}
+  /* --- v2.8.0: Üben, Analyse, Einsingen, Metronom, Journal --- */
+  #sbPractice{display:flex; gap:6px; padding:0 8px 8px;}
+  #sbPractice button{flex:1; padding:6px 4px; font-size:12px; white-space:nowrap;}
+  #sbPractice button.late{color:var(--danger); border-color:var(--danger);}
+  .mp-bar button.mp-prac.on{background:var(--accent); color:#fff;}
+  .mp-practice{padding:6px 8px 2px; border-bottom:1px solid var(--border); font-size:12px;}
+  .pr-row{display:flex; align-items:center; gap:4px; margin-bottom:4px; flex-wrap:wrap;}
+  .pr-row .pr-l{width:46px; color:var(--muted);}
+  .pr-row .pr-v{min-width:48px; text-align:center; font-variant-numeric:tabular-nums; font-weight:600;}
+  .pr-row button{padding:2px 8px; font-size:12px; min-width:28px;}
+  .pr-row button.on{background:var(--accent); color:#fff;}
+  .pr-row button:disabled{opacity:.4;}
+  .pr-note{font-size:11px; color:var(--muted); padding-bottom:4px;}
+  .pa-stats{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0;}
+  .pa-box{flex:1 1 110px; border:1px solid var(--border); border-radius:8px; padding:6px 8px; background:var(--panel);}
+  .pa-box .v{font-size:17px; font-weight:700;} .pa-box .l{font-size:11px; color:var(--muted);}
+  .pa-box.good .v{color:var(--ok);} .pa-box.ok .v{color:var(--warn);} .pa-box.bad .v{color:var(--danger);}
+  .pa-wrap{display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff;}
+  .pa-axis{flex:none; width:44px; height:260px; border-right:1px solid var(--border);}
+  .pa-scroll{flex:1; overflow-x:auto; overflow-y:hidden;}
+  .pa-canvas{display:block; height:260px; cursor:crosshair;}
+  .pa-cursor{position:absolute; top:0; bottom:0; width:2px; background:rgba(0,0,0,.55); pointer-events:none;}
+  .pa-progress{width:100%; height:auto; border:1px solid var(--border); border-radius:8px; background:#fff; margin:6px 0;}
+  .pa-trend{font-weight:600; margin:4px 0;}
+  .pa-table{font-size:12px;}
+  .pa-row{display:grid; grid-template-columns:minmax(90px,2fr) 1fr 1fr 1fr 1.6fr 1.2fr; gap:6px; padding:6px 4px; border-bottom:1px solid var(--border); cursor:pointer;}
+  .pa-row.hd{font-weight:700; color:var(--muted); cursor:default;}
+  .wu-form{display:flex; flex-wrap:wrap; gap:8px;}
+  .wu-f{display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--muted);}
+  .wu-f select, .wu-f input{font-size:13px;}
+  .wu-canvas{width:100%; height:auto; border:1px solid var(--border); border-radius:8px; background:#fff;}
+  .wu-results{margin-top:6px; max-height:220px; overflow:auto;}
+  .wu-dots{display:flex; gap:3px; flex-wrap:wrap; margin-left:auto;}
+  .wu-dot{font-size:12px; line-height:1;} .wu-dot.good{color:var(--ok);} .wu-dot.hit{color:var(--warn);} .wu-dot.miss{color:var(--danger);} .wu-dot.none{color:#bbb;}
+  #metroChip{position:fixed; left:10px; bottom:10px; z-index:90; display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--border); border-radius:999px; padding:4px 6px 4px 12px; box-shadow:0 4px 16px rgba(0,0,0,.25); font-size:13px;}
+  #metroChip .mb{font-weight:700; cursor:pointer; font-variant-numeric:tabular-nums;}
+  #metroChip .mds{display:flex; gap:3px;}
+  #metroChip .md{width:9px; height:9px; border-radius:50%; background:var(--border);}
+  #metroChip .md.acc{box-shadow:0 0 0 1px var(--accent) inset;}
+  #metroChip .md.on{background:var(--accent);}
+  #metroChip button{padding:2px 9px; border-radius:999px; font-size:13px;}
+  .metro-bpm{font-size:46px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; line-height:1.1;}
+  .journal .j-h{font-weight:600; padding:6px 4px 4px;}
+  .j-add{display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding:2px 4px 8px;}
+  .task-row .tk-st{min-width:34px; font-size:16px; padding:2px 6px;}
+  .task-row.done .name{text-decoration:line-through; color:var(--muted);}
+  .task-row.doing .tk-st{color:var(--warn);} .task-row.done .tk-st{color:var(--ok);}
+  .task-row.late .sub{color:var(--danger);}
+  .pitch-analysis .sub, .warmup .sub, .journal .sub, .metro .sub, .ref-section .sub{font-size:12px; color:var(--muted);}
+  .journal .j-h, .pitch-analysis .pa-spots > .sub{font-size:14px; color:var(--text);}
+  .task-row.late .sub{color:var(--danger);}
+  .jchip{color:var(--accent);} .jchip.late{color:var(--danger); font-weight:600;}
+  @media (max-width: 800px){ .mp-bar button{padding:3px 7px; min-width:30px;} #metroChip{left:auto; right:6px; top:58px; bottom:auto;} .pa-row{grid-template-columns:minmax(80px,2fr) 1fr 1fr; } .pa-row span:nth-child(n+4){display:none;} }
 </style>
 </head>
 <body>
@@ -356,6 +423,11 @@
         <button id="newSongBtn" class="primary">♪ Neuer Song</button>
         <button id="scanBtn">📷 Scan</button>
         <button id="newFolderBtn" title="Neuer Ordner">📁＋</button>
+      </div>
+      <div id="sbPractice">
+        <button id="warmupBtn" title="Einsingen: Tonleitern und Intervalle nachsingen, mit Treffer-Anzeige">🎵 Einsingen</button>
+        <button id="metroBtn" title="Metronom">⏱ Metronom</button>
+        <button id="tasksBtn" title="Alle offenen Lehrer-Aufgaben">📓 Aufgaben</button>
       </div>
       <div id="sbSearch">
         <input id="searchInput" type="search" placeholder="Suchen (Name, Tag) …">
@@ -442,7 +514,7 @@
         <button class="tool" data-tool="pen" title="Stift">✎ Stift</button>
         <button class="tool" data-tool="hl" title="Textmarker">▬ Marker</button>
         <button class="tool" data-tool="eraser" title="Radiergummi (löscht ganze Objekte)">⌫ Radierer</button>
-        <button class="tool" data-tool="text" title="Textfeld">T Text</button>
+        <button class="tool" data-tool="text" title="Textfeld: leere Stelle antippen = neuer Text, vorhandenen Text antippen = bearbeiten, ziehen = verschieben">T Text</button>
         <button class="tool" data-tool="stamp" title="Symbole (Atem, Crescendo, Fermate …)">♪ Symbole</button>
         <button class="tool" data-tool="select" title="Auswählen / verschieben">➤ Auswahl</button>
         <div class="sep"></div>
@@ -477,7 +549,7 @@
         </div>
         <div style="flex:1"></div>
         <button id="exportBtn" title="Als PDF mit Annotationen exportieren">⤓ PDF</button>
-        <button id="saveBtn">Speichern</button>
+        <button id="saveBtn" title="Speichern &amp; synchronisieren">💾 Speichern</button>
       </div>
       <div id="songBar" style="display:none;"></div>
       <div id="stampBar"></div>
@@ -524,6 +596,7 @@
     <span class="ttl" id="perfTitle"></span>
     <span style="font-size:12px;">☀</span><input type="range" id="perfBri" min="40" max="200" value="100" title="Helligkeit">
     <button id="perfLayers">▤</button>
+    <button id="perfNotesBtn" title="Gesangsnotizen zu diesem Blatt ein-/ausblenden">📝 Notizen</button>
     <button id="perfScroll" class="perf-txt" title="Automatisch scrollen (Start/Pause)">▶ Scroll</button>
     <button id="perfSlower" class="perf-txt" title="Langsamer">−</button>
     <span id="perfSpeed" class="perf-txt"></span>
@@ -533,6 +606,7 @@
     <button id="perfOfsUp" class="perf-sync" title="Text läuft zu spät: 0.5 s früher">+0.5 s</button>
     <button id="perfFull" title="Vollbild">⛶ Vollbild</button>
   </div>
+  <div id="perfNotes"></div>
   <div id="perfPage"></div>
 </div>
 
@@ -554,7 +628,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.8.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -619,6 +693,20 @@ function openModal({ title, body, buttons = [], wide = false }) {
   bg.append(box);
   $('modalRoot').append(bg);
   return api;
+}
+// Knopf mit Symbol + Beschriftung: auf dem Handy (schmaler Bildschirm) nur das Symbol (ab v2.7.0,
+// Beschriftung bleibt als Tooltip/Titel erhalten). Erkennt «<Symbol> <Text>»; reiner Text bleibt unverändert.
+function setIconLabel(btn, text) {
+  const m = String(text || '').match(/^([^\p{L}\p{N}\s][^\s]*)\s+(.+)$/u);
+  if (!m) { btn.textContent = text; return btn; }
+  btn.textContent = '';
+  btn.append(document.createTextNode(m[1]), h('span', { class: 'lbl-t', text: ' ' + m[2] }));
+  if (!btn.getAttribute('title')) btn.setAttribute('title', m[2]);
+  return btn;
+}
+function iconizeButtons(root) {
+  if (!root) return;
+  root.querySelectorAll('button').forEach(b => { if (!b.children.length && b.textContent.trim()) setIconLabel(b, b.textContent.trim()); });
 }
 function menuSheet(title, items) {
   const api = openModal({
@@ -710,9 +798,11 @@ function ensureMiniPlayer() {
   mp.hintEl = h('div', { class: 'mp-hint', style: 'display:none;' });
   mp.el = h('div', { id: 'miniPlayer', style: 'display:none;' },
     h('div', { class: 'mp-bar' },
-      h('div', { class: 'mp-title', title: 'Ein-/Ausklappen', onclick: () => mp.el.classList.toggle('min') }, mp.titleEl, mp.srcEl),
+      h('div', { class: 'mp-title', title: 'Video ein-/ausblenden', onclick: () => mpToggleMin() }, mp.titleEl, mp.srcEl),
       mp.timeEl,
+      mp.minBtn = h('button', { class: 'mp-min', text: '▾', title: 'Video ausblenden (nur Leiste)', onclick: () => mpToggleMin() }),
       mp.playBtn,
+      mp.pracBtn = h('button', { class: 'mp-prac', text: '🎚', title: 'Üben: Tempo, Tonart, A–B-Schleife', onclick: () => prToggle() }),
       h('button', { text: '■', title: 'Stoppen', onclick: () => stopMiniPlayer() }),
       h('button', { text: '↗', title: 'Extern öffnen', onclick: () => { if (mp.link) window.open(mp.link.url, '_blank', 'noopener'); } })),
     mp.hintEl,
@@ -720,6 +810,15 @@ function ensureMiniPlayer() {
   document.body.append(mp.el);
   return mp;
 }
+// Minimieren: Video/Spotify-Fenster ausblenden, nur die Leiste (Titel, Zeit, Pause, Stopp) bleibt –
+// die Wiedergabe läuft weiter. Einstellung wird pro Gerät gemerkt (ab v2.7.0).
+function mpApplyMin() {
+  if (!mp.el) return;
+  const min = lsGet('gapp_mpmin') === '1';
+  mp.el.classList.toggle('min', min);
+  if (mp.minBtn) { mp.minBtn.textContent = min ? '▴' : '▾'; mp.minBtn.title = min ? 'Video einblenden' : 'Video ausblenden (nur Leiste)'; }
+}
+function mpToggleMin() { lsSet('gapp_mpmin', lsGet('gapp_mpmin') === '1' ? '0' : '1'); mpApplyMin(); }
 function stopMiniPlayer() {
   if (!mp.el) return;
   if (mp.ytPlayer && mp.ytPlayer.destroy) try { mp.ytPlayer.destroy(); } catch (e) {}
@@ -727,6 +826,7 @@ function stopMiniPlayer() {
   if (mp.spCtrl && mp.spCtrl.destroy) try { mp.spCtrl.destroy(); } catch (e) {}
   mp.spCtrl = null; mp.spState = null;
   if (mp.audioEl) { try { mp.audioEl.pause(); } catch (e) {} mp.audioEl = null; }
+  mp.audioBlob = null;
   mp.mount.innerHTML = '';
   mp.hintEl.style.display = 'none'; mp.hintEl.innerHTML = '';
   mp.el.style.display = 'none';
@@ -752,12 +852,12 @@ function startMiniPlayerLink(link) {
   ensureMiniPlayer();
   if (mp.kind === 'link' && mp.link && mp.link.id === link.id && mp.ytPlayer) {
     try { mp.ytPlayer.seekTo(0); mp.ytPlayer.playVideo(); } catch (e) {}
-    mp.el.style.display = 'flex'; mp.el.classList.remove('min'); mpNotify(); return;
+    mp.el.style.display = 'flex'; mpApplyMin(); mpNotify(); return;
   }
   stopMiniPlayer(); ensureMiniPlayer();
   mp.link = link; mp.kind = 'link';
   mpSetTitle(link.title, link.type === 'yt' ? 'YouTube' : 'Spotify');
-  mp.el.style.display = 'flex'; mp.el.classList.remove('min');
+  mp.el.style.display = 'flex'; mpApplyMin();
   if (link.type === 'yt') {
     const inner = h('div');
     mp.mount.append(inner);
@@ -823,9 +923,9 @@ function startSpotifyInMiniPlayer(link) {
 }
 function playAudioBlobInMiniPlayer(item, blob) {
   ensureMiniPlayer(); stopMiniPlayer(); ensureMiniPlayer();
-  mp.kind = 'audio'; mp.link = null; mp.audioItem = item;
+  mp.kind = 'audio'; mp.link = null; mp.audioItem = item; mp.audioBlob = blob;   // Original für die Tonart-Umrechnung (20_practice.js)
   mpSetTitle(item.name, item.kind === 'backing' ? 'Backing-Track' : (item.kind === 'take' ? 'Aufnahme' : ''));
-  mp.el.style.display = 'flex'; mp.el.classList.remove('min');
+  mp.el.style.display = 'flex'; mpApplyMin();
   const audioEl = h('audio', { controls: true });
   mp.audioEl = audioEl; mp.mount.append(audioEl);
   audioEl.src = URL.createObjectURL(blob);
@@ -1037,6 +1137,13 @@ function mergeLib(a, b) {
           const amp = new Map();
           [...(x.audio || []), ...(y.audio || [])].forEach(a => { if (a && a.id && (!amp.has(a.id) || (a.u || 0) >= (amp.get(a.id).u || 0))) amp.set(a.id, a); });
           out[key][id].audio = [...amp.values()];
+          // Übungsjournal (ab v2.8.0): Aufgaben und Einträge ebenfalls nach id vereinigt, gelöschte als {id,x:1,u}
+          for (const k of ['tasks', 'log']) {
+            if (!x[k] && !y[k]) continue;
+            const m = new Map();
+            [...(x[k] || []), ...(y[k] || [])].forEach(t => { if (t && t.id && (!m.has(t.id) || (t.u || 0) >= (m.get(t.id).u || 0))) m.set(t.id, t); });
+            out[key][id][k] = [...m.values()];
+          }
         }
       } else out[key][id] = JSON.parse(JSON.stringify(x || y));
     }
@@ -1101,11 +1208,14 @@ function removeLink(songId, linkId) {
 // --- Aufnahmen (eigene Takes) + Backing-Track: beide als Audio-Anhänge eines Songs.
 //   audio: { id (=Drive-Datei-id), name, kind:'take'|'backing', dur?, u }
 function songAudio(id, kind) { const s = lib.songs[id]; const a = (s && s.audio) || []; return kind ? a.filter(x => x.kind === kind) : a; }
+// Aufnahmen + Backing-Tracks (ohne Referenzmelodie-Datei, die nur intern als Anhang geführt wird)
+const audioCount = (id) => songAudio(id).filter(x => x.kind !== 'ref').length;
 function addAudio(songId, item) {
   sTouch(songId, s => {
     s.audio = s.audio || [];
     s.audio = s.audio.filter(x => x.id !== item.id);   // gleiche Drive-id ersetzt (z. B. erneuter Sync)
-    s.audio.push(Object.assign({ u: Date.now() }, item));
+    const now = Date.now();
+    s.audio.push(Object.assign({ u: now, u0: now }, item));   // u0 = Zeitpunkt der Aufnahme (u ändert sich bei Umbenennen/Analyse)
   });
 }
 function removeAudioMeta(songId, id) {
@@ -1510,6 +1620,7 @@ function renderSheets() {
     else list.append(h('div', { class: 'empty-note', text: global ? 'Keine Treffer.' : (aliveSongs().length ? 'Dieser Ordner ist leer.' : 'Noch keine Songs. Oben «♪ Neuer Song» anlegen (inkl. automatischer Lyrics-Suche), oder direkt ein Blatt per «+ Blatt» / «📷 Scan» hochladen.') }));
   }
   $('offlineAllBtn').textContent = `⇩ Alle offline speichern (${cachedIds.size}/${files.length})`;
+  updateTasksBtn();
 }
 function resetFilters() {
   searchQ = ''; tagSel = ''; favOnly = false; $('searchInput').value = '';
@@ -1532,9 +1643,10 @@ function songItem(s, global) {
     sheets.length > 1 ? h('span', { text: '📄 ' + sheets.length + ' Blätter' }) : null,
     (s.links || []).length ? h('span', { text: '🔗 ' + s.links.length }) : null,
     songAudio(s.id, 'take').length ? h('span', { text: '🎤 ' + songAudio(s.id, 'take').length }) : null,
+    journalChip(s.id),
     path ? h('span', { text: '📁 ' + path }) : null);
   const offline = sheets.length && sheets.every(f => cachedIds.has(f.id));
-  const hasSub = (s.tg || []).length || sheets.length > 1 || path || (s.links || []).length || songAudio(s.id, 'take').length;
+  const hasSub = (s.tg || []).length || sheets.length > 1 || path || (s.links || []).length || songAudio(s.id, 'take').length || openTasks(s.id).length;
   return h('div', { class: 'file-item' + (currentSongId === s.id ? ' active' : ''), onclick: () => openSong(s) },
     h('button', { class: 'fav' + (s.fv ? ' on' : ''), text: s.fv ? '★' : '☆', title: 'Favorit', onclick: (e) => { e.stopPropagation(); sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }); } }),
     h('span', { class: 'type-icon', text: '♪' }),
@@ -1561,7 +1673,8 @@ function songMenu(s) {
     { label: '♫ Zur Setliste hinzufügen …', fn: () => addToSetlist(s.id) },
     { label: '📄 Blätter verwalten' + (sheets.length > 1 ? ` (${sheets.length})` : '') + ' …', fn: () => manageSheets(s) },
     { label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
-    { label: '🎙 Aufnahmen & Backing-Track' + (songAudio(s.id).length ? ` (${songAudio(s.id).length})` : '') + ' …', fn: () => manageAudio(s) },
+    { label: '🎙 Aufnahmen & Backing-Tracks' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : '') + ' …', fn: () => manageAudio(s) },
+    { label: '📓 Übungsjournal' + (openTasks(s.id).length ? ` (${openTasks(s.id).length} offen)` : '') + ' …', fn: () => openJournal(s.id) },
     { label: '📤 Mit Lehrer teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('song', s.id) },
     { label: sheets.length && sheets.every(f => cachedIds.has(f.id)) ? '⇧ Offline-Kopien entfernen' : '⇩ Alle Blätter offline speichern', fn: () => toggleOfflineSong(s) },
     { label: '🗑 Song in den Papierkorb', fn: () => deleteSong(s), danger: true }
@@ -1581,7 +1694,8 @@ function songBarActions(s) {
     { sep: true },
     { label: '📄 Blätter' + (sheets.length > 1 ? ` (${sheets.length})` : ''), fn: () => manageSheets(s) },
     { label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : ''), fn: () => manageLinks(s) },
-    { label: '🎙 Aufnahmen' + (songAudio(s.id).length ? ` (${songAudio(s.id).length})` : ''), fn: () => manageAudio(s) },
+    { label: '🎙 Aufnahmen' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : ''), fn: () => manageAudio(s) },
+    { label: '📓 Journal' + (openTasks(s.id).length ? ` (${openTasks(s.id).length})` : ''), on: openTasks(s.id).length > 0, title: 'Übungsjournal: Lehrer-Aufgaben und Übungsnotizen', fn: () => openJournal(s.id) },
     { label: '📤 Teilen' + (s.sh ? ' ✓' : ''), on: !!s.sh, title: s.sh ? 'Geteilt – Freigabe aktualisieren/beenden' : 'Mit Lehrer teilen (Drive-Freigabe)', fn: () => shareDialog('song', s.id) },
     { sep: true },
     { label: offline ? '⇧ Offline entfernen' : '⇩ Offline speichern', fn: () => toggleOfflineSong(s) },
@@ -1597,7 +1711,7 @@ function renderSongBar() {
   el.style.display = 'flex'; el.innerHTML = '';
   songBarActions(s).forEach(it => {
     if (it.sep) { el.append(h('div', { class: 'sep' })); return; }
-    el.append(h('button', { class: (it.on ? 'on ' : '') + (it.danger ? 'danger' : ''), text: it.label, title: it.title || it.label, onclick: it.fn }));
+    el.append(setIconLabel(h('button', { class: (it.on ? 'on ' : '') + (it.danger ? 'danger' : ''), title: it.title || it.label, onclick: it.fn }), it.label));
   });
 }
 
@@ -1932,6 +2046,21 @@ function loadImage(blob) {
   });
 }
 
+// Lokale Annotationen/Notizen eines Blatts; beim ersten Öffnen auf diesem Gerät zuerst aus Drive holen.
+// Ab v2.7.0 auch für Text-Blätter (Gesangsnotizen im Notizfeld, auch im Auftrittsmodus anzeigbar).
+async function loadAnnotFor(f) {
+  const loc = await safe(IDB.get('annots', f.id));
+  if (loc && loc.json) {
+    let a = null;
+    try { a = normalizeAnnot(JSON.parse(loc.json)); } catch (e) { a = null; }
+    return { a, rec: { aid: loc.aid || null, aTime: loc.aTime || null, base: loc.base || null } };
+  }
+  if (canSyncNow()) {
+    setStatus('Lädt Notizen …', 'saving');
+    try { return { a: await pullAnnotFirst(f.id), rec: null }; } catch (e) { console.warn('Erstes Laden der Notizen:', e); }
+  }
+  return { a: null, rec: null };
+}
 async function openFile(f, opts = {}) {
   const seq = ++openSeq;
   await flushSave();
@@ -1963,6 +2092,11 @@ async function openFile(f, opts = {}) {
     try {
       const { html, base } = await loadTextFileContent(f);
       if (seq !== openSeq) return;
+      const an = await loadAnnotFor(f);
+      if (seq !== openSeq) return;
+      if (an.rec) annotRec = an.rec;
+      annotData = an.a || emptyAnnot();
+      if (dirtyIds.has(f.id)) dirty = true;
       currentBlob = new Blob([html], { type: TXT_MIME });
       textBaseMd5 = base; textEditVer = 0;
       loadTextSheet(html);
@@ -1970,6 +2104,7 @@ async function openFile(f, opts = {}) {
       if (textDirtyIds.has(f.id)) textDirty = true;
       totalPages = 1; currentPage = 1;
       ready = true;
+      bindNotes();
       textSheetEl.contentEditable = perf ? 'false' : 'true';
       updatePageNav();
       if (seq === openSeq) { setStatus(''); updateSyncState(); }
@@ -1977,6 +2112,7 @@ async function openFile(f, opts = {}) {
       conflictShown.delete(f.id);
       if (textConflicts.has(f.id)) showTextConflict(f.id);
       else if (canSyncNow() && textDirtyIds.has(f.id)) enqueue(() => syncTextSheet(f.id)).catch(syncFail);
+      if (canSyncNow()) enqueue(() => syncAnnot(f.id)).catch(syncFail);
     } catch (e) {
       if (seq === openSeq) {
         if (e.message === 'offline_uncached') { fail('Nicht offline verfügbar', new Error('Dieses Blatt wurde noch nicht auf dieses Gerät geladen. Bitte einmal mit Internet öffnen oder «Offline speichern» wählen.')); toast('Dieses Blatt ist nicht offline verfügbar.'); }
@@ -1992,18 +2128,10 @@ async function openFile(f, opts = {}) {
     if (seq !== openSeq) return;
     currentBlob = blob;
 
-    // Lokale Annotationen; beim ersten Öffnen auf diesem Gerät zuerst aus Drive holen
-    const loc = await safe(IDB.get('annots', f.id));
+    const an = await loadAnnotFor(f);
     if (seq !== openSeq) return;
-    let a = null;
-    if (loc && loc.json) {
-      try { a = normalizeAnnot(JSON.parse(loc.json)); } catch (e) { a = null; }
-      annotRec = { aid: loc.aid || null, aTime: loc.aTime || null, base: loc.base || null };
-    } else if (canSyncNow()) {
-      setStatus('Lädt Notizen …', 'saving');
-      try { a = await pullAnnotFirst(f.id); } catch (e) { console.warn('Erstes Laden der Notizen:', e); }
-      if (seq !== openSeq) return;
-    }
+    if (an.rec) annotRec = an.rec;
+    const a = an.a;
 
     if (f.mimeType === 'application/pdf') {
       const lib_ = await getPdfjs();
@@ -2129,7 +2257,7 @@ function schedulePrefetch() {
 
 function scheduleRender(ms) {
   clearTimeout(renderTimer);
-  renderTimer = setTimeout(() => { renderPage().catch(e => { console.error(e); setStatus('Renderfehler', 'error'); }); }, ms);
+  renderTimer = setTimeout(() => { const doc = currentDoc; renderPage().catch(e => { if (doc !== currentDoc || /Transport destroyed|Worker was destroyed/i.test(String(e && e.message))) return; console.error(e); setStatus('Renderfehler', 'error'); }); }, ms);
 }
 
 function updatePageNav() {
@@ -2146,8 +2274,13 @@ async function goPage(p) {
   inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
   updatePageNav(); bindNotes();
   canvasWrap.scrollTop = 0;
+  const doc = currentDoc;
   try { await renderPage(); }
-  catch (e) { console.error(e); setStatus('Renderfehler', 'error'); pageReady = true; }
+  catch (e) {
+    // Blatt wurde während des Renderns gewechselt (schnelles Weiterblättern in der Setliste) – kein Fehler
+    if (doc !== currentDoc || /Transport destroyed|Worker was destroyed/i.test(String(e && e.message))) return;
+    console.error(e); setStatus('Renderfehler', 'error'); pageReady = true;
+  }
 }
 $('prevPage').addEventListener('click', () => goPage(currentPage - 1));
 $('nextPage').addEventListener('click', () => goPage(currentPage + 1));
@@ -2572,7 +2705,7 @@ $('layerBtn').addEventListener('click', () => { $('dispPop').classList.remove('s
 // Auswahl-Leiste
 // ---------------------------------------------------------------
 function updateSelBar() {
-  const bar = $('selBar'), o = tool === 'select' ? selObj() : null;
+  const bar = $('selBar'), o = (tool === 'select' || tool === 'text' || tool === 'stamp') ? selObj() : null;
   bar.innerHTML = '';
   if (!o) { bar.classList.remove('show'); return; }
   const btn = (t, fn, title) => h('button', { text: t, title, onclick: fn });
@@ -2598,17 +2731,25 @@ function pickLayerFor(o) {
 function textDialog(existing, pos) {
   const ta = h('textarea', { rows: 4, style: 'width:100%; font:inherit; padding:8px; border:1px solid var(--border); border-radius:8px;', placeholder: 'Text …' });
   if (existing) ta.value = existing.s;
+  // Grösse (auch nachträglich änderbar); bei einem bestehenden Text die nächstliegende Stufe vorwählen
+  const sizeSel = h('select', { style: 'margin-top:8px;' });
+  OBJ_SIZES.text.forEach(([k, lbl, px]) => sizeSel.append(h('option', { value: String(px), text: 'Grösse: ' + lbl })));
+  const curPx = existing ? existing.z * REF_W : objSizePx('text');
+  sizeSel.value = String(OBJ_SIZES.text.reduce((b, r) => Math.abs(r[2] - curPx) < Math.abs(b - curPx) ? r[2] : b, OBJ_SIZES.text[0][2]));
+  if (existing && !OBJ_SIZES.text.some(r => Math.abs(r[2] - curPx) < 0.5)) sizeSel.prepend(h('option', { value: String(curPx), text: 'Grösse: unverändert', selected: true }));
+  const hint = existing ? h('div', { class: 'sub', style: 'font-size:12px; color:var(--muted); margin-top:8px;', text: 'Tipp: Zum Verschieben den Text mit dem Werkzeug «T Text» (oder «➤ Auswahl») anfassen und ziehen.' }) : null;
   const buttons = [{ label: 'Abbrechen' }];
   if (existing) buttons.push({ label: 'Löschen', fn: () => { const it = deleteObjects([existing]); pushHist({ t: 'erase', page: currentPage, items: it }); selId = null; commitChange(); } });
   buttons.push({
     label: 'OK', primary: true, fn: () => {
       const v = ta.value.replace(/\s+$/, '');
       if (!v) return;
-      if (existing) { if (v !== existing.s) editObject(existing, x => { x.s = v; }); }
-      else addObject({ id: uid('o'), l: activeLayer, t: 'x', x: r5(pos.x), y: r5(pos.y), s: v, z: r5(objSizePx('text') / REF_W), c: color });
+      const z = r5(parseFloat(sizeSel.value) / REF_W);
+      if (existing) { if (v !== existing.s || Math.abs(z - existing.z) > 1e-6) editObject(existing, x => { x.s = v; x.z = z; }); }
+      else addObject({ id: uid('o'), l: activeLayer, t: 'x', x: r5(pos.x), y: r5(pos.y), s: v, z, c: color });
     }
   });
-  openModal({ title: existing ? 'Text bearbeiten' : 'Text einfügen', body: [ta], buttons });
+  openModal({ title: existing ? 'Text bearbeiten' : 'Text einfügen', body: [ta, sizeSel, hint].filter(Boolean), buttons });
   setTimeout(() => ta.focus(), 50);
 }
 
@@ -2679,10 +2820,16 @@ function startTool(e) {
     updateSelBar(); requestInk();
     if (hit) action = { kind: 'drag', pen, lx: pt.x, ly: pt.y, before: JSON.parse(JSON.stringify(hit)), moved: false, id: hit.id };
     else action = { kind: 'tap', pen };
-  } else if (tool === 'text') {
-    action = { kind: 'place', pen, pt, sx: e.clientX, sy: e.clientY };
-  } else if (tool === 'stamp') {
-    action = { kind: 'place', pen, pt, sx: e.clientX, sy: e.clientY };
+  } else if (tool === 'text' || tool === 'stamp') {
+    // Vorhandenes Textfeld/Symbol anfassen: ziehen = verschieben, antippen = bearbeiten (Text) (ab v2.7.0)
+    const hit = hitTest(pt.x, pt.y, 12);
+    if (hit && ((tool === 'text' && hit.t === 'x') || (tool === 'stamp' && hit.t === 'm'))) {
+      selId = hit.id; updateSelBar(); requestInk();
+      action = { kind: 'drag', pen, lx: pt.x, ly: pt.y, before: JSON.parse(JSON.stringify(hit)), moved: false, id: hit.id, tapEdit: tool === 'text', tapPlace: tool === 'stamp' ? pt : null, sx: e.clientX, sy: e.clientY };
+    } else {
+      if (selId) { selId = null; updateSelBar(); requestInk(); }
+      action = { kind: 'place', pen, pt, sx: e.clientX, sy: e.clientY };
+    }
   }
 }
 
@@ -2742,10 +2889,15 @@ function endPointer(e, cancelled) {
   } else if (a.kind === 'erase') {
     if (a.items.length) { pushHist({ t: 'erase', page: currentPage, items: a.items }); commitChange(); }
   } else if (a.kind === 'drag') {
-    if (a.moved) {
-      const o = pageArrRO().find(x => x.id === a.id);
+    const o = pageArrRO().find(x => x.id === a.id);
+    const smallMove = a.sx != null && Math.hypot(e.clientX - a.sx, e.clientY - a.sy) < 8;
+    if (a.moved && !(smallMove && (a.tapEdit || a.tapPlace))) {
       if (o) pushHist({ t: 'edit', page: currentPage, before: a.before, after: JSON.parse(JSON.stringify(o)) });
       commitChange();
+    } else {
+      if (a.moved && o) { Object.assign(o, a.before); invalidateInk(); requestInk(); }    // Mini-Zittern beim Antippen zurücknehmen
+      if (a.tapEdit && o) textDialog(o);
+      else if (a.tapPlace) { selId = null; updateSelBar(); addObject({ id: uid('o'), l: activeLayer, t: 'm', k: stampKind, x: r5(a.tapPlace.x), y: r5(a.tapPlace.y), z: r5(objSizePx('stamp') / REF_W), c: color }); }
     }
   } else if (a.kind === 'place' && !a.cancelled) {
     if (tool === 'text') {
@@ -2804,7 +2956,7 @@ objSizeSel.addEventListener('change', () => {
 
 function updateFingerBtn() {
   const b = $('fingerBtn');
-  b.textContent = fingerMode === 'auto' ? (penSeen ? '✋ Auto (Stift)' : '✋ Auto') : fingerMode === 'draw' ? '✋ Zeichnen' : '✋ Scrollen';
+  setIconLabel(b, fingerMode === 'auto' ? (penSeen ? '✋ Auto (Stift)' : '✋ Auto') : fingerMode === 'draw' ? '✋ Zeichnen' : '✋ Scrollen');
   b.classList.toggle('on', fingerMode !== 'auto');
 }
 $('fingerBtn').addEventListener('click', () => {
@@ -3141,8 +3293,25 @@ function setPerfBar(show) {
   if (show) perfBarTimer = setTimeout(() => { $('perfUI').classList.remove('show'); $('layerPop').classList.remove('show'); }, 5000);
 }
 const perfTitleText = () => { const s = sget(currentSongId); return s ? s.n + (songSheets(currentSongId).length > 1 && currentFile ? ' · ' + currentFile.name.replace(/\.[^.]+$/, '') : '') : (currentFile ? currentFile.name : ''); };
+// Gesangsnotizen im Auftrittsmodus (ab v2.7.0, optional, pro Gerät gemerkt)
+function renderPerfNotes() {
+  const el = $('perfNotes'), on = perf && lsGet('gapp_perfnotes') === '1';
+  $('perfNotesBtn').classList.toggle('on', on);
+  if (!on) { el.classList.remove('show'); return; }
+  const fileNote = (annotData.notes || '').trim(), pageNote = ((annotData.pageNotes || {})[String(currentPage)] || '').trim();
+  const sig = fileNote + '\u0000' + pageNote + '\u0000' + currentPage;
+  if (el.dataset.sig !== sig) {
+    el.dataset.sig = sig; el.innerHTML = '';
+    if (fileNote) el.append(h('div', { class: 'pn-h', text: 'Notizen' }), h('div', { class: 'pn-t', text: fileNote }));
+    if (pageNote) el.append(h('div', { class: 'pn-h', text: 'Seite ' + currentPage }), h('div', { class: 'pn-t', text: pageNote }));
+    if (!fileNote && !pageNote) el.append(h('div', { class: 'pn-t', style: 'color:var(--muted); font-size:13px;', text: 'Keine Notizen zu diesem Blatt.' }));
+  }
+  el.classList.add('show');
+}
+$('perfNotesBtn').addEventListener('click', () => { lsSet('gapp_perfnotes', lsGet('gapp_perfnotes') === '1' ? '0' : '1'); renderPerfNotes(); setPerfBar(true); });
 function updatePerfPage() {
-  if (!perf) return;
+  if (!perf) { $('perfNotes').classList.remove('show'); return; }
+  renderPerfNotes();
   let t = `${currentPage} / ${totalPages}`;
   if (perfCtx && lib.setlists[perfCtx.setId]) t += ` · Lied ${perfCtx.idx + 1}/${lib.setlists[perfCtx.setId].it.length}`;
   const pl = mpTimeLabel();
@@ -3832,14 +4001,9 @@ async function buildAnnotatedPdfBytes(f, blob, annot, { visible = visLayer, img 
 async function exportPdf() {
   if (!ready || !currentFile || !currentBlob) { toast('Erst ein Blatt öffnen.'); return; }
   if (sheetKind === 'text') return exportTextSheetPdf();
-  const f = currentFile;
-  try {
-    setStatus('Exportiere …', 'saving');
-    const bytes = await buildAnnotatedPdfBytes(f, currentBlob, annotData, { img: currentImg });
-    const outName = f.name.replace(/\.[^.]+$/, '') + ' (annotiert).pdf';
-    setStatus('');
-    exportDialog(bytes, outName, outName, f);
-  } catch (e) { fail('Export fehlgeschlagen', e); }
+  const f = currentFile, blob = currentBlob, annot = annotData, img = currentImg;
+  const outName = f.name.replace(/\.[^.]+$/, '') + ' (annotiert).pdf';
+  exportDialog({ build: () => buildAnnotatedPdfBytes(f, blob, annot, { img }), downloadName: outName, sheetName: outName, srcFile: f });
 }
 $('exportBtn').addEventListener('click', exportPdf);
 
@@ -4231,11 +4395,15 @@ function loadYouTubeApi() {
 function openRecorder(song) {
   let chunks = [], recorder = null, stream = null, actx = null, analyser = null, raf = null;
   let recording = false, mimeType = '', pitchHist = [], timer = null;
+  // Referenzmelodie (ab v2.8.0): Soll-Ton während der Aufnahme anzeigen und im Verlauf grau einblenden
+  let refMel = null, refHist = [], t0 = 0;
+  getRefMelody(song.id).then(m => { refMel = m; if (m) refEl.textContent = 'Soll: –'; }).catch(() => {});
 
   const statusEl = h('div', { class: 'empty-note', text: 'Mikrofon wird erst beim Start angefragt.' });
   const noteEl = h('div', { class: 'tuner-note', text: '–' });
   const centsEl = h('div', { class: 'tuner-cents', text: '' });
   const needle = h('div', { class: 'tuner-needle', style: 'left:50%;' });
+  const refEl = h('div', { class: 'tuner-ref', title: 'Ton der Referenzmelodie an dieser Stelle', text: '' });
   const canvas = h('canvas', { class: 'pitch-canvas', width: 640, height: 140 });
   const cctx = canvas.getContext('2d');
   const startBtn = h('button', { class: 'primary', text: '🔴 Aufnahme starten' });
@@ -4243,14 +4411,14 @@ function openRecorder(song) {
   const previewWrap = h('div');
 
   // --- Mitspielen: Backing-Track-Datei ODER eine verlinkte YouTube-Version (z. B. Karaoke) ---
-  const fileBacking = songAudio(song.id, 'backing')[0] || null;
+  const fileBackings = songAudio(song.id, 'backing');
   const ytBackingLinks = songLinks(song.id).filter(l => l.type === 'yt');
-  const hasBackingChoice = !!(fileBacking || ytBackingLinks.length);
-  // Vorauswahl: bevorzugt eine verlinkte Karaoke-Version, sonst die Datei, sonst irgendeinen YouTube-Link
+  const hasBackingChoice = !!(fileBackings.length || ytBackingLinks.length);
+  // Vorauswahl: bevorzugt eine verlinkte Karaoke-Version, sonst die erste Datei, sonst irgendeinen YouTube-Link
   let backingMode = 'none';
   const karaokeLink = ytBackingLinks.find(l => l.kind === 'karaoke');
   if (karaokeLink) backingMode = karaokeLink.id;
-  else if (fileBacking) backingMode = 'file';
+  else if (fileBackings.length) backingMode = 'file:' + fileBackings[0].id;
   else if (ytBackingLinks.length) backingMode = ytBackingLinks[0].id;
 
   // Läuft im gemeinsamen Mini-Player (02_core.js) statt eingebettet im Dialog, damit die
@@ -4258,7 +4426,7 @@ function openRecorder(song) {
   const backingSel = hasBackingChoice ? h('select', {}) : null;
   if (backingSel) {
     backingSel.append(h('option', { value: 'none', text: 'Nicht mitspielen' }));
-    if (fileBacking) backingSel.append(h('option', { value: 'file', text: '🎵 Backing-Track (Datei): ' + fileBacking.name }));
+    fileBackings.forEach(fb => backingSel.append(h('option', { value: 'file:' + fb.id, text: '🎵 Backing-Track (Datei): ' + fb.name })));
     ytBackingLinks.forEach(l => backingSel.append(h('option', { value: l.id, text: '▶ ' + (l.title || 'YouTube') + ' (' + linkKindLabel(l) + ')' })));
     backingSel.value = backingMode;
     backingSel.addEventListener('change', () => { backingMode = backingSel.value; if (backingMode === 'none') stopMiniPlayer(); else startBackingPlayback(); });
@@ -4268,8 +4436,9 @@ function openRecorder(song) {
     h('span', { text: '(läuft im Mini-Player unten rechts – bleibt auch nach dem Schliessen aktiv)' })) : null;
 
   function startBackingPlayback() {
-    if (backingMode === 'file' && fileBacking) {
-      loadAudioBlob(fileBacking).then(blob => playAudioBlobInMiniPlayer(fileBacking, blob)).catch(() => {});
+    const fb = backingMode.startsWith('file:') ? fileBackings.find(x => 'file:' + x.id === backingMode) : null;
+    if (fb) {
+      loadAudioBlob(fb).then(blob => playAudioBlobInMiniPlayer(fb, blob)).catch(() => {});
     } else if (backingMode !== 'none') {
       const link = ytBackingLinks.find(l => l.id === backingMode);
       if (link) startMiniPlayerLink(link);
@@ -4282,7 +4451,7 @@ function openRecorder(song) {
 
   const body = h('div', { class: 'recorder' },
     statusEl,
-    h('div', { class: 'tuner' }, noteEl, centsEl, h('div', { class: 'tuner-meter' }, needle)),
+    h('div', { class: 'tuner' }, noteEl, centsEl, refEl, h('div', { class: 'tuner-meter' }, needle)),
     canvas,
     h('div', { style: 'display:flex; align-items:center; gap:10px; margin-top:8px;' }, startBtn, timeEl),
     backingRow, previewWrap);
@@ -4296,6 +4465,13 @@ function openRecorder(song) {
       const y = canvas.height - ((m - LO) / (HI - LO)) * canvas.height;
       cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(canvas.width, y); cctx.stroke();
     }
+    // Referenzmelodie (grau, dick)
+    cctx.strokeStyle = 'rgba(120,120,120,.45)'; cctx.lineWidth = 6;
+    refHist.forEach((mval, i) => {
+      if (mval == null) return;
+      const x = (i / 300) * canvas.width, y = canvas.height - ((clamp(mval, LO, HI) - LO) / (HI - LO)) * canvas.height;
+      cctx.beginPath(); cctx.moveTo(x, y); cctx.lineTo(x + canvas.width / 300 + 0.5, y); cctx.stroke();
+    });
     cctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent') || '#6b4f3b';
     cctx.lineWidth = 2.5;
     let started = false;
@@ -4310,7 +4486,17 @@ function openRecorder(song) {
   }
   drawTrace();
 
-  function pushPitch(mval) { pitchHist.push(mval); if (pitchHist.length > 300) pitchHist.shift(); drawTrace(); }
+  function pushPitch(mval) {
+    let rm = null;
+    if (refMel && recording) {
+      const rn = refNoteAt(refMel, (Date.now() - t0) / 1000);
+      rm = rn ? rn.m : null;
+      refEl.textContent = 'Soll: ' + (rn ? midiName(rn.m) : '–');
+    }
+    pitchHist.push(mval); refHist.push(rm);
+    if (pitchHist.length > 300) { pitchHist.shift(); refHist.shift(); }
+    drawTrace();
+  }
 
   function tick() {
     if (!analyser) return;
@@ -4347,10 +4533,10 @@ function openRecorder(song) {
     recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
     recorder.onstop = onStopped;
     recorder.start();
-    recording = true; pitchHist = [];
+    recording = true; pitchHist = []; refHist = [];
     startBtn.textContent = '⏹ Aufnahme beenden'; startBtn.classList.add('danger'); startBtn.classList.remove('primary');
     startBackingPlayback();
-    const t0 = Date.now();
+    t0 = Date.now();
     timer = setInterval(() => {
       const s = Math.floor((Date.now() - t0) / 1000);
       timeEl.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
@@ -4405,7 +4591,9 @@ function openRecorder(song) {
   api.onClose = cleanup;
 }
 
-// --- Übersicht: eigene Aufnahmen + Backing-Track (vom Song-Menü aus) ----------
+// --- Übersicht: eigene Aufnahmen, Backing-Tracks, Referenzmelodie (vom Song-Menü aus) ----------
+// Ab v2.8.0: mehrere Backing-Tracks pro Song (hinzufügen statt ersetzen, umbenennen), Tonhöhenverlauf
+// je Aufnahme (📈) inkl. Fortschritt, Referenzmelodie aus MIDI/MusicXML (siehe 22_reference.js).
 function manageAudio(s) {
   const body = h('div', { class: 'audio-manage' });
   // Wiedergabe über den gemeinsamen Mini-Player (Pause/Fortsetzen, Zeitanzeige, läuft nach Schliessen weiter)
@@ -4413,32 +4601,48 @@ function manageAudio(s) {
   const isPlaying = (item) => { if (!isLoaded(item)) return false; const st = mpState(); return !!(st && st.playing); };
 
   function audioRow(item) {
+    const st = item.st;
+    const info = new Date(item.u0 || item.u).toLocaleString('de-DE') + (cachedIds.has(item.id) ? ' · offline verfügbar' : '') +
+      (item.kind === 'take' && st ? ' · Treffsicherheit ' + st.acc + ' %' + (st.ra != null ? ' (Melodie ' + st.ra + ' %)' : '') : '');
     return h('div', { class: 'pick-row' + (isLoaded(item) ? ' playing' : '') },
       h('span', { class: 'type-icon', text: item.kind === 'backing' ? '🎵' : '🎤' }),
       h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playAudioItemToggle(item) },
         h('div', { class: 'name', text: item.name }),
-        h('div', { class: 'sub' }, h('span', { text: new Date(item.u).toLocaleString('de-DE') + (cachedIds.has(item.id) ? ' · offline verfügbar' : '') }), h('span', { class: 'mp-time', 'data-mpid': item.id, text: isLoaded(item) ? mpTimeLabel() : '' }))),
+        h('div', { class: 'sub' }, h('span', { text: info }), h('span', { class: 'mp-time', 'data-mpid': item.id, text: isLoaded(item) ? mpTimeLabel() : '' }))),
       h('button', { class: 'more', text: isPlaying(item) ? '❚❚' : '▶', title: 'Abspielen', onclick: (e) => { e.stopPropagation(); playAudioItemToggle(item); } }),
       isLoaded(item) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
+      item.kind === 'take' ? h('button', { class: 'more', text: '📈', title: 'Tonhöhenverlauf ansehen', onclick: (e) => { e.stopPropagation(); openPitchAnalysis(s.id, item.id); } }) : null,
+      h('button', { class: 'more', text: '✎', title: 'Umbenennen', onclick: (e) => { e.stopPropagation(); renameAudio(item); } }),
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeItem(item); } }));
   }
   function draw() {
     body.innerHTML = '';
-    const takes = songAudio(s.id, 'take').slice().sort((a, b) => (b.u || 0) - (a.u || 0));
+    const takes = songAudio(s.id, 'take').slice().sort((a, b) => (b.u0 || b.u || 0) - (a.u0 || a.u || 0));
     const backing = songAudio(s.id, 'backing');
     body.append(h('div', { class: 'sub', style: 'padding:6px 6px 2px; font-weight:600;', text: '🎤 Eigene Aufnahmen' }));
     if (!takes.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Aufnahme.' }));
     takes.forEach(t => body.append(audioRow(t)));
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => { api.close(); openRecorder(s); } },
       h('span', { text: '🔴' }), h('span', { text: 'Neue Aufnahme …' })));
+    if (takes.length) body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => openProgress(s.id) },
+      h('span', { text: '📈' }), h('span', { text: 'Fortschritt über alle Aufnahmen …' })));
 
-    body.append(h('div', { class: 'sub', style: 'padding:12px 6px 2px; font-weight:600;', text: '🎵 Backing-Track' }));
+    body.append(h('div', { class: 'sub', style: 'padding:12px 6px 2px; font-weight:600;', text: '🎵 Backing-Tracks' }));
     if (!backing.length) body.append(h('div', { class: 'empty-note', text: 'Kein Backing-Track hinterlegt.' }));
     else backing.forEach(b => body.append(audioRow(b)));
     const inp = h('input', { type: 'file', accept: 'audio/*', style: 'display:none;' });
     inp.addEventListener('change', () => { if (inp.files[0]) uploadBacking(inp.files[0]); inp.value = ''; });
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() },
-      h('span', { text: '＋' }), h('span', { text: (backing.length ? 'Ersetzen' : 'Hochladen') + ' …' }), inp));
+      h('span', { text: '＋' }), h('span', { text: 'Backing-Track hinzufügen …' }), inp));
+
+    body.append(refSection(s.id, draw));
+  }
+  function renameAudio(item) {
+    const n = (prompt('Neuer Name:', item.name) || '').trim();
+    if (!n || n === item.name) return;
+    sTouch(s.id, x => { const it = (x.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.name = n; it.u = Date.now(); } });
+    if (isLoaded(item)) mpSetTitle(n, item.kind === 'backing' ? 'Backing-Track' : 'Aufnahme');
+    draw();
   }
   async function removeItem(item) {
     if (!confirm('«' + item.name + '» wirklich entfernen?')) return;
@@ -4449,20 +4653,18 @@ function manageAudio(s) {
   }
   async function uploadBacking(file) {
     if (!(await requireOnline('Backing-Track hochladen'))) return;
-    const old = songAudio(s.id, 'backing');
     setStatus('Backing-Track wird hochgeladen …', 'saving');
     try {
       const created = await uploadOne(file);
-      addAudio(s.id, { id: created.id, name: file.name, kind: 'backing' });
+      addAudio(s.id, { id: created.id, name: file.name.replace(/\.[^.]+$/, ''), kind: 'backing' });
       await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType || file.type }, file);
-      for (const o of old) { await trashAudio(o); removeAudioMeta(s.id, o.id); }
       setStatus('Backing-Track gespeichert', 'ok'); draw();
     } catch (e) { fail('Backing-Track: Hochladen fehlgeschlagen', e); }
   }
 
   draw();
   mp.listeners.add(draw);
-  const api = openModal({ title: '🎙 Aufnahmen & Backing-Track – «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+  const api = openModal({ title: '🎙 Aufnahmen & Backing-Tracks – «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
   api.onClose = () => mp.listeners.delete(draw);
 }
 
@@ -4577,7 +4779,9 @@ function safeDrawText(page, text, opts) {
 // in der App weiterbearbeiten (Schriftgrösse, Zeilenabstand, Fett/Kursiv/Unterstrichen, Korrektur).
 async function saveLyricsSheet(s, lyricsText, meta) {
   if (!(await requireOnline('Text-Blatt speichern'))) return false;
-  const html = plainTextToLyricsHtml(lyricsText, DEFAULT_TXT_FONT_SIZE, DEFAULT_TXT_LINE_HEIGHT, { lrc: meta && meta.lrc });
+  // Kopf: Titel/Interpret wie beim Anlegen eingegeben (Interpret notfalls aus dem Fund), Lyrics 18 pt zentriert
+  const hdr = { title: (s.title || (meta && meta.title) || splitArtistTitle(s.n).title || s.n), artist: s.artist || (meta && meta.artist) || splitArtistTitle(s.n).artist || '' };
+  const html = plainTextToLyricsHtml(lyricsText, LYRICS_FONT_SIZE, LYRICS_LINE_HEIGHT, { lrc: meta && meta.lrc, align: LYRICS_ALIGN, header: hdr });
   const file = new File([html], 'Text.html', { type: TXT_MIME });
   uploadTargetSong = s.id;
   setStatus('Speichere Text-Blatt …', 'saving');
@@ -4645,7 +4849,7 @@ function newSongFlow() {
     const id = createSongRaw(name, { folder: currentFolder });
     currentSongId = id;
     renderSidebar();
-    const flowApi = lyricsFlow({ id, n: name });
+    const flowApi = lyricsFlow({ id, n: name, title, artist });
     flowApi.onClose = () => { const cur = sget(id); if (cur) manageSheets({ id, ...cur }); };
   }
   const onEnter = (e) => { if (e.key === 'Enter') { e.preventDefault(); api.btns.querySelector('.primary').click(); } };
@@ -4683,7 +4887,9 @@ $('newSongBtn').addEventListener('click', newSongFlow);
 // still überschrieben, sondern nachgefragt (meine / andere / beide behalten), siehe v2.5.0.
 // ---------------------------------------------------------------
 const TXT_MIME = 'text/x-gesangsapp-lyrics';
-const DEFAULT_TXT_FONT_SIZE = 20, DEFAULT_TXT_LINE_HEIGHT = 1.9;
+const DEFAULT_TXT_FONT_SIZE = 20, DEFAULT_TXT_LINE_HEIGHT = 1.9;       // Rückfallwerte für Dokumente ohne Angabe
+// Standard für neu angelegte Lyrics-Blätter (ab v2.7.0): Lyrics 18 pt, zentriert, Kopf mit Titel/Interpret
+const LYRICS_FONT_SIZE = 18, LYRICS_LINE_HEIGHT = 1.6, LYRICS_ALIGN = 'center';
 const PERF_TXT_SCALE = 1.6;
 
 const sheetTypeLabel = (f) => f.mimeType === TXT_MIME ? 'Text' : (f.mimeType === 'application/pdf' ? 'PDF' : 'IMG');
@@ -4755,8 +4961,18 @@ function mergeChordLine(chordLine, textLine) {
   }
   return out + escapeHtml(t.slice(last).replace(/\s+$/, ''));
 }
-function docHtml(inner, fs, lh, lrc) {
-  return `<div class="lyrics-doc" style="font-size:${fs || DEFAULT_TXT_FONT_SIZE}px;line-height:${lh || DEFAULT_TXT_LINE_HEIGHT};"${lrc ? ` data-lrc="${escapeHtml(lrc)}"` : ''}>${inner || '<p>&nbsp;</p>'}</div>`;
+function docHtml(inner, fs, lh, lrc, align) {
+  const al = align && align !== 'left' ? `text-align:${align};` : '';
+  return `<div class="lyrics-doc" style="font-size:${fs || DEFAULT_TXT_FONT_SIZE}px;line-height:${lh || DEFAULT_TXT_LINE_HEIGHT};${al}"${lrc ? ` data-lrc="${escapeHtml(lrc)}"` : ''}>${inner || '<p>&nbsp;</p>'}</div>`;
+}
+// Kopf eines neuen Lyrics-Blatts: Titel (24 pt, fett), Interpret (12 pt, kursiv), eine Leerzeile (12 pt)
+function lyricsHeaderHtml(title, artist, fs) {
+  const em = (pt) => Math.round(pt / fs * 10000) / 10000 + 'em';
+  let out = '';
+  if (title) out += `<p style="font-size: ${em(24)};"><b>${escapeHtml(title)}</b></p>`;
+  if (artist) out += `<p style="font-size: ${em(12)};"><i>${escapeHtml(artist)}</i></p>`;
+  if (title || artist) out += `<p style="font-size: ${em(12)};">&nbsp;</p>`;
+  return out;
 }
 function plainTextToLyricsHtml(text, fontSize, lineHeight, opts = {}) {
   const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
@@ -4783,7 +4999,8 @@ function plainTextToLyricsHtml(text, fontSize, lineHeight, opts = {}) {
     }
     out.push(open + chordifyInline(l.trim()) + '</p>');
   }
-  return docHtml(out.join(''), fontSize, lineHeight, opts.lrc);
+  const head = opts.header ? lyricsHeaderHtml(opts.header.title, opts.header.artist, fontSize || DEFAULT_TXT_FONT_SIZE) : '';
+  return docHtml(head + out.join(''), fontSize, lineHeight, opts.lrc, opts.align);
 }
 
 // Inhalt aus Drive stammt zwar aus dem eigenen Konto, wird aber trotzdem auf erlaubte Elemente/
@@ -4814,7 +5031,8 @@ function parseLyricsHtml(raw) {
   const body = document.createElement('div');
   body.innerHTML = root.innerHTML;
   sanitizeTextDoc(body);
-  return { fontSize: fs, lineHeight: lh, lrc, html: body.innerHTML || '<p>&nbsp;</p>' };
+  const align = (root.style && root.style.textAlign) || 'left';
+  return { fontSize: fs, lineHeight: lh, lrc, align, html: body.innerHTML || '<p>&nbsp;</p>' };
 }
 
 // --- Editor-Anbindung --------------------------------------------------------
@@ -4822,13 +5040,14 @@ const textSheetEl = $('textSheet');
 const txtFontSizeSel = $('txtFontSize'), txtLineHeightSel = $('txtLineHeight'), txtBlockSel = $('txtBlock');
 const txtFontSel = $('txtFont'), txtAlignSel = $('txtAlign');
 const txtBoldBtn = $('txtBold'), txtItalicBtn = $('txtItalic'), txtUnderlineBtn = $('txtUnderline');
-let txtFs = DEFAULT_TXT_FONT_SIZE, txtLh = DEFAULT_TXT_LINE_HEIGHT, textLrc = '';
+let txtFs = DEFAULT_TXT_FONT_SIZE, txtLh = DEFAULT_TXT_LINE_HEIGHT, textLrc = '', txtAlignDoc = 'left';
 let textBaseMd5 = null, textEditVer = 0, lastTxtRange = null;
 const textConflicts = new Map(), conflictShown = new Set();
 
 function applyTxtStyle() {
   textSheetEl.style.fontSize = (txtFs * (perf ? PERF_TXT_SCALE : 1)) + 'px';
   textSheetEl.style.lineHeight = String(txtLh);
+  textSheetEl.style.textAlign = txtAlignDoc === 'left' ? '' : txtAlignDoc;
 }
 function setSelValue(sel, v) {
   const s = String(v);
@@ -4837,7 +5056,7 @@ function setSelValue(sel, v) {
 }
 function loadTextSheet(rawHtmlContent) {
   const parsed = parseLyricsHtml(rawHtmlContent);
-  txtFs = parsed.fontSize; txtLh = parsed.lineHeight; textLrc = parsed.lrc;
+  txtFs = parsed.fontSize; txtLh = parsed.lineHeight; textLrc = parsed.lrc; txtAlignDoc = parsed.align;
   textSheetEl.innerHTML = parsed.html;
   applyTxtStyle();
   lastTxtRange = null;
@@ -4846,7 +5065,7 @@ function loadTextSheet(rawHtmlContent) {
 function serializeTextSheet() {
   const c = textSheetEl.cloneNode(true);
   c.querySelectorAll('.cur').forEach(p => { p.classList.remove('cur'); if (!p.className) p.removeAttribute('class'); });
-  return docHtml(c.innerHTML, txtFs, txtLh, textLrc);
+  return docHtml(c.innerHTML, txtFs, txtLh, textLrc, txtAlignDoc);
 }
 const txtEditable = () => sheetKind === 'text' && textSheetEl.contentEditable === 'true';
 
@@ -4899,7 +5118,7 @@ function paraFmtOf(p) {
   let px = txtFs;
   if (/em$/.test(st.fontSize || '')) px = Math.round((parseFloat(st.fontSize) || 1) * txtFs);
   else if (/px$/.test(st.fontSize || '')) px = Math.round(parseFloat(st.fontSize));
-  return { px, lh: parseFloat(st.lineHeight) || txtLh, fam: fontFamKey(st.fontFamily), align: st.textAlign || 'left' };
+  return { px, lh: parseFloat(st.lineHeight) || txtLh, fam: fontFamKey(st.fontFamily), align: st.textAlign || txtAlignDoc };
 }
 function reflectParaFormat(p) {
   const f = paraFmtOf(p);
@@ -4932,7 +5151,18 @@ txtFontSizeSel.addEventListener('change', () => {
 });
 txtLineHeightSel.addEventListener('change', () => { const v = parseFloat(txtLineHeightSel.value); applyParaStyle('line-height', Math.abs(v - txtLh) < 0.001 ? '' : String(v)); });
 txtFontSel.addEventListener('change', () => applyParaStyle('font-family', TXT_FONTS[txtFontSel.value] || ''));
-txtAlignSel.addEventListener('change', () => applyParaStyle('text-align', txtAlignSel.value === 'left' ? '' : txtAlignSel.value));
+// Ausrichtung: markierte Zeilen bzw. Zeile mit Cursor; ohne Cursor im Text für das ganze Blatt (Grundeinstellung)
+txtAlignSel.addEventListener('change', () => {
+  if (!txtEditable()) return;
+  const v = txtAlignSel.value;
+  if (!selectedBlocks().length) {
+    txtAlignDoc = v; applyTxtStyle();
+    [...textSheetEl.children].forEach(p => { p.style.removeProperty('text-align'); if (!p.getAttribute('style')) p.removeAttribute('style'); });
+    toast('Ausrichtung für das ganze Blatt übernommen.', 2000);
+    queueTextSave(); return;
+  }
+  applyParaStyle('text-align', v === txtAlignDoc ? '' : v);
+});
 function txtCmd(cmd) {
   if (!txtEditable()) return;
   restoreTxtRange();
@@ -5214,25 +5444,36 @@ function createTextSheetFile(songId, name, html, opts = {}) {
 // --- PDF-Export eines Text-Blatts (Formatierung, Abschnitte, Akkorde: siehe 15_textpdf.js) ---
 async function exportTextSheetPdf() {
   if (!ready || !currentFile) { toast('Erst ein Blatt öffnen.'); return; }
-  const f = currentFile;
+  const f = currentFile, html = serializeTextSheet();
   const songName = sget(currentSongId) ? sget(currentSongId).n : f.name.replace(/\.[^.]+$/, '');
-  try {
-    setStatus('Exportiere …', 'saving');
-    const bytes = await buildTextSheetPdf(songName, serializeTextSheet());
-    setStatus('');
-    exportDialog(bytes, songName.replace(/[\\/]+/g, '-') + ' – Text.pdf', f.name.replace(/\.[^.]+$/, '') + ' (PDF).pdf', f);
-  } catch (e) { fail('Export fehlgeschlagen', e); }
+  exportDialog({
+    build: (o) => buildTextSheetPdf(songName, html, { header: !!o.header }), headerOption: true,
+    downloadName: songName.replace(/[\\/]+/g, '-') + ' – Text.pdf', sheetName: f.name.replace(/\.[^.]+$/, '') + ' (PDF).pdf', srcFile: f
+  });
 }
-// Nach dem Erzeugen: herunterladen und/oder direkt als weiteres Blatt im Song ablegen (ab v2.6.0)
-function exportDialog(bytes, downloadName, sheetName, srcFile) {
+// Export-Dialog (ab v2.6.0; ab v2.7.0 vor dem Erzeugen): herunterladen und/oder direkt als weiteres
+// Blatt im Song ablegen; bei Text-Blättern optional den Songtitel als Überschrift einfügen (Standard: aus).
+function exportDialog({ build, headerOption = false, downloadName, sheetName, srcFile }) {
   const sid = currentSongId && sget(currentSongId) ? currentSongId : null;
+  const cbHead = h('input', { type: 'checkbox' });
+  const run = async (what) => {
+    try {
+      setStatus('Exportiere …', 'saving');
+      const bytes = await build({ header: cbHead.checked });
+      setStatus('');
+      if (what === 'sheet') await attachExportedPdf(sid, bytes, sheetName, srcFile);
+      else { await deliverFile(new File([bytes], downloadName, { type: 'application/pdf' })); toast('PDF exportiert: ' + downloadName); }
+    } catch (e) { fail('Export fehlgeschlagen', e); }
+  };
   const buttons = [{ label: 'Abbrechen' }];
-  if (sid) buttons.push({ label: '📄 Als Blatt zum Song hinzufügen', fn: () => { attachExportedPdf(sid, bytes, sheetName, srcFile); } });
-  buttons.push({ label: '⤓ Herunterladen', primary: true, fn: () => { deliverFile(new File([bytes], downloadName, { type: 'application/pdf' })).then(() => toast('PDF exportiert: ' + downloadName)); } });
+  if (sid) buttons.push({ label: '📄 Als Blatt zum Song hinzufügen', fn: () => { run('sheet'); } });
+  buttons.push({ label: '⤓ Herunterladen', primary: true, fn: () => { run('download'); } });
   openModal({
-    title: '⤓ PDF exportiert', buttons,
-    body: [h('p', { style: 'margin-top:0;', text: 'Das PDF ist fertig (' + Math.max(1, Math.round(bytes.length / 1024)) + ' KB).' }),
-      sid ? h('p', { class: 'sub', style: 'font-size:12.5px; color:var(--muted);', text: '«Als Blatt hinzufügen» legt es als «' + sheetName + '» direkt hinter dem aktuellen Blatt in «' + sget(sid).n + '» ab (in Drive gespeichert und offline verfügbar).' }) : null]
+    title: '⤓ PDF exportieren', buttons,
+    body: [
+      headerOption ? h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:13px; margin-bottom:6px;' }, cbHead, h('span', { text: 'Songtitel «' + (sid ? sget(sid).n : '') + '» als Überschrift einfügen' })) : null,
+      sid ? h('p', { class: 'sub', style: 'font-size:12.5px; color:var(--muted);', text: '«Als Blatt hinzufügen» legt das PDF als «' + sheetName + '» direkt hinter dem aktuellen Blatt in «' + sget(sid).n + '» ab (in Drive gespeichert und offline verfügbar).' }) : null
+    ].filter(Boolean)
   });
 }
 async function attachExportedPdf(sid, bytes, name, srcFile) {
@@ -5281,17 +5522,19 @@ function collectTextRuns(node, st, out) {
   return out;
 }
 // Absatzformat (ab v2.6.0 pro Absatz): Grössenfaktor, Zeilenabstand, Schriftfamilie, Ausrichtung
-function paraFormat(n, baseFs, baseLh) {
+function paraFormat(n, baseFs, baseLh, baseAlign) {
   const st = n.style || {};
   let mult = 1;
   if (/em$/.test(st.fontSize || '')) mult = parseFloat(st.fontSize) || 1;
   else if (/px$/.test(st.fontSize || '')) mult = (parseFloat(st.fontSize) || baseFs) / baseFs;
-  return { mult, lh: parseFloat(st.lineHeight) || baseLh, fam: fontFamKey(st.fontFamily), align: st.textAlign || 'left' };
+  return { mult, lh: parseFloat(st.lineHeight) || baseLh, fam: fontFamKey(st.fontFamily), align: st.textAlign || baseAlign || 'left' };
 }
 const SYM_WIDE = { cresc: 1.7, decresc: 1.7, slur: 1.7, caesura: 0.9 };
 const symWidthFactor = (k) => SYM_WIDE[k] || (DYN[k] ? 0.5 + 0.45 * k.length : 1);
 
-async function buildTextSheetPdf(songName, html) {
+// Schriftgrössen im Text-Blatt entsprechen im PDF Punkten (18 = 18 pt). Songtitel als Überschrift nur
+// auf Wunsch (header:true) – neue Lyrics-Blätter enthalten Titel/Interpret ohnehin als erste Zeilen.
+async function buildTextSheetPdf(songName, html, { header = false } = {}) {
   const { PDFDocument, StandardFonts, rgb } = await loadPdfLib();
   const parsed = parseLyricsHtml(html);
   const root = document.createElement('div'); root.innerHTML = parsed.html;
@@ -5320,7 +5563,7 @@ async function buildTextSheetPdf(songName, html) {
     symImg[k] = await doc.embedPng(new Uint8Array(await (await canvasBlob(c, 'image/png')).arrayBuffer()));
   }
   const W = 595.28, H = 841.89, M = 54, MAXW = W - 2 * M;
-  const size = clamp(parsed.fontSize * 0.72, 9, 30);
+  const size = clamp(parsed.fontSize, 6, 60);
   const accent = rgb(0x6b / 255, 0x4f / 255, 0x3b / 255), muted = rgb(0x8a / 255, 0x81 / 255, 0x78 / 255);
   const ink = rgb(0x2a / 255, 0x26 / 255, 0x22 / 255), chordCol = rgb(0x24 / 255, 0x71 / 255, 0xa3 / 255), refBar = rgb(0xc9 / 255, 0xb2 / 255, 0x9b / 255);
   const title = sanitizeForPdf(songName);
@@ -5328,24 +5571,25 @@ async function buildTextSheetPdf(songName, html) {
   // Absätze sammeln (auch lose Textknoten auf oberster Ebene)
   const paras = [];
   root.childNodes.forEach(n => {
-    if (n.nodeType === 3) { if (n.textContent.trim()) paras.push({ cls: '', fmt: { mult: 1, lh: parsed.lineHeight, fam: 'sans', align: 'left' }, runs: [{ t: 'x', s: n.textContent, st: {} }] }); return; }
+    if (n.nodeType === 3) { if (n.textContent.trim()) paras.push({ cls: '', fmt: { mult: 1, lh: parsed.lineHeight, fam: 'sans', align: parsed.align }, runs: [{ t: 'x', s: n.textContent, st: {} }] }); return; }
     if (n.nodeType !== 1) return;
     const cls = ['lbl', 'ref', 'bri'].find(c => n.classList.contains(c)) || '';
     const base = cls === 'lbl' ? { b: true } : cls === 'bri' ? { i: true } : {};
-    paras.push({ cls, fmt: paraFormat(n, parsed.fontSize, parsed.lineHeight), runs: collectTextRuns(n, base, []) });
+    paras.push({ cls, fmt: paraFormat(n, parsed.fontSize, parsed.lineHeight, parsed.align), runs: collectTextRuns(n, base, []) });
   });
 
   let page, y, pageNo = 0;
   function startPage() {
     page = doc.addPage([W, H]); pageNo++;
     y = H - M;
+    if (!header) return;
     let ts = pageNo === 1 ? 21 : 13;
     const t = pageNo === 1 ? title : title + ' - Fortsetzung';
     while (ts > 11 && FB.widthOfTextAtSize(t, ts) > MAXW) ts -= 1;
     safeDrawText(page, t, { x: M, y: y - ts * 0.8, size: ts, font: FB, color: accent });
     y -= ts * 1.25;
     page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1.2, color: accent, opacity: 0.45 });
-    y -= size * 1.1;
+    y -= Math.min(size, 18) * 1.1;
   }
   const need = (hh) => { if (y - hh < M + 24) startPage(); };
   const tw = (s, st, sz, fam) => { try { return fontOf(st, fam).widthOfTextAtSize(s, sz); } catch (e) { return s.length * sz * 0.5; } };
@@ -5418,7 +5662,7 @@ async function buildTextSheetPdf(songName, html) {
     });
   });
   const pages = doc.getPages();
-  pages.forEach((pg, i) => safeDrawText(pg, 'Gesangs-App · Seite ' + (i + 1) + '/' + pages.length, { x: M, y: 30, size: 8, font: FR, color: muted }));
+  if (pages.length > 1) pages.forEach((pg, i) => safeDrawText(pg, 'Seite ' + (i + 1) + '/' + pages.length, { x: W - M - 40, y: 30, size: 8, font: FR, color: muted }));
   doc.setTitle(title + ' - Text'); doc.setCreator('Gesangs-App');
   return new Uint8Array(await doc.save());
 }
@@ -5505,7 +5749,7 @@ async function convertPdfSheet(s, f, after) {
           try {
             setStatus('Wandle um …', 'saving');
             const idx = (lib.songs[s.id].sheets || []).indexOf(f.id);
-            const nf = await createTextSheetFile(s.id, f.name.replace(/\.pdf$/i, '') + '.html', plainTextToLyricsHtml(val, DEFAULT_TXT_FONT_SIZE, DEFAULT_TXT_LINE_HEIGHT), { atIndex: idx < 0 ? null : idx });
+            const nf = await createTextSheetFile(s.id, f.name.replace(/\.pdf$/i, '') + '.html', plainTextToLyricsHtml(val, LYRICS_FONT_SIZE, LYRICS_LINE_HEIGHT, { align: LYRICS_ALIGN }), { atIndex: idx < 0 ? null : idx });
             if (trash.checked) { detachSheet(s.id, f.id); await trashFile(f, true); }
             setStatus('Umgewandelt', 'ok');
             currentSongId = s.id;
@@ -5528,11 +5772,11 @@ async function convertPdfSheet(s, f, after) {
 //              Fassungen oft leicht anders getaktet sind als das Original.
 // Von Hand scrollen ist jederzeit möglich; der Auto-Scroll läuft ab der neuen Position weiter.
 // ---------------------------------------------------------------
-const AS = { on: false, sync: false, speed: 30, ofs: 0, raf: 0, last: 0, pos: 0, map: null, curP: null, saveT: null, waitIv: null };
+const AS = { on: false, sync: false, speed: 10, ofs: 0, raf: 0, last: 0, pos: 0, map: null, curP: null, saveT: null, waitIv: null };
 
 function asLabel() {
   $('perfSpeed').textContent = AS.sync ? ('Versatz ' + (AS.ofs >= 0 ? '+' : '') + AS.ofs.toFixed(1) + ' s') : (Math.round(AS.speed) + ' px/s');
-  $('perfScroll').textContent = AS.on ? '⏸ Pause' : '▶ Scroll';
+  setIconLabel($('perfScroll'), AS.on ? '❚❚ Pause' : '▶ Scroll');
   $('perfSync').classList.toggle('on', AS.sync);
   document.body.classList.toggle('as-sync', AS.sync);
 }
@@ -5547,7 +5791,7 @@ function asStop() {
 function asPrepare() {                       // beim Betreten des Auftrittsmodus bzw. Wechsel des Blatts
   asStop();
   AS.sync = false; AS.map = null;
-  if (currentFile && sheetKind === 'text') { const m = fget(currentFile.id); AS.speed = m.scr || 30; AS.ofs = m.lro || 0; }
+  if (currentFile && sheetKind === 'text') { const m = fget(currentFile.id); AS.speed = m.scr || 10; AS.ofs = m.lro || 0; }
   asLabel();
 }
 function asSavePrefs() {
@@ -5643,7 +5887,7 @@ function asOfferLrcSearch() {
 function asOfferPlayback() {
   const sid = currentSongId, items = [];
   songLinks(sid).forEach(l => items.push({ label: (l.type === 'yt' ? '▶ YouTube: ' : '♫ Spotify: ') + (l.title || l.url) + (l.kind === 'karaoke' ? ' (Karaoke)' : ''), fn: () => { startMiniPlayerLink(l); asWaitAndSync(); } }));
-  songAudio(sid).forEach(a => items.push({ label: (a.kind === 'backing' ? '🎵 Backing-Track: ' : '🎤 Aufnahme: ') + a.name, fn: async () => {
+  songAudio(sid).filter(a => a.kind !== 'ref').forEach(a => items.push({ label: (a.kind === 'backing' ? '🎵 Backing-Track: ' : '🎤 Aufnahme: ') + a.name, fn: async () => {
     try { playAudioBlobInMiniPlayer(a, await loadAudioBlob(a)); asWaitAndSync(); } catch (e) { toast('Audio konnte nicht geladen werden: ' + e.message); }
   } }));
   if (!items.length) { toast('Für «Sync» bitte eine Verknüpfung (YouTube/Spotify) oder einen Backing-Track/eine Aufnahme am Song hinterlegen.', 4500); return; }
@@ -5865,7 +6109,7 @@ async function stopShare(t) {
 // keine zusätzliche Bibliothek nötig. Inhalt:
 //   Songs/<Ordner>/<Song>/<Blätter im Original> (+ optional «… (mit Anmerkungen).pdf»)
 //   Songs/<Ordner>/<Song>/Links & Notizen.txt
-//   Audio/<Ordner>/<Song>/<Aufnahmen, Backing-Tracks>          (optional)
+//   Audio/<Ordner>/<Song>/<Aufnahmen, Backing-Tracks (optional), Referenzmelodie>
 //   _Daten/library.json, _Daten/dateien.json, _Daten/Anmerkungen/<Datei-ID>.annotations.json
 //   LIESMICH.txt
 // ---------------------------------------------------------------
@@ -5931,7 +6175,7 @@ async function buildBackup(opts, progress) {
   };
   const songDir = (sid) => folderPath(effSongFolder(sid)).map(x => safeFileName(x.n)).concat(safeFileName(lib.songs[sid].n)).join('/');
   const songs = aliveSongs().sort((a, b) => songDir(a.id).localeCompare(songDir(b.id), 'de', { numeric: true }));
-  const total = songs.reduce((a, s) => a + songSheets(s.id).length + (opts.audio ? songAudio(s.id).length : 0), 0);
+  const total = songs.reduce((a, s) => a + songSheets(s.id).length + songAudio(s.id).filter(x => opts.audio || x.kind === 'ref').length, 0);
   let n = 0;
   for (const s of songs) {
     const dir = 'Songs/' + songDir(s.id) + '/';
@@ -5942,6 +6186,8 @@ async function buildBackup(opts, progress) {
           const html = await textHtmlForSheet(f);
           const path = add(dir + safeFileName(f.name.replace(/\.[^.]+$/, '')) + '.html', standaloneTextHtml(s.n, html));
           index.push({ id: f.id, name: f.name, mimeType: f.mimeType, song: s.id, path });
+          const a = await annotForSheet(f);                      // Anmerkungen auf Text-Blättern (ab v2.7.0)
+          if (hasContent(a)) add('_Daten/Anmerkungen/' + f.id + '.annotations.json', JSON.stringify(a));
         } else {
           const blob = await loadBlob(f);
           const path = add(dir + safeFileName(f.name), new Uint8Array(await blob.arrayBuffer()));
@@ -5956,12 +6202,16 @@ async function buildBackup(opts, progress) {
     }
     const info = await songInfoText(s.id, true).catch(() => null);
     if (info) add(dir + 'Links & Notizen.txt', info);
-    if (opts.audio) {
-      for (const a of songAudio(s.id)) {
-        progress(`Sichere ${++n}/${total} …`);
-        try { add('Audio/' + songDir(s.id) + '/' + safeFileName(a.name), new Uint8Array(await (await loadAudioBlob(a)).arrayBuffer())); }
-        catch (e) { missing.push(s.n + ' – Audio ' + a.name + ' (' + e.message + ')'); }
-      }
+    // Aufnahmen/Backing-Tracks optional, Referenzmelodie (klein) immer; ab v2.8.0 im Verzeichnis, damit
+    // «Backup einspielen» sie wiederherstellen kann
+    for (const a of songAudio(s.id).filter(x => opts.audio || x.kind === 'ref')) {
+      progress(`Sichere ${++n}/${total} …`);
+      try {
+        const blob = await loadAudioBlob(a);
+        const ext = /\.[a-z0-9]{2,5}$/i.test(a.name) ? '' : audioExt(blob.type);
+        const path = add('Audio/' + songDir(s.id) + '/' + safeFileName(a.name) + ext, new Uint8Array(await blob.arrayBuffer()));
+        index.push({ id: a.id, name: a.name + ext, mimeType: blob.type || 'application/octet-stream', song: s.id, kind: a.kind, path });
+      } catch (e) { missing.push(s.n + ' – Audio ' + a.name + ' (' + e.message + ')'); }
     }
   }
   const d = new Date();
@@ -5970,7 +6220,7 @@ async function buildBackup(opts, progress) {
   add('LIESMICH.txt', [
     'Gesangs-App – Backup vom ' + d.toLocaleString('de-CH') + ' (App-Version ' + APP_VERSION + ')',
     '',
-    songs.length + ' Songs, ' + index.length + ' Blätter' + (opts.audio ? ', inkl. Aufnahmen/Backing-Tracks' : ''),
+    songs.length + ' Songs, ' + index.filter(e => !e.kind).length + ' Blätter' + (opts.audio ? ', inkl. Aufnahmen/Backing-Tracks' : ''),
     '',
     'Songs/     Blätter im Original (PDF/Bild), Text-Blätter als HTML-Seite (im Browser öffnen),',
     '           je Song «Links & Notizen.txt»' + (opts.pdf ? ', PDFs «(mit Anmerkungen)» mit eingebrannten Strichen/Symbolen' : ''),
@@ -5980,19 +6230,21 @@ async function buildBackup(opts, progress) {
     '',
     missing.length ? 'NICHT enthalten (bitte mit Internet erneut sichern):\n- ' + missing.join('\n- ') : 'Alle Blätter sind enthalten.'
   ].filter(x => x !== null).join('\n'));
-  return { blob: makeZip(entries), missing, songs: songs.length, sheets: index.length };
+  return { blob: makeZip(entries), missing, songs: songs.length, sheets: index.filter(e => !e.kind).length };
 }
 
+const audioExt = (t) => /webm/.test(t) ? '.webm' : /mp4|m4a|aac/.test(t) ? '.m4a' : /mpeg|mp3/.test(t) ? '.mp3' : /wav/.test(t) ? '.wav' : /ogg/.test(t) ? '.ogg' : '';
 function backupDialog() {
   const cbAudio = h('input', { type: 'checkbox' }), cbPdf = h('input', { type: 'checkbox' });
-  const nAudio = aliveSongs().reduce((a, s) => a + songAudio(s.id).length, 0);
+  const nAudio = aliveSongs().reduce((a, s) => a + audioCount(s.id), 0);
   const row = (cb, text) => h('label', { style: 'display:flex; gap:8px; align-items:center; margin-top:8px; font-size:13px;' }, cb, h('span', { text }));
   openModal({
     title: '💾 Backup der Bibliothek',
     body: [h('p', { style: 'margin-top:0; font-size:13px;', text: 'Speichert alle Songs mit ihren Blättern, Text-Blättern, Anmerkungen, Notizen, Links, Ordnern, Tags und Setlisten als eine ZIP-Datei auf dieses Gerät. Nicht offline gespeicherte Blätter werden dafür aus Drive geladen.' }),
       row(cbPdf, 'Zusätzlich PDFs mit eingebrannten Anmerkungen (dauert länger)'),
       row(cbAudio, 'Aufnahmen & Backing-Tracks mitsichern' + (nAudio ? ` (${nAudio})` : ' (keine vorhanden)'))],
-    buttons: [{ label: 'Abbrechen' }, { label: 'Backup erstellen', primary: true, fn: () => { runBackup({ audio: cbAudio.checked, pdf: cbPdf.checked }); } }]
+    buttons: [{ label: 'Abbrechen' }, { label: '♻ Backup einspielen …', fn: () => { restoreDialog(); } },
+      { label: 'Backup erstellen', primary: true, fn: () => { runBackup({ audio: cbAudio.checked, pdf: cbPdf.checked }); } }]
   });
 }
 async function runBackup(opts) {
@@ -6007,6 +6259,1332 @@ async function runBackup(opts) {
   } catch (e) { fail('Backup fehlgeschlagen', e); }
 }
 $('backupBtn').addEventListener('click', backupDialog);
+
+
+// ---------------------------------------------------------------
+// Oberfläche (ab v2.7.0): Werkzeug-, Song- und Auftrittsleiste auf dem Handy nur mit Symbolen
+// (siehe .lbl-t in 01_head.html). Dynamisch beschriftete Knöpfe setzen ihren Text über setIconLabel().
+// ---------------------------------------------------------------
+iconizeButtons($('toolbar'));
+iconizeButtons($('perfBar'));
+(function () { const b = document.querySelector('#toolbar [data-tool="text"]'); if (b) { b.textContent = ''; b.append('T', h('span', { class: 'lbl-t', text: ' Text' })); } })();
+
+
+// ---------------------------------------------------------------
+// Üben mit dem Mini-Player (ab v2.8.0): 🎚 in der Leiste öffnet
+//   • Tempo 50–150 % ohne Tonhöhenänderung (Audio-Datei: playbackRate mit preservesPitch;
+//     YouTube: nächstmögliche Geschwindigkeit des Players; Spotify erlaubt das nicht)
+//   • Tonart ±6 Halbtöne bei gleichem Tempo (nur Audio-Dateien: einmalige Umrechnung im Gerät
+//     per WSOLA-Zeitdehnung + Neuabtastung, je Halbtonschritt zwischengespeichert)
+//   • A–B-Schleife (Audio, YouTube, Spotify)
+// Einstellungen gelten für die gerade laufende Wiedergabe und werden beim Wechsel zurückgesetzt.
+// ---------------------------------------------------------------
+const PR = { open: false, src: null, rate: 1, semi: 0, a: null, b: null, loop: false, cache: new Map(), origUrl: null, decoded: null, busy: 0, el: null, msg: '' };
+
+// --- Reine Signalverarbeitung (testbar) ---------------------------------------------------
+// WSOLA: Plan der Analyse-Positionen für eine Dehnung um «stretch» (>1 = länger), gemeinsam für alle Kanäle
+async function wsolaPositions(x, sr, stretch, onProgress) {
+  const N = 2 * Math.round(sr * 0.02), Hs = N / 2, Ha = Hs / stretch, delta = Math.round(sr * 0.008), L = Hs;
+  const outLen = Math.round(x.length * stretch), pos = [];
+  let prev = 0;
+  const frames = Math.ceil(outLen / Hs);
+  for (let k = 0; k < frames; k++) {
+    let p;
+    if (k === 0) p = 0;
+    else {
+      const target = prev + Hs, nominal = Math.round(k * Ha);
+      const lo = Math.max(0, nominal - delta), hi = Math.min(x.length - N, nominal + delta);
+      p = clamp(nominal, 0, Math.max(0, x.length - N));
+      if (hi > lo && target + L <= x.length) {
+        let best = -Infinity;
+        const corr = (c, step) => { let s = 0; for (let i = 0; i < L; i += step) s += x[c + i] * x[target + i]; return s; };
+        for (let c = lo; c <= hi; c += 2) { const s = corr(c, 4); if (s > best) { best = s; p = c; } }
+        const c0 = p; best = -Infinity;
+        for (let c = Math.max(lo, c0 - 2); c <= Math.min(hi, c0 + 2); c++) { const s = corr(c, 1); if (s > best) { best = s; p = c; } }
+      }
+    }
+    pos.push(p); prev = p;
+    if (k % 400 === 399) { if (onProgress) onProgress(k / frames); await sleep(0); }
+  }
+  return { pos, N, Hs, outLen };
+}
+function applyWsola(x, plan) {
+  const { pos, N, Hs, outLen } = plan;
+  const out = new Float32Array(outLen + N), ws = new Float32Array(outLen + N), win = new Float32Array(N);
+  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
+  pos.forEach((p, k) => {
+    const o = k * Hs;
+    for (let i = 0; i < N; i++) { const v = x[p + i]; if (v === undefined) break; out[o + i] += v * win[i]; ws[o + i] += win[i]; }
+  });
+  for (let i = 0; i < out.length; i++) if (ws[i] > 1e-3) out[i] /= ws[i];
+  return out.subarray(0, outLen);
+}
+// Neu abtasten: factor > 1 = schneller abspielen (kürzer, höher)
+function resampleLinear(x, factor) {
+  const n = Math.floor(x.length / factor), y = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const s = i * factor, j = Math.floor(s), f = s - j; y[i] = (x[j] || 0) * (1 - f) + (x[j + 1] || 0) * f; }
+  return y;
+}
+async function pitchShiftChannels(chs, sr, semi, onProgress) {
+  const f = Math.pow(2, semi / 12);
+  const mono = chs.length === 1 ? chs[0] : chs[0].map((v, i) => chs.reduce((a, c) => a + c[i], 0) / chs.length);
+  const plan = await wsolaPositions(mono, sr, f, onProgress);
+  return chs.map(c => { const y = resampleLinear(applyWsola(c, plan), f); return y.length > c.length ? y.subarray(0, c.length) : y; });
+}
+async function pitchShiftSamples(x, sr, semi) { return (await pitchShiftChannels([x], sr, semi))[0]; }
+function encodeWav(chs, sr) {
+  const nc = chs.length, n = chs[0].length, buf = new ArrayBuffer(44 + n * nc * 2), dv = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); dv.setUint32(4, 36 + n * nc * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, nc, true); dv.setUint32(24, sr, true);
+  dv.setUint32(28, sr * nc * 2, true); dv.setUint16(32, nc * 2, true); dv.setUint16(34, 16, true); w(36, 'data'); dv.setUint32(40, n * nc * 2, true);
+  let o = 44;
+  for (let i = 0; i < n; i++) for (let c = 0; c < nc; c++) { const v = clamp(chs[c][i] || 0, -1, 1); dv.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7FFF, true); o += 2; }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+// --- Steuerung der laufenden Wiedergabe ----------------------------------------------------
+function mpSeek(t) {
+  try {
+    if (mp.kind === 'audio' && mp.audioEl) mp.audioEl.currentTime = Math.max(0, t);
+    else if (mp.ytPlayer && mp.ytPlayer.seekTo) mp.ytPlayer.seekTo(Math.max(0, t), true);
+    else if (mp.spCtrl && mp.spCtrl.seek) mp.spCtrl.seek(Math.max(0, t));
+  } catch (e) {}
+  setTimeout(mpTick, 50);
+}
+const prKind = () => mp.kind === 'audio' ? 'audio' : (mp.ytPlayer ? 'yt' : (mp.link && mp.link.type === 'sp' ? 'sp' : (mp.link ? 'yt' : null)));
+function prApplyRate() {
+  const k = prKind();
+  if (k === 'audio' && mp.audioEl) {
+    const a = mp.audioEl;
+    a.defaultPlaybackRate = PR.rate; a.playbackRate = PR.rate;
+    if ('preservesPitch' in a) a.preservesPitch = true; else if ('webkitPreservesPitch' in a) a.webkitPreservesPitch = true;
+    PR.msg = '';
+  } else if (k === 'yt' && mp.ytPlayer && mp.ytPlayer.setPlaybackRate) {
+    let r = PR.rate;
+    try {
+      const av = (mp.ytPlayer.getAvailablePlaybackRates && mp.ytPlayer.getAvailablePlaybackRates()) || [];
+      if (av.length) r = av.reduce((b, x) => Math.abs(x - PR.rate) < Math.abs(b - PR.rate) ? x : b, av[0]);
+      mp.ytPlayer.setPlaybackRate(r);
+    } catch (e) {}
+    PR.msg = Math.abs(r - PR.rate) > 0.001 ? 'YouTube erlaubt hier nur ' + Math.round(r * 100) + ' %.' : '';
+    PR.rate = r;
+  } else if (k === 'sp') PR.msg = 'Spotify erlaubt kein anderes Tempo.';
+}
+function prReset() {
+  PR.cache.forEach(u => URL.revokeObjectURL(u)); PR.cache.clear();
+  PR.rate = 1; PR.semi = 0; PR.a = PR.b = null; PR.loop = false; PR.decoded = null; PR.msg = ''; PR.busy++;
+  PR.origUrl = mp.audioEl ? mp.audioEl.src : null;
+}
+function prSwapSrc(url) {
+  const a = mp.audioEl; if (!a) return;
+  const t = a.currentTime, playing = !a.paused;
+  a.addEventListener('loadedmetadata', () => { try { a.currentTime = Math.min(t, a.duration || t); } catch (e) {} prApplyRate(); if (playing) a.play().catch(() => {}); }, { once: true });
+  a.src = url;
+}
+async function prSetKey(semi) {
+  if (prKind() !== 'audio' || !mp.audioEl) return;
+  PR.semi = clamp(semi, -6, 6); const my = ++PR.busy, item = mp.audioItem;
+  if (!PR.semi) { PR.msg = ''; prSwapSrc(PR.origUrl); prRender(); return; }
+  if (PR.cache.has(PR.semi)) { PR.msg = ''; prSwapSrc(PR.cache.get(PR.semi)); prRender(); return; }
+  PR.msg = 'Tonart wird umgerechnet …'; prRender();
+  try {
+    if (!PR.decoded) {
+      const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const ab = await new AC(1, 1, 44100).decodeAudioData(await mp.audioBlob.arrayBuffer());
+      PR.decoded = { sr: ab.sampleRate, chs: Array.from({ length: Math.min(2, ab.numberOfChannels) }, (_, c) => ab.getChannelData(c)) };
+    }
+    if (my !== PR.busy || mp.audioItem !== item) return;
+    const semiNow = PR.semi;
+    const out = await pitchShiftChannels(PR.decoded.chs, PR.decoded.sr, semiNow, (f) => { if (my === PR.busy) { PR.msg = 'Tonart wird umgerechnet … ' + Math.round(f * 100) + ' %'; prRender(); } });
+    const url = URL.createObjectURL(encodeWav(out, PR.decoded.sr));
+    if (PR.cache.size >= 3) { const [k0, u0] = PR.cache.entries().next().value; URL.revokeObjectURL(u0); PR.cache.delete(k0); }
+    PR.cache.set(semiNow, url);
+    if (my !== PR.busy || mp.audioItem !== item) return;
+    PR.msg = ''; prSwapSrc(url);
+  } catch (e) { PR.msg = 'Umrechnen nicht möglich: ' + e.message; PR.semi = 0; }
+  prRender();
+}
+setInterval(() => {
+  if (!PR.loop || PR.a == null || PR.b == null || PR.b <= PR.a) return;
+  const s = mpState();
+  if (s && s.playing && s.t >= PR.b) mpSeek(PR.a);
+}, 80);
+
+// Tempo in 5-%-Schritten; YouTube kennt nur feste Stufen (meist 0.25er) → zur nächsten verfügbaren Stufe
+function prStep(dir) {
+  let av = [];
+  try { if (prKind() === 'yt' && mp.ytPlayer && mp.ytPlayer.getAvailablePlaybackRates) av = (mp.ytPlayer.getAvailablePlaybackRates() || []).filter(r => r >= 0.5 && r <= 1.5).sort((a, b) => a - b); } catch (e) {}
+  if (av.length > 1 && av.length <= 15) {
+    const nx = dir < 0 ? av.filter(r => r < PR.rate - 1e-6).pop() : av.find(r => r > PR.rate + 1e-6);
+    if (nx != null) PR.rate = nx;
+  } else PR.rate = clamp(Math.round((PR.rate + dir * 0.05) * 100) / 100, 0.5, 1.5);
+  prApplyRate(); prRender();
+}
+
+// --- Bedienfeld im Mini-Player ------------------------------------------------------------
+function prToggle() { PR.open = !PR.open; prRender(); }
+function prRender() {
+  if (!mp.el) return;
+  if (!PR.el) { PR.el = h('div', { class: 'mp-practice', style: 'display:none;' }); mp.el.insertBefore(PR.el, mp.hintEl); }
+  if (mp.pracBtn) mp.pracBtn.classList.toggle('on', PR.open || PR.rate !== 1 || PR.semi !== 0 || PR.loop);
+  PR.el.style.display = PR.open && mp.kind ? 'block' : 'none';
+  if (!PR.open) return;
+  const k = prKind(), el = PR.el;
+  el.innerHTML = '';
+  const row = (label, ...kids) => h('div', { class: 'pr-row' }, h('span', { class: 'pr-l', text: label }), ...kids);
+  const btn = (text, title, fn, dis) => h('button', { text, title, disabled: dis || null, onclick: fn });
+  const tempoDis = k === 'sp';
+  el.append(row('Tempo',
+    btn('−', 'Langsamer', () => prStep(-1), tempoDis),
+    h('span', { class: 'pr-v', text: Math.round(PR.rate * 100) + ' %' }),
+    btn('+', 'Schneller', () => prStep(1), tempoDis),
+    PR.rate !== 1 ? btn('↺', 'Originaltempo', () => { PR.rate = 1; prApplyRate(); prRender(); }) : null));
+  const keyDis = k !== 'audio';
+  el.append(row('Tonart',
+    btn('−', 'Einen Halbton tiefer', () => prSetKey(PR.semi - 1), keyDis || PR.semi <= -6),
+    h('span', { class: 'pr-v', text: (PR.semi > 0 ? '+' : '') + PR.semi + ' HT' }),
+    btn('+', 'Einen Halbton höher', () => prSetKey(PR.semi + 1), keyDis || PR.semi >= 6),
+    PR.semi ? btn('↺', 'Originaltonart', () => prSetKey(0)) : null));
+  const cur = () => (mpState() || { t: 0 }).t;
+  el.append(row('A–B',
+    btn(PR.a == null ? 'A' : 'A ' + fmtTime(PR.a), 'Schleifenanfang = aktuelle Stelle', () => { PR.a = cur(); if (PR.b != null && PR.b <= PR.a) PR.b = null; prRender(); }),
+    btn(PR.b == null ? 'B' : 'B ' + fmtTime(PR.b), 'Schleifenende = aktuelle Stelle', () => { const t = cur(); if (PR.a == null || t > PR.a + 0.3) { PR.b = t; PR.loop = true; mpSeek(PR.a == null ? 0 : PR.a); if (PR.a == null) PR.a = 0; } else toast('B muss nach A liegen.'); prRender(); }),
+    btn(PR.loop ? '⟲ an' : '⟲ aus', 'Schleife ein/aus', () => { if (PR.a == null || PR.b == null) { toast('Erst A und B setzen.'); return; } PR.loop = !PR.loop; prRender(); }),
+    PR.a != null || PR.b != null ? btn('✕', 'Schleife löschen', () => { PR.a = PR.b = null; PR.loop = false; prRender(); }) : null));
+  if (PR.loop) el.lastChild.querySelector('button:nth-of-type(3)').classList.add('on');
+  const note = PR.msg || (k === 'sp' ? 'Spotify: nur A–B-Schleife möglich.' : (k === 'yt' ? 'Tonart nur bei Audio-Dateien (Backing-Track, Aufnahme).' : ''));
+  if (note) el.append(h('div', { class: 'pr-note', text: note }));
+}
+mp.listeners.add(() => {
+  const id = mpCurrentId();
+  // Beim Stoppen schliessen – beim direkten Wechsel zur nächsten Wiedergabe (stop + start) offen lassen
+  if (id !== PR.src) { PR.src = id; prReset(); if (!id) setTimeout(() => { if (!mpCurrentId()) { PR.open = false; prRender(); } }, 0); }
+  if (mp.ytPlayer && PR.rate !== 1) prApplyRate();
+  prRender();
+});
+
+
+// ---------------------------------------------------------------
+// Tonhöhenanalyse von Aufnahmen (ab v2.8.0)
+//   📈 je Aufnahme: Tonhöhenverlauf über die ganze Aufnahme, eingefärbt nach Abweichung (grün = sauber,
+//      orange = knapp, rot = daneben), mit Referenzmelodie (grau, falls hinterlegt), Liste der
+//      Problemstellen («zu tief»/«zu hoch») und Wiedergabe-Cursor (Antippen im Verlauf = dorthin springen).
+//   Fortschritt: alle Aufnahmen eines Songs im Vergleich (Treffsicherheit, Melodie-Treffer, Tendenz).
+// Die Tonhöhen-Rohdaten werden lokal zwischengespeichert (IndexedDB kv 'pitch:<id>'), die Kennzahlen
+// als item.st im Song (synchronisiert, damit sie auf allen Geräten sichtbar sind).
+// ---------------------------------------------------------------
+const PITCH_SR = 16000, PITCH_FRAME = 1024, PITCH_HOP = 800;       // 50 ms Raster
+
+// Reine Analyse (testbar): Mono-Samples → { hop (s), p:[MIDI-Wert mit Nachkommastellen | null] }
+async function pitchTrack(x, sr, onProgress) {
+  const hop = Math.round(sr * PITCH_HOP / PITCH_SR), fr = Math.round(sr * PITCH_FRAME / PITCH_SR);
+  const n = Math.max(0, Math.floor((x.length - fr) / hop) + 1), p = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const f = detectPitch(x.subarray(i * hop, i * hop + fr), sr);
+    p[i] = f ? Math.round((69 + 12 * Math.log2(f / 440)) * 100) / 100 : null;
+    if (i % 150 === 149) { if (onProgress) onProgress(i / n); await sleep(0); }
+  }
+  return { hop: hop / sr, p: cleanPitch(p) };
+}
+// Ausreisser glätten: Median über 5 stimmhafte Nachbarn, sehr kurze Fetzen (< 3 Rahmen) verwerfen
+function cleanPitch(p) {
+  const out = p.slice();
+  for (let i = 0; i < p.length; i++) {
+    if (p[i] == null) continue;
+    const w = [];
+    for (let j = Math.max(0, i - 2); j <= Math.min(p.length - 1, i + 2); j++) if (p[j] != null) w.push(p[j]);
+    w.sort((a, b) => a - b);
+    const med = w[w.length >> 1];
+    out[i] = Math.abs(p[i] - med) > 1.5 ? med : p[i];          // Oktav-/Einzelfehler durch den Median ersetzen
+  }
+  let i = 0;
+  while (i < out.length) {
+    if (out[i] == null) { i++; continue; }
+    let j = i; while (j < out.length && out[j] != null) j++;
+    if (j - i < 3) for (let k = i; k < j; k++) out[k] = null;
+    i = j;
+  }
+  return out;
+}
+const foldCents = (c) => ((c + 600) % 1200 + 1200) % 1200 - 600;    // Oktavlage egal (Frauen-/Männerstimme)
+const refSig = (s) => s && s.ref ? [s.ref.id, s.ref.trk || 0, s.ref.tr || 0, s.ref.ofs || 0].join('|') : '';
+
+// Kennzahlen: acc = Anteil Rahmen innerhalb ±25 ct des nächsten Halbtons, dev = Ø Abweichung (ct),
+// bias = Tendenz (negativ = zu tief), lo/hi = Umfang, ra = Anteil Rahmen innerhalb ±50 ct der Referenzmelodie.
+function pitchStats(res, mel) {
+  const v = [];
+  res.p.forEach((m, i) => { if (m != null) v.push({ t: i * res.hop, m }); });
+  const out = { v: Math.round(v.length * res.hop * 10) / 10, acc: 0, dev: 0, bias: 0, lo: null, hi: null, ra: null, rb: null, spots: [] };
+  if (!v.length) return out;
+  let ok = 0, sa = 0, sb = 0;
+  v.forEach(x => { const c = (x.m - Math.round(x.m)) * 100; if (Math.abs(c) <= 25) ok++; sa += Math.abs(c); sb += c; });
+  out.acc = Math.round(ok / v.length * 100); out.dev = Math.round(sa / v.length); out.bias = Math.round(sb / v.length);
+  const sorted = v.map(x => x.m).sort((a, b) => a - b);
+  out.lo = Math.round(sorted[Math.floor(sorted.length * 0.05)]); out.hi = Math.round(sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))]);
+  const spots = [];
+  if (mel && mel.notes && mel.notes.length) {
+    let n = 0, hit = 0, sd = 0, nd = 0;
+    const perNote = new Map();
+    v.forEach(x => {
+      const r = refNoteAt(mel, x.t);
+      if (!r) return;
+      n++;
+      const d = foldCents((x.m - r.m) * 100);
+      if (Math.abs(d) <= 50) hit++;
+      if (Math.abs(d) <= 150) { sd += d; nd++; const e = perNote.get(r) || { t: x.t, m: r.m, s: 0, n: 0 }; e.s += d; e.n++; perNote.set(r, e); }
+    });
+    if (n) { out.ra = Math.round(hit / n * 100); out.rb = nd ? Math.round(sd / nd) : 0; }
+    perNote.forEach(e => { if (e.n >= 3 && Math.abs(e.s / e.n) > 30) spots.push({ t: e.t, m: e.m, c: Math.round(e.s / e.n) }); });
+  } else {
+    // ohne Referenz: gehaltene Töne (≥ 4 Rahmen auf demselben Halbton), die im Schnitt > 30 ct daneben liegen
+    let i = 0;
+    while (i < v.length) {
+      const r = Math.round(v[i].m); let j = i, s = 0;
+      while (j < v.length && Math.round(v[j].m) === r && (j === i || v[j].t - v[j - 1].t < res.hop * 1.5)) { s += (v[j].m - r) * 100; j++; }
+      if (j - i >= 4 && Math.abs(s / (j - i)) > 30) spots.push({ t: v[i].t, m: r, c: Math.round(s / (j - i)) });
+      i = j;
+    }
+  }
+  out.spots = spots.sort((a, b) => Math.abs(b.c) - Math.abs(a.c)).slice(0, 8).sort((a, b) => a.t - b.t);
+  return out;
+}
+
+async function decodeMono(blob, sr = PITCH_SR) {
+  const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!AC) throw new Error('Audio-Analyse wird von diesem Browser nicht unterstützt');
+  const ab = await new AC(1, 1, sr).decodeAudioData(await blob.arrayBuffer());
+  const x = new Float32Array(ab.length);
+  for (let c = 0; c < ab.numberOfChannels; c++) { const d = ab.getChannelData(c); for (let i = 0; i < x.length; i++) x[i] += d[i] / ab.numberOfChannels; }
+  return { x, sr: ab.sampleRate, dur: ab.duration };
+}
+async function analyzeTakePitch(item, onProgress) {
+  const key = 'pitch:' + item.id;
+  const cached = await safe(IDB.get('kv', key));
+  if (cached && cached.v === 1) return cached;
+  const { x, sr, dur } = await decodeMono(await loadAudioBlob(item));
+  const res = Object.assign({ v: 1, dur }, await pitchTrack(x, sr, onProgress));
+  await safe(IDB.put('kv', key, res));
+  return res;
+}
+// Analysieren + Kennzahlen am Song speichern (nur wenn neu oder die Referenzmelodie geändert wurde)
+async function takeStats(songId, item, onProgress) {
+  const res = await analyzeTakePitch(item, onProgress);
+  const mel = await getRefMelody(songId).catch(() => null);
+  const st = pitchStats(res, mel), s = sget(songId), rk = refSig(s);
+  const summary = { acc: st.acc, dev: st.dev, bias: st.bias, lo: st.lo, hi: st.hi, ra: st.ra, rb: st.rb, v: st.v, rk };
+  const cur = (s.audio || []).find(a => a.id === item.id);
+  if (cur && JSON.stringify(cur.st || {}) !== JSON.stringify(summary)) sTouch(songId, x => { const it = (x.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.st = summary; it.u = Date.now(); } });
+  return { res, mel, st };
+}
+const tendText = (b) => Math.abs(b) < 6 ? 'ausgeglichen' : (b < 0 ? 'eher zu tief (' + b + ' ct)' : 'eher zu hoch (+' + b + ' ct)');
+const devColor = (c) => Math.abs(c) <= 25 ? '#2e8b57' : Math.abs(c) <= 50 ? '#e08a00' : '#c0392b';
+
+function openPitchAnalysis(songId, itemId) {
+  const s = sget(songId), item = s && (s.audio || []).find(a => a.id === itemId);
+  if (!item) return;
+  const status = h('div', { class: 'sub', text: 'Analysiere Aufnahme …' });
+  const statsEl = h('div', { class: 'pa-stats' }), spotsEl = h('div', { class: 'pa-spots' });
+  const axis = h('canvas', { class: 'pa-axis', width: 44, height: 260 });
+  const cv = h('canvas', { class: 'pa-canvas', width: 600, height: 260 });
+  const cursor = h('div', { class: 'pa-cursor', style: 'display:none;' });
+  const scroller = h('div', { class: 'pa-scroll' }, h('div', { style: 'position:relative; display:inline-block;' }, cv, cursor));
+  const playBtn = h('button', { text: '▶ Abspielen', onclick: () => playAudioItemToggle(item) });
+  const legend = h('div', { class: 'sub', style: 'margin-top:4px;' },
+    h('span', { style: 'color:#2e8b57; font-weight:700;', text: '━ sauber (±25 ct)  ' }), h('span', { style: 'color:#e08a00; font-weight:700;', text: '━ knapp (±50 ct)  ' }),
+    h('span', { style: 'color:#c0392b; font-weight:700;', text: '━ daneben  ' }), h('span', { style: 'color:#999; font-weight:700;', text: '▬ Referenzmelodie' }));
+  const body = h('div', { class: 'pitch-analysis' }, status, statsEl, h('div', { class: 'pa-wrap' }, axis, scroller), legend,
+    h('div', { style: 'display:flex; gap:8px; align-items:center; margin-top:8px;' }, playBtn, h('span', { class: 'sub', text: 'Antippen im Verlauf springt an diese Stelle.' })), spotsEl);
+  const api = openModal({ title: '📈 Tonhöhenverlauf – ' + item.name, body, wide: true, buttons: [{ label: 'Schliessen' }] });
+  const PX = 50;                                      // Pixel pro Sekunde
+  let data = null, iv = null, lo = 48, hi = 76;
+  const yOf = (m) => 8 + (hi - m) / (hi - lo) * (cv.height - 16);
+  const seek = (t) => {
+    if (!(mp.kind === 'audio' && mp.audioItem && mp.audioItem.id === item.id && mp.audioEl)) { playAudioItemToggle(item).then(() => { if (mp.audioEl) mp.audioEl.currentTime = t; }); return; }
+    mp.audioEl.currentTime = t; mpTick();
+  };
+  cv.addEventListener('click', (e) => { const r = cv.getBoundingClientRect(); seek(Math.max(0, (e.clientX - r.left) / r.width * cv.width / PX)); });
+
+  function draw() {
+    const { res, mel } = data;
+    const dur = Math.max(res.dur || 0, res.p.length * res.hop, 1);
+    cv.width = Math.max(560, Math.ceil(dur * PX) + 20);
+    const cx = cv.getContext('2d'), ax = axis.getContext('2d');
+    cx.clearRect(0, 0, cv.width, cv.height); ax.clearRect(0, 0, axis.width, axis.height);
+    ax.font = '10px system-ui'; ax.fillStyle = '#777'; ax.textAlign = 'right'; ax.textBaseline = 'middle';
+    for (let m = Math.ceil(lo); m <= hi; m++) {
+      const y = yOf(m), isC = m % 12 === 0, white = [0, 2, 4, 5, 7, 9, 11].includes(((m % 12) + 12) % 12);
+      cx.strokeStyle = isC ? 'rgba(0,0,0,.28)' : (white ? 'rgba(0,0,0,.08)' : 'rgba(0,0,0,.04)'); cx.lineWidth = 1;
+      cx.beginPath(); cx.moveTo(0, y); cx.lineTo(cv.width, y); cx.stroke();
+      if (white) ax.fillText(midiName(m), axis.width - 4, y);
+    }
+    cx.fillStyle = '#999'; cx.font = '10px system-ui';
+    for (let t = 0; t <= dur; t += 5) { cx.fillRect(t * PX, cv.height - 6, 1, 6); if (t % 10 === 0) cx.fillText(fmtTime(t), t * PX + 2, cv.height - 8); }
+    if (mel) {
+      cx.fillStyle = 'rgba(120,120,120,.35)';
+      mel.notes.forEach(n => { const t = n.t + (mel.ofs || 0); if (t > dur) return; const y = yOf(n.m); cx.fillRect(t * PX, y - 4, Math.max(2, n.d * PX - 1), 8); });
+    }
+    cx.lineWidth = 2.5; cx.lineCap = 'round';
+    for (let i = 1; i < res.p.length; i++) {
+      const a = res.p[i - 1], b = res.p[i];
+      if (a == null || b == null) continue;
+      const r = mel ? refNoteAt(mel, i * res.hop) : null;
+      const c = r ? foldCents((b - r.m) * 100) : (b - Math.round(b)) * 100;
+      cx.strokeStyle = devColor(c);
+      cx.beginPath(); cx.moveTo((i - 1) * res.hop * PX, yOf(a)); cx.lineTo(i * res.hop * PX, yOf(b)); cx.stroke();
+    }
+  }
+  function showStats(st, mel) {
+    statsEl.innerHTML = '';
+    const box = (label, val, cls) => h('div', { class: 'pa-box' + (cls ? ' ' + cls : '') }, h('div', { class: 'v', text: val }), h('div', { class: 'l', text: label }));
+    const q = (x) => x >= 75 ? 'good' : x >= 50 ? 'ok' : 'bad';
+    statsEl.append(box('Treffsicherheit (±25 ct)', st.acc + ' %', q(st.acc)),
+      mel && st.ra != null ? box('Melodie getroffen (±50 ct)', st.ra + ' %', q(st.ra)) : null,
+      box('Ø Abweichung', st.dev + ' ct'), box('Tendenz', tendText(mel && st.rb != null ? st.rb : st.bias)),
+      st.lo != null ? box('Umfang', midiName(st.lo) + '–' + midiName(st.hi)) : null, box('gesungen', fmtTime(st.v)));
+    spotsEl.innerHTML = '';
+    if (!st.v) { spotsEl.append(h('div', { class: 'empty-note', text: 'In dieser Aufnahme wurde kein Gesang erkannt.' })); return; }
+    spotsEl.append(h('div', { class: 'sub', style: 'font-weight:600; margin-top:10px;', text: st.spots.length ? '🎯 Stellen zum Üben' + (mel ? ' (gegenüber der Referenzmelodie)' : ' (gehaltene Töne)') : '🎯 Keine auffälligen Stellen – schön sauber!' }));
+    st.spots.forEach(sp => spotsEl.append(h('div', { class: 'pick-row', onclick: () => seek(Math.max(0, sp.t - 1)) },
+      h('span', { class: 'sub', style: 'min-width:44px;', text: fmtTime(sp.t) }),
+      h('span', { text: midiName(sp.m) + ': ' + (sp.c < 0 ? 'zu tief (' + sp.c + ' ct)' : 'zu hoch (+' + sp.c + ' ct)') }),
+      h('span', { style: 'color:' + devColor(sp.c) + '; margin-left:auto;', text: sp.c < 0 ? '▼' : '▲' }))));
+  }
+  takeStats(songId, item, (f) => { status.textContent = 'Analysiere Aufnahme … ' + Math.round(f * 100) + ' %'; }).then(({ res, mel, st }) => {
+    if (!api.el.isConnected) return;
+    data = { res, mel };
+    const ms = res.p.filter(m => m != null).concat(mel ? mel.notes.filter(n => n.t + (mel.ofs || 0) <= res.p.length * res.hop).map(n => n.m) : []);
+    if (ms.length) { lo = Math.floor(Math.min(...ms)) - 2; hi = Math.ceil(Math.max(...ms)) + 2; if (hi - lo < 12) { const c = (hi + lo) / 2; lo = Math.floor(c - 6); hi = Math.ceil(c + 6); } }
+    status.style.display = 'none';
+    draw(); showStats(st, mel);
+    iv = setInterval(() => {
+      const on = mp.kind === 'audio' && mp.audioItem && mp.audioItem.id === item.id, s2 = on ? mpState() : null;
+      playBtn.textContent = s2 && s2.playing ? '❚❚ Pause' : '▶ Abspielen';
+      if (!s2) { cursor.style.display = 'none'; return; }
+      const x = s2.t * PX * cv.getBoundingClientRect().width / cv.width;
+      cursor.style.display = 'block'; cursor.style.left = x + 'px';
+      if (s2.playing && (x < scroller.scrollLeft + 20 || x > scroller.scrollLeft + scroller.clientWidth - 40)) scroller.scrollLeft = Math.max(0, x - 60);
+    }, 150);
+  }).catch(e => { status.textContent = 'Analyse nicht möglich: ' + e.message; });
+  api.onClose = () => clearInterval(iv);
+}
+
+// --- Fortschritt über alle Aufnahmen eines Songs -------------------------------------------
+function openProgress(songId) {
+  const s = sget(songId);
+  const takes = songAudio(songId, 'take').slice().sort((a, b) => (a.u0 || a.u || 0) - (b.u0 || b.u || 0));
+  const status = h('div', { class: 'sub', text: 'Werte Aufnahmen aus …' });
+  const cv = h('canvas', { class: 'pa-progress', width: 640, height: 220 });
+  const table = h('div', { class: 'pa-table' }), trend = h('div', { class: 'pa-trend' });
+  const api = openModal({ title: '📈 Fortschritt – «' + s.n + '»', body: h('div', {}, status, trend, cv, table), wide: true, buttons: [{ label: 'Schliessen' }] });
+  (async () => {
+    const rows = [];
+    const rk = refSig(s);
+    for (let i = 0; i < takes.length; i++) {
+      if (!api.el.isConnected) return;
+      const t = takes[i];
+      status.textContent = 'Werte Aufnahme ' + (i + 1) + ' von ' + takes.length + ' aus …';
+      try {
+        let st = t.st;
+        if (!st || st.rk !== rk) st = (await takeStats(songId, t)).st;
+        rows.push({ item: t, st });
+      } catch (e) { rows.push({ item: t, err: e.message }); }
+    }
+    if (!api.el.isConnected) return;
+    status.style.display = 'none';
+    const ok = rows.filter(r => r.st && r.st.v);
+    drawProgress(cv, ok);
+    if (ok.length >= 2) {
+      const a = ok[0].st, b = ok[ok.length - 1].st, d = b.acc - a.acc;
+      const dr = a.ra != null && b.ra != null ? b.ra - a.ra : null;
+      trend.textContent = (d >= 0 ? '📈 ' : '📉 ') + 'Treffsicherheit von ' + a.acc + ' % auf ' + b.acc + ' % (' + (d >= 0 ? '+' : '') + d + ' Punkte)' +
+        (dr != null ? ' · Melodie ' + a.ra + ' % → ' + b.ra + ' % (' + (dr >= 0 ? '+' : '') + dr + ')' : '');
+    } else trend.textContent = ok.length ? 'Für einen Verlauf braucht es mindestens zwei Aufnahmen.' : 'Noch keine auswertbare Aufnahme.';
+    table.innerHTML = '';
+    const hd = h('div', { class: 'pa-row hd' }, ...['Aufnahme', 'Treffsicher', 'Melodie', 'Ø Abw.', 'Tendenz', 'Umfang'].map(x => h('span', { text: x })));
+    table.append(hd);
+    rows.slice().reverse().forEach(r => table.append(h('div', { class: 'pa-row', onclick: () => openPitchAnalysis(songId, r.item.id) },
+      h('span', { text: r.item.name }),
+      h('span', { text: r.st ? r.st.acc + ' %' : '–' }), h('span', { text: r.st && r.st.ra != null ? r.st.ra + ' %' : '–' }),
+      h('span', { text: r.st ? r.st.dev + ' ct' : '–' }), h('span', { text: r.st ? tendText(r.st.ra != null ? r.st.rb : r.st.bias) : (r.err || '–') }),
+      h('span', { text: r.st && r.st.lo != null ? midiName(r.st.lo) + '–' + midiName(r.st.hi) : '–' }))));
+  })();
+}
+function drawProgress(cv, rows) {
+  const cx = cv.getContext('2d'), W = cv.width, H = cv.height, L = 36, R = 12, T = 12, B = 28;
+  cx.clearRect(0, 0, W, H);
+  cx.font = '10px system-ui'; cx.fillStyle = '#777'; cx.textAlign = 'right'; cx.textBaseline = 'middle';
+  for (let p = 0; p <= 100; p += 25) {
+    const y = T + (100 - p) / 100 * (H - T - B);
+    cx.strokeStyle = 'rgba(0,0,0,.1)'; cx.beginPath(); cx.moveTo(L, y); cx.lineTo(W - R, y); cx.stroke();
+    cx.fillText(p + ' %', L - 4, y);
+  }
+  if (!rows.length) return;
+  const xOf = (i) => rows.length === 1 ? (L + W - R) / 2 : L + 10 + i / (rows.length - 1) * (W - L - R - 20);
+  const yOf = (p) => T + (100 - p) / 100 * (H - T - B);
+  const line = (key, color) => {
+    const pts = rows.map((r, i) => r.st[key] == null ? null : [xOf(i), yOf(r.st[key])]).filter(Boolean);
+    if (!pts.length) return;
+    cx.strokeStyle = color; cx.fillStyle = color; cx.lineWidth = 2.5;
+    cx.beginPath(); pts.forEach((p, i) => (i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1]))); cx.stroke();
+    pts.forEach(p => { cx.beginPath(); cx.arc(p[0], p[1], 4, 0, Math.PI * 2); cx.fill(); });
+  };
+  line('acc', '#6b4f3b'); line('ra', '#2471a3');
+  cx.textAlign = 'center'; cx.textBaseline = 'top'; cx.fillStyle = '#777';
+  rows.forEach((r, i) => cx.fillText(new Date(r.item.u0 || r.item.u).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), xOf(i), H - B + 6));
+  cx.textAlign = 'left'; cx.fillStyle = '#6b4f3b'; cx.fillText('● Treffsicherheit', L + 4, 0);
+  if (rows.some(r => r.st.ra != null)) { cx.fillStyle = '#2471a3'; cx.fillText('● Melodie', L + 110, 0); }
+}
+
+
+// ---------------------------------------------------------------
+// Referenzmelodie aus MIDI oder MusicXML (ab v2.8.0)
+// Pro Song lässt sich eine MIDI-Datei (.mid) oder MusicXML-Datei (.musicxml/.xml bzw. komprimiert
+// .mxl, z. B. aus MuseScore exportiert) hinterlegen. Die Datei liegt wie Aufnahmen im Drive-Ordner
+// (song.audio, kind:'ref'); die Einstellungen am Song: ref = { id, name, trk (Spur), ofs (Versatz in
+// s: Melodie beginnt so viel später als die Aufnahme/der Backing-Track), tr (Transposition, Halbtöne) }.
+// Verwendet für: Anhören (einfacher Synthesizer), Soll-Ton während der Aufnahme, Vergleich in der
+// Tonhöhenanalyse (21_analysis.js).
+// ---------------------------------------------------------------
+const midiName = (m) => { const r = Math.round(m); return NOTE_NAMES_DE[((r % 12) + 12) % 12] + (Math.floor(r / 12) - 1); };
+
+// --- MIDI (Standard MIDI File, Format 0/1) ------------------------------------------
+function parseMidi(buf) {
+  const d = new DataView(buf), n = buf.byteLength;
+  const str = (p, l) => String.fromCharCode(...new Uint8Array(buf, p, Math.min(l, n - p)));
+  if (str(0, 4) !== 'MThd') throw new Error('Keine gültige MIDI-Datei');
+  const hlen = d.getUint32(4), ntr = d.getUint16(10), div = d.getUint16(12);
+  if (div & 0x8000) throw new Error('MIDI mit SMPTE-Zeitbasis wird nicht unterstützt');
+  let p = 8 + hlen;
+  const tempos = [{ tick: 0, us: 500000 }], raw = [];
+  const vlq = () => { let v = 0, b; do { b = d.getUint8(p++); v = (v << 7) | (b & 0x7f); } while (b & 0x80 && p < n); return v; };
+  for (let k = 0; k < ntr && p + 8 <= n; k++) {
+    const id = str(p, 4), len = d.getUint32(p + 4); p += 8;
+    const end = Math.min(n, p + len);
+    if (id !== 'MTrk') { p = end; continue; }
+    let tick = 0, rs = 0, name = '';
+    const on = new Map(), notes = [];
+    while (p < end) {
+      tick += vlq();
+      let st = d.getUint8(p);
+      if (st < 0x80) st = rs; else { p++; if (st < 0xF0) rs = st; }
+      if (st === 0xFF) {
+        const type = d.getUint8(p++), l = vlq();
+        if (type === 0x51 && l >= 3) tempos.push({ tick, us: (d.getUint8(p) << 16) | (d.getUint8(p + 1) << 8) | d.getUint8(p + 2) });
+        else if (type === 0x03 && !name) name = new TextDecoder('latin1').decode(new Uint8Array(buf, p, l)).trim();
+        p += l;
+      } else if (st === 0xF0 || st === 0xF7) { p += vlq(); }
+      else {
+        const hi = st & 0xF0, ch = st & 0x0F;
+        if (hi === 0xC0 || hi === 0xD0) { p += 1; continue; }
+        const a = d.getUint8(p), b = d.getUint8(p + 1); p += 2;
+        const key = ch * 128 + a;
+        if (hi === 0x90 && b > 0) { if (!on.has(key)) on.set(key, tick); }
+        else if (hi === 0x80 || hi === 0x90) { if (on.has(key)) { notes.push({ t0: on.get(key), t1: tick, m: a, ch }); on.delete(key); } }
+      }
+    }
+    p = end;
+    raw.push({ name, notes });
+  }
+  tempos.sort((a, b) => a.tick - b.tick);
+  const sec = (tick) => {                                   // Ticks → Sekunden über die Tempo-Karte
+    let s = 0, lastTick = 0, us = 500000;
+    for (const t of tempos) { if (t.tick >= tick) break; s += (t.tick - lastTick) * us / div / 1e6; lastTick = t.tick; us = t.us; }
+    return s + (tick - lastTick) * us / div / 1e6;
+  };
+  const tracks = [];
+  raw.forEach((tr, k) => {
+    const chans = [...new Set(tr.notes.map(x => x.ch))].filter(c => c !== 9);   // Kanal 10 = Schlagzeug
+    chans.forEach(ch => {
+      const notes = tr.notes.filter(x => x.ch === ch).map(x => ({ t: sec(x.t0), d: Math.max(0.05, sec(x.t1) - sec(x.t0)), m: x.m })).sort((a, b) => a.t - b.t);
+      if (notes.length) tracks.push({ name: (tr.name || 'Spur ' + (k + 1)) + (chans.length > 1 ? ' (Kanal ' + (ch + 1) + ')' : ''), notes });
+    });
+  });
+  return tracks;
+}
+
+// --- MusicXML (partwise; .mxl = ZIP) ---------------------------------------------------
+const STEP_IDX = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function parseMusicXml(text) {
+  const xml = new DOMParser().parseFromString(text, 'application/xml');
+  if (xml.getElementsByTagName('parsererror').length) throw new Error('MusicXML konnte nicht gelesen werden');
+  const names = {};
+  [...xml.getElementsByTagName('score-part')].forEach(sp => { const pn = sp.getElementsByTagName('part-name')[0]; names[sp.getAttribute('id')] = (pn && pn.textContent.trim()) || sp.getAttribute('id'); });
+  const tracks = [];
+  const num = (el, tag) => { const x = el.getElementsByTagName(tag)[0]; return x ? parseFloat(x.textContent) : NaN; };
+  [...xml.getElementsByTagName('part')].forEach(part => {
+    let divisions = 1, tempo = 120, cursor = 0, lastStart = 0, mainVoice = null;
+    const notes = [];
+    const secs = (dur) => dur / divisions * 60 / tempo;
+    [...part.getElementsByTagName('measure')].forEach(meas => {
+      [...meas.children].forEach(el => {
+        const tag = el.tagName;
+        if (tag === 'attributes') { const dv = num(el, 'divisions'); if (dv > 0) divisions = dv; }
+        const snd = tag === 'sound' ? el : el.getElementsByTagName('sound')[0];
+        if (snd && snd.getAttribute('tempo')) tempo = parseFloat(snd.getAttribute('tempo')) || tempo;
+        if (tag === 'backup') cursor -= secs(num(el, 'duration') || 0);
+        else if (tag === 'forward') cursor += secs(num(el, 'duration') || 0);
+        else if (tag === 'note') {
+          if (el.getElementsByTagName('grace').length) return;
+          const dur = secs(num(el, 'duration') || 0), chord = el.getElementsByTagName('chord').length > 0;
+          const vEl = el.getElementsByTagName('voice')[0], voice = vEl ? vEl.textContent.trim() : '1';
+          if (mainVoice === null && !el.getElementsByTagName('rest').length) mainVoice = voice;
+          const start = chord ? lastStart : cursor;
+          if (!chord) { lastStart = cursor; cursor += dur; }
+          if (voice !== (mainVoice || voice) || el.getElementsByTagName('rest').length) return;
+          const pe = el.getElementsByTagName('pitch')[0];
+          if (!pe) return;
+          const step = (pe.getElementsByTagName('step')[0] || {}).textContent, oct = num(pe, 'octave'), alt = num(pe, 'alter') || 0;
+          if (!(step in STEP_IDX) || isNaN(oct)) return;
+          const m = 12 * (oct + 1) + STEP_IDX[step] + alt;
+          const tieStop = [...el.getElementsByTagName('tie')].some(t => t.getAttribute('type') === 'stop');
+          const prev = notes[notes.length - 1];
+          if (tieStop && prev && prev.m === m && Math.abs(prev.t + prev.d - start) < 0.02) { prev.d += dur; return; }
+          notes.push({ t: start, d: Math.max(0.05, dur), m });
+        }
+      });
+    });
+    notes.sort((a, b) => a.t - b.t);
+    if (notes.length) tracks.push({ name: names[part.getAttribute('id')] || 'Stimme', notes });
+  });
+  return tracks;
+}
+async function parseRefFile(name, buf) {
+  const u8 = new Uint8Array(buf);
+  if (u8[0] === 0x4d && u8[1] === 0x54 && u8[2] === 0x68 && u8[3] === 0x64) return parseMidi(buf);        // "MThd"
+  if (u8[0] === 0x50 && u8[1] === 0x4b) {                                                                  // ZIP (.mxl)
+    const zip = await readZip(new Blob([buf]));
+    let root = null;
+    const cont = zip.get('META-INF/container.xml');
+    if (cont) { const m = new TextDecoder().decode(await cont()).match(/full-path="([^"]+)"/); if (m) root = m[1]; }
+    if (!root) root = [...zip.keys()].find(k => /\.(xml|musicxml)$/i.test(k) && !k.startsWith('META-INF'));
+    if (!root || !zip.get(root)) throw new Error('Im MXL-Archiv wurde keine MusicXML-Datei gefunden');
+    return parseMusicXml(new TextDecoder().decode(await zip.get(root)()));
+  }
+  const text = new TextDecoder().decode(u8);
+  if (/<score-partwise|<score-timewise/.test(text)) {
+    if (/<score-timewise/.test(text)) throw new Error('MusicXML «timewise» wird nicht unterstützt – bitte «partwise» exportieren');
+    return parseMusicXml(text);
+  }
+  throw new Error('Unbekanntes Format – bitte MIDI (.mid) oder MusicXML (.musicxml, .xml, .mxl) verwenden');
+}
+// Melodielinie einer Spur: bei gleichzeitig klingenden Tönen den höchsten nehmen («Skyline»)
+function melodyLine(notes) {
+  const out = [];
+  [...notes].sort((a, b) => a.t - b.t || b.m - a.m).forEach(n => {
+    const last = out[out.length - 1];
+    if (last && n.t < last.t + last.d - 0.01) {
+      if (n.m > last.m) { last.d = Math.max(0.05, n.t - last.t); if (last.d < 0.06) out.pop(); out.push({ ...n }); }
+      return;
+    }
+    out.push({ ...n });
+  });
+  return out;
+}
+function defaultRefTrack(tracks) {
+  const pref = /voice|vocal|gesang|melod|sopran|solo|lead|stimme|singstimme|voix/i;
+  let best = 0, score = -1;
+  tracks.forEach((t, i) => { const sc = t.notes.length + (pref.test(t.name) ? 10000 : 0); if (sc > score) { score = sc; best = i; } });
+  return best;
+}
+
+// --- Laden/Zwischenspeichern ---------------------------------------------------------
+const refCache = new Map();          // Datei-ID → Spuren
+async function refTracks(songId) {
+  const s = sget(songId);
+  if (!s || !s.ref) return null;
+  if (refCache.has(s.ref.id)) return refCache.get(s.ref.id);
+  const item = (s.audio || []).find(a => a.id === s.ref.id) || { id: s.ref.id, name: s.ref.name };
+  const tracks = await parseRefFile(s.ref.name, await (await loadAudioBlob(item)).arrayBuffer());
+  refCache.set(s.ref.id, tracks);
+  return tracks;
+}
+// Aufbereitete Melodie des Songs: { notes:[{t,d,m}] (bereits transponiert), ofs, name } oder null
+async function getRefMelody(songId) {
+  const s = sget(songId);
+  if (!s || !s.ref) return null;
+  const tracks = await refTracks(songId);
+  if (!tracks || !tracks.length) return null;
+  const tr = tracks[clamp(s.ref.trk || 0, 0, tracks.length - 1)];
+  return { notes: melodyLine(tr.notes).map(n => ({ t: n.t, d: n.d, m: n.m + (s.ref.tr || 0) })), ofs: s.ref.ofs || 0, name: tr.name };
+}
+function refNoteAt(mel, t) {
+  if (!mel) return null;
+  const x = t - (mel.ofs || 0), a = mel.notes;
+  let lo = 0, hi = a.length - 1, f = -1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (a[mid].t <= x) { f = mid; lo = mid + 1; } else hi = mid - 1; }
+  return f >= 0 && x < a[f].t + a[f].d ? a[f] : null;
+}
+
+// --- Einfacher Synthesizer (auch für die Einsingübungen) --------------------------------
+const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+function synthNote(ctx, midi, t0, dur, vol = 0.22, dest = null) {
+  const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+  o1.type = 'triangle'; o2.type = 'sine';
+  o1.frequency.value = midiHz(midi); o2.frequency.value = midiHz(midi) * 2;
+  const g2 = ctx.createGain(); g2.gain.value = 0.25;
+  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(dest || ctx.destination);
+  const end = t0 + Math.max(0.08, dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(vol * 0.6, t0 + Math.min(0.25, dur * 0.5));
+  g.gain.setValueAtTime(vol * 0.6, Math.max(t0 + 0.03, end - 0.06));
+  g.gain.exponentialRampToValueAtTime(0.0001, end);
+  o1.start(t0); o2.start(t0); o1.stop(end + 0.02); o2.stop(end + 0.02);
+}
+let refPlayer = null;                // { ctx, songId, timer }
+function stopRefPlayback() {
+  if (!refPlayer) return;
+  clearTimeout(refPlayer.timer);
+  try { refPlayer.ctx.close(); } catch (e) {}
+  refPlayer = null;
+}
+async function playRefMelody(songId, onEnd) {
+  stopRefPlayback();
+  const mel = await getRefMelody(songId);
+  if (!mel || !mel.notes.length) { toast('Keine Melodie gefunden.'); return false; }
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const t0 = ctx.currentTime + 0.15;
+  mel.notes.forEach(n => synthNote(ctx, n.m, t0 + n.t, n.d * 0.95));
+  const last = mel.notes[mel.notes.length - 1];
+  refPlayer = { ctx, songId, timer: setTimeout(() => { stopRefPlayback(); if (onEnd) onEnd(); }, (last.t + last.d + 0.5) * 1000) };
+  return true;
+}
+
+// --- Abschnitt in «Aufnahmen & Backing-Tracks» ---------------------------------------------
+function refSection(songId, redraw) {
+  const s = sget(songId), wrap = h('div', { class: 'ref-section' });
+  wrap.append(h('div', { class: 'sub', style: 'padding:12px 6px 2px; font-weight:600;', text: '🎼 Referenzmelodie (MIDI / MusicXML)' }));
+  const inp = h('input', { type: 'file', accept: '.mid,.midi,.xml,.musicxml,.mxl,audio/midi,audio/x-midi', style: 'display:none;' });
+  inp.addEventListener('change', () => { if (inp.files[0]) addRefFile(songId, inp.files[0]).then(redraw); inp.value = ''; });
+  if (!s.ref) {
+    wrap.append(h('div', { class: 'empty-note', text: 'Noch keine Referenzmelodie. Damit zeigt die Aufnahme den Soll-Ton an und die Tonhöhenanalyse vergleicht mit der Melodie.' }),
+      h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() }, h('span', { text: '＋' }), h('span', { text: 'MIDI- oder MusicXML-Datei hinzufügen …' }), inp));
+    return wrap;
+  }
+  const info = h('div', { class: 'sub', style: 'padding:0 6px;', text: 'Lade Melodie …' });
+  const trkSel = h('select', { title: 'Spur/Stimme mit der Gesangsmelodie' });
+  const ofsIn = h('input', { type: 'number', step: '0.1', value: String(s.ref.ofs || 0), style: 'width:80px;', title: 'Versatz in Sekunden: um so viel später beginnt die Melodie gegenüber Aufnahme/Backing-Track' });
+  const trSel = h('select', { title: 'Transponieren (Halbtöne), z. B. −12 für eine Oktave tiefer' });
+  for (let i = -12; i <= 12; i++) trSel.append(h('option', { value: String(i), text: 'Transponieren ' + (i > 0 ? '+' : '') + i }));
+  trSel.value = String(s.ref.tr || 0);
+  const playBtn = h('button', { text: refPlayer && refPlayer.songId === songId ? '■ Stopp' : '▶ Anhören' });
+  playBtn.addEventListener('click', async () => {
+    if (refPlayer && refPlayer.songId === songId) { stopRefPlayback(); playBtn.textContent = '▶ Anhören'; return; }
+    playBtn.textContent = '■ Stopp';
+    if (!(await playRefMelody(songId, () => { playBtn.textContent = '▶ Anhören'; }))) playBtn.textContent = '▶ Anhören';
+  });
+  const save = (patch) => sTouch(songId, x => { x.ref = Object.assign({}, x.ref, patch); });
+  trkSel.addEventListener('change', () => { save({ trk: parseInt(trkSel.value, 10) || 0 }); showInfo(); });
+  ofsIn.addEventListener('change', () => save({ ofs: Math.round((parseFloat(ofsIn.value) || 0) * 10) / 10 }));
+  trSel.addEventListener('change', () => { save({ tr: parseInt(trSel.value, 10) || 0 }); showInfo(); });
+  async function showInfo() {
+    try {
+      const mel = await getRefMelody(songId);
+      if (!mel) { info.textContent = 'Keine Noten gefunden.'; return; }
+      const ms = mel.notes.map(n => n.m), last = mel.notes[mel.notes.length - 1];
+      info.textContent = mel.notes.length + ' Töne · Umfang ' + midiName(Math.min(...ms)) + '–' + midiName(Math.max(...ms)) + ' · Dauer ' + fmtTime(last.t + last.d);
+    } catch (e) { info.textContent = 'Fehler: ' + e.message; }
+  }
+  refTracks(songId).then(tracks => {
+    trkSel.innerHTML = '';
+    (tracks || []).forEach((t, i) => trkSel.append(h('option', { value: String(i), text: t.name + ' (' + t.notes.length + ' Töne)' })));
+    trkSel.value = String(clamp(s.ref.trk || 0, 0, Math.max(0, (tracks || []).length - 1)));
+    showInfo();
+  }).catch(e => { info.textContent = 'Datei konnte nicht gelesen werden: ' + e.message; });
+  wrap.append(
+    h('div', { class: 'pick-row', style: 'cursor:default;' }, h('span', { class: 'type-icon', text: '🎼' }), h('div', { class: 'mid', style: 'flex:1;' }, h('div', { class: 'name', text: s.ref.name }), info),
+      h('button', { class: 'more', text: '🗑', title: 'Referenzmelodie entfernen', onclick: () => removeRef(songId).then(redraw) })),
+    h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px;' }, trkSel, trSel, h('span', { class: 'sub', text: 'Versatz (s):' }), ofsIn, playBtn),
+    h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() }, h('span', { text: '⇄' }), h('span', { text: 'Andere Datei wählen …' }), inp));
+  return wrap;
+}
+async function addRefFile(songId, file) {
+  let tracks;
+  try { tracks = await parseRefFile(file.name, await file.arrayBuffer()); }
+  catch (e) { toast(e.message, 4000); return; }
+  if (!tracks.length) { toast('In der Datei wurden keine Noten gefunden.', 4000); return; }
+  if (!(await requireOnline('Referenzmelodie hochladen'))) return;
+  try {
+    setStatus('Referenzmelodie wird hochgeladen …', 'saving');
+    const typed = new File([file], file.name, { type: file.type || (/\.mxl$/i.test(file.name) ? 'application/vnd.recordare.musicxml' : /\.(xml|musicxml)$/i.test(file.name) ? 'application/vnd.recordare.musicxml+xml' : 'audio/midi') });
+    const created = await uploadOne(typed);
+    const old = sget(songId).ref;
+    if (old) await removeRef(songId, true);
+    addAudio(songId, { id: created.id, name: file.name, kind: 'ref' });
+    await storeBlob({ id: created.id, name: created.name, mimeType: typed.type }, typed);
+    refCache.set(created.id, tracks);
+    sTouch(songId, x => { x.ref = { id: created.id, name: file.name, trk: defaultRefTrack(tracks), ofs: 0, tr: 0 }; });
+    setStatus('Referenzmelodie gespeichert', 'ok');
+  } catch (e) { fail('Referenzmelodie: Hochladen fehlgeschlagen', e); }
+}
+async function removeRef(songId, silent) {
+  const s = sget(songId);
+  if (!s || !s.ref) return;
+  if (!silent && !confirm('Referenzmelodie «' + s.ref.name + '» entfernen?')) return;
+  const item = (s.audio || []).find(a => a.id === s.ref.id) || { id: s.ref.id, name: s.ref.name };
+  stopRefPlayback();
+  await trashAudio(item);
+  refCache.delete(item.id);
+  sTouch(songId, x => { x.audio = (x.audio || []).filter(a => a.id !== item.id); delete x.ref; });
+}
+
+
+// ---------------------------------------------------------------
+// Einsingen (ab v2.8.0): Tonleitern/Intervalle werden vorgespielt, man singt nach (oder mit), die App
+// hört per Mikrofon zu und zeigt je Ton, ob er getroffen wurde (Oktavlage egal, ±50 ct = getroffen,
+// ±25 ct = sauber). Jede Wiederholung einen Halbton höher/tiefer.
+// Dazu ein einfaches Metronom (schwebender Knopf unten links, läuft auch bei geschlossenem Dialog).
+// ---------------------------------------------------------------
+const WARMUPS = {
+  five: { n: 'Quintlauf Dur (1-2-3-4-5-4-3-2-1)', s: [0, 2, 4, 5, 7, 5, 4, 2, 0] },
+  five_m: { n: 'Quintlauf Moll (1-2-♭3-4-5-4-♭3-2-1)', s: [0, 2, 3, 5, 7, 5, 3, 2, 0] },
+  scale: { n: 'Tonleiter Dur (Oktave auf und ab)', s: [0, 2, 4, 5, 7, 9, 11, 12, 11, 9, 7, 5, 4, 2, 0] },
+  triad: { n: 'Dreiklang (1-3-5-8-5-3-1)', s: [0, 4, 7, 12, 7, 4, 0] },
+  thirds: { n: 'Terzen (1-3-2-4-3-5-4-2-1)', s: [0, 4, 2, 5, 4, 7, 5, 2, 0] },
+  fifth: { n: 'Intervall Quinte (1-5-1)', s: [0, 7, 0] },
+  octave: { n: 'Oktavsprung (1-8-5-3-1)', s: [0, 12, 7, 4, 0] }
+};
+function warmupTargets(key, base) {
+  const s = WARMUPS[key].s;
+  return s.map((d, i) => ({ m: base + d, b: i, d: i === s.length - 1 ? 2 : 1 }));
+}
+function warmupBases(base, reps, dir) {
+  const up = Array.from({ length: reps }, (_, i) => base + i), down = Array.from({ length: reps }, (_, i) => base - i);
+  if (dir === 'down') return down;
+  if (dir === 'updown') return up.concat(up.slice(0, -1).reverse());
+  return up;
+}
+// Auswertung (rein, testbar): samples [{t, m|null}] (m = MIDI mit Nachkommastellen), Zieltöne ab T0 (Sekunden)
+function evaluateNotes(samples, T0, beat, targets) {
+  const notes = targets.map(tg => {
+    const s = T0 + tg.b * beat, len = tg.d * beat, a = s + Math.min(0.35 * len, 0.25), z = s + len - Math.min(0.1 * len, 0.08);
+    const all = samples.filter(x => x.t >= a && x.t <= z);
+    const vals = all.filter(x => x.m != null).map(x => foldCents((x.m - tg.m) * 100)).sort((p, q) => p - q);
+    if (vals.length < Math.max(2, all.length * 0.3)) return { m: tg.m, dev: null, r: 'none' };
+    const dev = Math.round(vals[vals.length >> 1]);
+    return { m: tg.m, dev, r: Math.abs(dev) <= 25 ? 'good' : Math.abs(dev) <= 50 ? 'hit' : 'miss' };
+  });
+  const hit = notes.filter(n => n.r === 'good' || n.r === 'hit').length;
+  const devs = notes.filter(n => n.dev != null).map(n => n.dev);
+  return { notes, hit, n: notes.length, score: Math.round(hit / Math.max(1, notes.length) * 100), bias: devs.length ? Math.round(devs.reduce((a, b) => a + b, 0) / devs.length) : null };
+}
+
+function openWarmup() {
+  const st = Object.assign({ ex: 'five', base: 60, reps: 5, dir: 'up', bpm: 90, mode: 'listen' }, (() => { try { return JSON.parse(lsGet('gapp_warmup') || '{}'); } catch (e) { return {}; } })());
+  const sel = (opts, val, title) => { const s = h('select', { title }); opts.forEach(([v, t]) => s.append(h('option', { value: String(v), text: t }))); s.value = String(val); return s; };
+  const exSel = sel(Object.entries(WARMUPS).map(([k, x]) => [k, x.n]), st.ex, 'Übung');
+  const baseSel = sel(Array.from({ length: 30 }, (_, i) => [45 + i, 'ab ' + midiName(45 + i)]), st.base, 'Startton');
+  const repsIn = h('input', { type: 'number', min: 1, max: 12, value: String(st.reps), style: 'width:56px;', title: 'Wiederholungen, jeweils einen Halbton versetzt' });
+  const dirSel = sel([['up', 'aufwärts'], ['down', 'abwärts'], ['updown', 'auf und ab']], st.dir, 'Richtung');
+  const bpmIn = h('input', { type: 'number', min: 40, max: 200, value: String(st.bpm), style: 'width:60px;', title: 'Tempo (Schläge pro Minute)' });
+  const modeSel = sel([['listen', 'Vorspielen, dann nachsingen'], ['along', 'Mitsingen']], st.mode, 'Ablauf');
+  const startBtn = h('button', { class: 'primary', text: '▶ Starten' });
+  const cv = h('canvas', { class: 'wu-canvas', width: 640, height: 200 });
+  const info = h('div', { class: 'sub', style: 'margin-bottom:6px;', text: 'Tipp: Mit Kopfhörern hört die App deine Stimme am genausten. Oktavlage ist egal.' });
+  const results = h('div', { class: 'wu-results' });
+  const lbl = (t, el) => h('label', { class: 'wu-f' }, h('span', { text: t }), el);
+  const body = h('div', { class: 'warmup' },
+    h('div', { class: 'wu-form' }, lbl('Übung', exSel), lbl('Start', baseSel), lbl('Wdh.', repsIn), lbl('Richtung', dirSel), lbl('Tempo', bpmIn), lbl('Ablauf', modeSel)),
+    h('div', { style: 'display:flex; gap:8px; align-items:center; margin:8px 0 4px;' }, startBtn, h('button', { text: '⏱ Metronom …', onclick: () => metroDialog() })), info,
+    cv, results);
+  const api = openModal({ title: '🎵 Einsingen', body, wide: true, buttons: [{ label: 'Schliessen' }] });
+  let run = null;
+  const read = () => ({ ex: exSel.value, base: parseInt(baseSel.value, 10), reps: clamp(parseInt(repsIn.value, 10) || 1, 1, 12), dir: dirSel.value, bpm: clamp(parseInt(bpmIn.value, 10) || 90, 40, 200), mode: modeSel.value });
+
+  function draw() {
+    const cx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    cx.clearRect(0, 0, W, H);
+    if (!run || !run.cur) return;
+    const r = run.cur, lo = r.base - 3, hi = r.base + 15;
+    const yOf = (m) => 6 + (hi - m) / (hi - lo) * (H - 12);
+    const t0 = r.vT, span = r.len * run.beat, xOf = (t) => (t - t0) / span * W;
+    for (let m = lo; m <= hi; m++) { cx.strokeStyle = m % 12 === r.base % 12 ? 'rgba(0,0,0,.2)' : 'rgba(0,0,0,.05)'; cx.beginPath(); cx.moveTo(0, yOf(m)); cx.lineTo(W, yOf(m)); cx.stroke(); }
+    const colors = { good: '#2e8b57', hit: '#e08a00', miss: '#c0392b', none: '#bbb' };
+    r.targets.forEach((tg, i) => {
+      const res = r.eval && r.eval.notes[i];
+      cx.fillStyle = res ? colors[res.r] : 'rgba(107,79,59,.25)';
+      cx.fillRect(xOf(t0 + tg.b * run.beat) + 1, yOf(tg.m) - 5, tg.d * run.beat / span * W - 2, 10);
+    });
+    cx.strokeStyle = '#2471a3'; cx.lineWidth = 2.5; cx.beginPath();
+    let on = false;
+    run.samples.forEach(s => {
+      if (s.t < t0 || s.t > t0 + span || s.m == null) { on = false; return; }
+      // Oktavlage an den Zielbereich anpassen (Männer-/Frauenstimme)
+      let m = s.m; while (m < lo) m += 12; while (m > hi) m -= 12;
+      const x = xOf(s.t), y = yOf(m);
+      if (!on) { cx.moveTo(x, y); on = true; } else cx.lineTo(x, y);
+    });
+    cx.stroke();
+    if (run.ctx) { const x = xOf(run.ctx.currentTime); if (x >= 0 && x <= W) { cx.fillStyle = 'rgba(0,0,0,.35)'; cx.fillRect(x, 0, 1.5, H); } }
+    cx.fillStyle = '#555'; cx.font = '12px system-ui'; cx.fillText(r.phase, 6, 14);
+  }
+  function showResult(r) {
+    const ev = r.eval, row = h('div', { class: 'pick-row', style: 'cursor:default; flex-wrap:wrap;' },
+      h('span', { style: 'font-weight:600; min-width:44px;', text: midiName(r.base) }),
+      h('span', { text: ev.hit + '/' + ev.n + ' getroffen' + (ev.bias != null && Math.abs(ev.bias) >= 10 ? ' · eher ' + (ev.bias < 0 ? 'zu tief' : 'zu hoch') : '') }),
+      h('span', { class: 'wu-dots' }, ...ev.notes.map(n => h('span', { class: 'wu-dot ' + n.r, title: midiName(n.m) + (n.dev != null ? ' ' + (n.dev > 0 ? '+' : '') + n.dev + ' ct' : ' – nicht erkannt'), text: n.r === 'miss' ? (n.dev < 0 ? '▼' : '▲') : '●' }))));
+    results.prepend(row);
+  }
+  function finish(msg) {
+    if (!run) return;
+    clearInterval(run.iv); clearInterval(run.drawIv); run.timers.forEach(clearTimeout);
+    if (run.stream) run.stream.getTracks().forEach(t => t.stop());
+    try { run.ctx.close(); } catch (e) {}
+    const all = run.done;
+    run = null;
+    startBtn.textContent = '▶ Starten'; startBtn.classList.add('primary'); startBtn.classList.remove('danger');
+    if (all.length) {
+      const hit = all.reduce((a, r) => a + r.eval.hit, 0), n = all.reduce((a, r) => a + r.eval.n, 0);
+      info.textContent = (msg ? msg + ' · ' : '') + 'Gesamt: ' + hit + '/' + n + ' Töne getroffen (' + Math.round(hit / Math.max(1, n) * 100) + ' %)';
+    } else if (msg) info.textContent = msg;
+  }
+  async function start() {
+    const o = read(); lsSet('gapp_warmup', JSON.stringify(o));
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true } }); }
+    catch (e) { info.textContent = 'Mikrofonzugriff verweigert oder nicht verfügbar.'; return; }
+    metroStop();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const an = ctx.createAnalyser(); an.fftSize = 2048;
+    ctx.createMediaStreamSource(stream).connect(an);
+    const beat = 60 / o.bpm, bases = warmupBases(o.base, o.reps, o.dir), L = WARMUPS[o.ex].s.length + 1;   // Takte je Durchgang (letzter Ton 2 Schläge)
+    run = { ctx, stream, beat, samples: [], done: [], timers: [], cur: null };
+    results.innerHTML = ''; info.textContent = o.mode === 'listen' ? 'Zuhören … dann nachsingen.' : 'Mitsingen!';
+    startBtn.textContent = '■ Stopp'; startBtn.classList.remove('primary'); startBtn.classList.add('danger');
+    let t = ctx.currentTime + 0.4;
+    for (let k = 0; k < 2; k++) metroClick(ctx, t + k * beat, k === 0, 0.25);     // Einzähler
+    t += 2 * beat;
+    const reps = [];
+    bases.forEach(base => {
+      const targets = warmupTargets(o.ex, base);
+      if (o.mode === 'listen') {
+        targets.forEach(tg => synthNote(ctx, tg.m, t + tg.b * beat, tg.d * beat * 0.92));
+        const T0 = t + (L + 1) * beat;
+        for (let k = 0; k < L; k++) metroClick(ctx, T0 + k * beat, k === 0, 0.08);
+        reps.push({ base, targets, T0, P0: t, vT: t, len: L });
+        t = T0 + (L + 1) * beat;
+      } else {
+        targets.forEach(tg => synthNote(ctx, tg.m, t + tg.b * beat, tg.d * beat * 0.92, 0.16));
+        reps.push({ base, targets, T0: t, P0: t, vT: t, len: L });
+        t += (L + 1) * beat;
+      }
+    });
+    const my = run;
+    reps.forEach((r, i) => {
+      // Phase anzeigen, sobald die Wiederholung beginnt; auswerten, sobald sie vorbei ist
+      my.timers.push(setTimeout(() => { if (run !== my) return; r.phase = o.mode === 'listen' ? '♪ Zuhören – ' + midiName(r.base) : '♪ Mitsingen – ' + midiName(r.base); my.cur = r; }, Math.max(0, (r.P0 - ctx.currentTime) * 1000)));
+      if (o.mode === 'listen') my.timers.push(setTimeout(() => { if (run === my) { r.phase = '🎤 Jetzt singen – ' + midiName(r.base); r.vT = r.T0; } }, (r.T0 - ctx.currentTime) * 1000));
+      my.timers.push(setTimeout(() => {
+        if (run !== my) return;
+        r.eval = evaluateNotes(my.samples, r.T0, beat, r.targets);
+        my.done.push(r); showResult(r); draw();
+        if (i === reps.length - 1) setTimeout(() => finish('Fertig'), 400);
+      }, (r.T0 + (r.len + 0.4) * beat - ctx.currentTime) * 1000));
+    });
+    const buf = new Float32Array(an.fftSize);
+    run.iv = setInterval(() => {
+      an.getFloatTimeDomainData(buf);
+      const f = detectPitch(buf, ctx.sampleRate);
+      my.samples.push({ t: ctx.currentTime - 0.03, m: f ? 69 + 12 * Math.log2(f / 440) : null });
+      if (my.samples.length > 6000) my.samples.splice(0, 2000);
+    }, 30);
+    run.drawIv = setInterval(draw, 60);
+  }
+  startBtn.addEventListener('click', () => { if (run) finish('Abgebrochen'); else start(); });
+  api.onClose = () => finish();
+}
+
+// --- Metronom ------------------------------------------------------------------------------
+const MET = Object.assign({ on: false, bpm: 90, beats: 4, accent: true, ctx: null, next: 0, n: 0, timer: null, taps: [] },
+  (() => { try { const o = JSON.parse(lsGet('gapp_metro') || '{}'); return { bpm: o.bpm || 90, beats: o.beats || 4, accent: o.accent !== false }; } catch (e) { return {}; } })());
+function metroClick(ctx, t, acc, vol = 0.35) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'square'; o.frequency.value = acc ? 1760 : 1100;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.06);
+}
+function metroSave() { lsSet('gapp_metro', JSON.stringify({ bpm: MET.bpm, beats: MET.beats, accent: MET.accent })); }
+function metroStart() {
+  if (MET.on) return;
+  MET.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  MET.on = true; MET.n = 0; MET.next = MET.ctx.currentTime + 0.08;
+  MET.timer = setInterval(() => {
+    const ctx = MET.ctx;
+    while (MET.next < ctx.currentTime + 0.12) {
+      const beat = MET.n % MET.beats, acc = MET.accent && MET.beats > 1 && beat === 0;
+      metroClick(ctx, MET.next, acc);
+      setTimeout(() => metroFlash(beat), Math.max(0, (MET.next - ctx.currentTime) * 1000));
+      MET.next += 60 / MET.bpm; MET.n++;
+    }
+  }, 25);
+  metroChip();
+}
+function metroStop() {
+  if (!MET.on) return;
+  MET.on = false; clearInterval(MET.timer);
+  try { MET.ctx.close(); } catch (e) {}
+  MET.ctx = null; metroChip();
+}
+function metroSetBpm(b) { MET.bpm = clamp(Math.round(b), 30, 240); metroSave(); metroChip(); if (metroSetBpm.onChange) metroSetBpm.onChange(); }
+function metroTap() {
+  const now = performance.now();
+  MET.taps = MET.taps.filter(t => now - t < 2500).concat(now);
+  if (MET.taps.length >= 2) { const d = (MET.taps[MET.taps.length - 1] - MET.taps[0]) / (MET.taps.length - 1); metroSetBpm(60000 / d); }
+}
+function metroFlash(beat) {
+  const chip = $('metroChip'); if (!chip || !MET.on) return;
+  chip.querySelectorAll('.md').forEach((d, i) => d.classList.toggle('on', i === beat));
+}
+function metroChip() {
+  let chip = $('metroChip');
+  if (!MET.on) { if (chip) chip.remove(); return; }
+  if (!chip) { chip = h('div', { id: 'metroChip' }); document.body.append(chip); }
+  chip.innerHTML = '';
+  chip.append(h('span', { class: 'mb', title: 'Metronom-Einstellungen', onclick: () => metroDialog(), text: '⏱ ' + MET.bpm }),
+    h('span', { class: 'mds' }, ...Array.from({ length: MET.beats }, (_, i) => h('span', { class: 'md' + (i === 0 && MET.accent ? ' acc' : '') }))),
+    h('button', { text: '−', title: 'Langsamer', onclick: () => metroSetBpm(MET.bpm - 2) }),
+    h('button', { text: '+', title: 'Schneller', onclick: () => metroSetBpm(MET.bpm + 2) }),
+    h('button', { text: '■', title: 'Metronom stoppen', onclick: () => metroStop() }));
+}
+function metroDialog() {
+  const bpmV = h('div', { class: 'metro-bpm', text: String(MET.bpm) });
+  const range = h('input', { type: 'range', min: 30, max: 240, value: String(MET.bpm), style: 'width:100%;' });
+  const beatsSel = h('select', {});
+  [[1, 'ohne Takt'], [2, '2er-Takt'], [3, '3er-Takt'], [4, '4er-Takt'], [6, '6er-Takt']].forEach(([v, t]) => beatsSel.append(h('option', { value: String(v), text: t })));
+  beatsSel.value = String(MET.beats);
+  const acc = h('input', { type: 'checkbox', checked: MET.accent || null });
+  const go = h('button', { class: 'primary', text: MET.on ? '■ Stopp' : '▶ Start' });
+  const sync = () => { bpmV.textContent = String(MET.bpm); range.value = String(MET.bpm); go.textContent = MET.on ? '■ Stopp' : '▶ Start'; };
+  metroSetBpm.onChange = sync;
+  range.addEventListener('input', () => metroSetBpm(parseInt(range.value, 10)));
+  beatsSel.addEventListener('change', () => { MET.beats = parseInt(beatsSel.value, 10); MET.n = 0; metroSave(); metroChip(); });
+  acc.addEventListener('change', () => { MET.accent = acc.checked; metroSave(); metroChip(); });
+  go.addEventListener('click', () => { MET.on ? metroStop() : metroStart(); sync(); });
+  const api = openModal({
+    title: '⏱ Metronom',
+    body: h('div', { class: 'metro' }, bpmV, h('div', { class: 'sub', style: 'text-align:center;', text: 'Schläge pro Minute' }),
+      h('div', { style: 'display:flex; gap:6px; align-items:center;' }, h('button', { text: '−5', onclick: () => metroSetBpm(MET.bpm - 5) }), range, h('button', { text: '+5', onclick: () => metroSetBpm(MET.bpm + 5) })),
+      h('div', { style: 'display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;' }, beatsSel,
+        h('label', { style: 'display:flex; gap:6px; align-items:center; font-size:13px;' }, acc, h('span', { text: 'erster Schlag betont' })),
+        h('button', { text: '👆 Tippen', title: 'Tempo durch mehrmaliges Antippen vorgeben', onclick: () => metroTap() }), go),
+      h('div', { class: 'sub', style: 'margin-top:8px;', text: 'Läuft auch nach dem Schliessen weiter (Knopf unten links).' })),
+    buttons: [{ label: 'Schliessen' }]
+  });
+  api.onClose = () => { metroSetBpm.onChange = null; };
+}
+$('warmupBtn').addEventListener('click', () => openWarmup());
+$('metroBtn').addEventListener('click', () => metroDialog());
+
+
+// ---------------------------------------------------------------
+// Übungsjournal pro Song (ab v2.8.0)
+//   song.tasks: [{id, t:Text, d:'JJJJ-MM-TT' (bis wann, optional), s:'open'|'doing'|'done', c:erstellt, u, x?:1 (gelöscht)}]
+//   song.log:   [{id, d:'JJJJ-MM-TT', m:Minuten, t:Notiz, u, x?:1}]
+// Beides wird geräteübergreifend nach id zusammengeführt (mergeLib). Solange ein Song offene
+// Aufgaben hat, trägt er automatisch den Tag «Lehrer-Aufgabe» (und verliert ihn wieder, wenn alles
+// erledigt ist – sofern der Tag von hier gesetzt wurde).
+// ---------------------------------------------------------------
+// (Funktionen statt const: renderSidebar() kann diese Helfer schon vor dem Laden dieses Abschnitts brauchen)
+function taskTag() { return 'Lehrer-Aufgabe'; }
+function todayStr() { return new Date().toLocaleDateString('sv-SE'); }
+function fmtDay(d) { if (!d) return ''; const [y, m, dd] = d.split('-'); return dd + '.' + m + '.' + (y !== String(new Date().getFullYear()) ? y.slice(2) : ''); }
+function songTasks(id) { const s = lib.songs[id]; return ((s && s.tasks) || []).filter(t => !t.x); }
+function openTasks(id) { return songTasks(id).filter(t => t.s !== 'done'); }
+function songLog(id) { const s = lib.songs[id]; return ((s && s.log) || []).filter(e => !e.x); }
+function isOverdue(t) { return !!(t.s !== 'done' && t.d && t.d < todayStr()); }
+function journalChip(id) {
+  const o = openTasks(id);
+  if (!o.length) return null;
+  const late = o.some(isOverdue);
+  return h('span', { class: 'jchip' + (late ? ' late' : ''), title: late ? 'Aufgabe überfällig' : 'Offene Lehrer-Aufgaben', text: '📓 ' + o.length + ' offen' });
+}
+// Änderung am Journal + automatischer Tag
+function jTouch(id, fn) {
+  sTouch(id, s => {
+    s.tasks = s.tasks || []; s.log = s.log || [];
+    fn(s);
+    const open = s.tasks.some(t => !t.x && t.s !== 'done');
+    s.tg = s.tg || [];
+    if (open && !s.tg.includes(taskTag())) { s.tg.push(taskTag()); s.tga = 1; }
+    else if (!open && s.tga && s.tg.includes(taskTag())) {   // nur einen selbst gesetzten Tag wieder entfernen
+      s.tg = s.tg.filter(t => t !== taskTag()); delete s.tga;
+    }
+  });
+  updateTasksBtn();
+}
+function addTask(id, text, due) {
+  const now = Date.now();
+  jTouch(id, s => { s.tasks.push({ id: uid('tk'), t: text, d: due || '', s: 'open', c: now, u: now }); });
+}
+function setTask(id, tid, patch) { jTouch(id, s => { const t = s.tasks.find(x => x.id === tid); if (t) Object.assign(t, patch, { u: Date.now() }); }); }
+function addLog(id, d, m, t) { jTouch(id, s => { s.log.push({ id: uid('lg'), d: d || todayStr(), m: m || 0, t: t || '', u: Date.now() }); }); }
+function delLog(id, lid) { jTouch(id, s => { const e = s.log.find(x => x.id === lid); if (e) { e.x = 1; e.u = Date.now(); } }); }
+const nextStatus = { open: 'doing', doing: 'done', done: 'open' };
+const statusIcon = { open: '○', doing: '◐', done: '✓' };
+const statusText = { open: 'offen', doing: 'in Arbeit', done: 'erledigt' };
+
+function openJournal(id) {
+  const s0 = sget(id); if (!s0) return;
+  const body = h('div', { class: 'journal' });
+  const api = openModal({ title: '📓 Übungsjournal – «' + s0.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+  let showDone = false;
+  function taskRow(t) {
+    return h('div', { class: 'pick-row task-row ' + t.s + (isOverdue(t) ? ' late' : '') },
+      h('button', { class: 'tk-st', text: statusIcon[t.s], title: statusText[t.s] + ' – antippen: ' + statusText[nextStatus[t.s]], onclick: () => { setTask(id, t.id, { s: nextStatus[t.s] }); draw(); } }),
+      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', title: 'Bearbeiten', onclick: () => editTask(t) },
+        h('div', { class: 'name', text: t.t }),
+        h('div', { class: 'sub', text: statusText[t.s] + (t.d ? ' · bis ' + fmtDay(t.d) + (isOverdue(t) ? ' (überfällig)' : '') : '') + ' · erfasst ' + new Date(t.c || t.u).toLocaleDateString('de-DE') })),
+      h('button', { class: 'more', text: '🗑', title: 'Aufgabe löschen', onclick: () => { if (confirm('Aufgabe «' + t.t + '» löschen?')) { setTask(id, t.id, { x: 1 }); draw(); } } }));
+  }
+  function editTask(t) {
+    const tx = h('textarea', { rows: 3, style: 'width:100%;' }); tx.value = t.t;
+    const dd = h('input', { type: 'date', value: t.d || '' });
+    openModal({ title: 'Aufgabe bearbeiten', body: [tx, h('label', { class: 'sub', style: 'display:flex; gap:6px; align-items:center; margin-top:6px;' }, h('span', { text: 'Bis:' }), dd)],
+      buttons: [{ label: 'Abbrechen' }, { label: 'Speichern', primary: true, fn: () => { const v = tx.value.trim(); if (!v) return false; setTask(id, t.id, { t: v, d: dd.value || '' }); draw(); } }] });
+  }
+  function draw() {
+    body.innerHTML = '';
+    const tasks = songTasks(id);
+    const open = tasks.filter(t => t.s !== 'done').sort((a, b) => (a.d || '9999').localeCompare(b.d || '9999') || (a.c || 0) - (b.c || 0));
+    const done = tasks.filter(t => t.s === 'done').sort((a, b) => (b.u || 0) - (a.u || 0));
+    body.append(h('div', { class: 'sub j-h', text: '🧑‍🏫 Aufgaben vom Unterricht' }));
+    const txt = h('input', { type: 'text', placeholder: 'Neue Aufgabe, z. B. «Refrain: Kopfstimme, Takt 12–16»', style: 'flex:1; min-width:160px;' });
+    const due = h('input', { type: 'date', title: 'Bis wann (optional)' });
+    const add = () => { const v = txt.value.trim(); if (!v) { txt.focus(); return; } addTask(id, v, due.value); draw(); };
+    txt.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
+    body.append(h('div', { class: 'j-add' }, txt, due, h('button', { class: 'primary', text: '＋', title: 'Aufgabe hinzufügen', onclick: add })));
+    if (!open.length) body.append(h('div', { class: 'empty-note', text: done.length ? 'Alle Aufgaben erledigt. 🎉' : 'Noch keine Aufgaben.' }));
+    open.forEach(t => body.append(taskRow(t)));
+    if (done.length) {
+      body.append(h('div', { class: 'pick-row', style: 'color:var(--muted); font-size:13px;', onclick: () => { showDone = !showDone; draw(); } },
+        h('span', { text: showDone ? '▾' : '▸' }), h('span', { text: done.length + ' erledigt' })));
+      if (showDone) done.forEach(t => body.append(taskRow(t)));
+    }
+    // Übungsprotokoll
+    const log = songLog(id).sort((a, b) => b.d.localeCompare(a.d) || (b.u || 0) - (a.u || 0));
+    const weekAgo = new Date(Date.now() - 6 * 864e5).toLocaleDateString('sv-SE');
+    const wk = log.filter(e => e.d >= weekAgo), mins = wk.reduce((a, e) => a + (e.m || 0), 0), days = new Set(wk.map(e => e.d)).size;
+    body.append(h('div', { class: 'sub j-h', style: 'margin-top:14px;', text: '🗓 Übungsprotokoll' + (wk.length ? ' – letzte 7 Tage: ' + mins + ' min an ' + days + (days === 1 ? ' Tag' : ' Tagen') : '') }));
+    const ld = h('input', { type: 'date', value: todayStr() });
+    const lm = h('input', { type: 'number', min: 0, max: 600, placeholder: 'min', style: 'width:64px;', title: 'Minuten geübt' });
+    const lt = h('input', { type: 'text', placeholder: 'Was geübt / wie lief es?', style: 'flex:1; min-width:140px;' });
+    const addL = () => { if (!lt.value.trim() && !parseInt(lm.value, 10)) { lt.focus(); return; } addLog(id, ld.value, parseInt(lm.value, 10) || 0, lt.value.trim()); draw(); };
+    lt.addEventListener('keydown', (e) => { if (e.key === 'Enter') addL(); });
+    body.append(h('div', { class: 'j-add' }, ld, lm, lt, h('button', { class: 'primary', text: '＋', title: 'Eintrag hinzufügen', onclick: addL })));
+    if (!log.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Einträge.' }));
+    log.slice(0, 50).forEach(e => body.append(h('div', { class: 'pick-row log-row' },
+      h('span', { class: 'sub', style: 'min-width:54px;', text: fmtDay(e.d) }),
+      h('div', { class: 'mid', style: 'flex:1;' }, h('div', { class: 'name', text: e.t || '–' }), e.m ? h('div', { class: 'sub', text: e.m + ' min' }) : null),
+      h('button', { class: 'more', text: '🗑', title: 'Eintrag löschen', onclick: () => { delLog(id, e.id); draw(); } }))));
+  }
+  draw();
+  return api;
+}
+
+// Übersicht aller offenen Aufgaben (Knopf in der Seitenleiste)
+function openAllTasks() {
+  const body = h('div', { class: 'journal' });
+  function draw() {
+    body.innerHTML = '';
+    const all = [];
+    aliveSongs().forEach(s => openTasks(s.id).forEach(t => all.push({ s, t })));
+    all.sort((a, b) => (a.t.d || '9999').localeCompare(b.t.d || '9999') || a.s.n.localeCompare(b.s.n, 'de'));
+    if (!all.length) { body.append(h('div', { class: 'empty-note', text: 'Keine offenen Aufgaben. Aufgaben erfasst du im Übungsjournal eines Songs (📓 in der Songleiste).' })); return; }
+    all.forEach(({ s, t }) => body.append(h('div', { class: 'pick-row task-row ' + t.s + (isOverdue(t) ? ' late' : '') },
+      h('button', { class: 'tk-st', text: statusIcon[t.s], title: statusText[t.s] + ' – antippen: ' + statusText[nextStatus[t.s]], onclick: () => { setTask(s.id, t.id, { s: nextStatus[t.s] }); draw(); } }),
+      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => { api.close(); openJournal(s.id); } },
+        h('div', { class: 'name', text: t.t }),
+        h('div', { class: 'sub', text: '♪ ' + s.n + (t.d ? ' · bis ' + fmtDay(t.d) + (isOverdue(t) ? ' (überfällig)' : '') : '') })),
+      h('button', { class: 'more', text: '▶', title: 'Song öffnen', onclick: () => { api.close(); openSong(s); } }))));
+  }
+  draw();
+  const api = openModal({ title: '📓 Offene Aufgaben', body, wide: true, buttons: [{ label: 'Schliessen' }] });
+}
+function updateTasksBtn() {
+  const b = $('tasksBtn'); if (!b) return;
+  let n = 0, late = false;
+  aliveSongs().forEach(s => { const o = openTasks(s.id); n += o.length; if (o.some(isOverdue)) late = true; });
+  setIconLabel(b, '📓 Aufgaben' + (n ? ' (' + n + ')' : ''));
+  b.classList.toggle('late', late);
+}
+$('tasksBtn').addEventListener('click', openAllTasks);
+updateTasksBtn();
+
+
+// ---------------------------------------------------------------
+// Backup einspielen (ab v2.8.0) + kleiner ZIP-Leser
+// Liest eine mit «💾 Backup» erstellte ZIP-Datei und führt sie mit der aktuellen Bibliothek zusammen:
+//   • Blätter/Aufnahmen/Referenzmelodien, die in Drive fehlen (gelöscht, anderes Konto …), werden aus
+//     dem Backup neu hochgeladen (neue Drive-IDs; alle Verweise werden umgeschrieben).
+//   • Songs, Ordner, Setlisten, Tags, Links, Journal werden zusammengeführt – Neueres gewinnt, nichts
+//     Aktuelles wird überschrieben. Optional werden seit dem Backup gelöschte Songs/Ordner/Setlisten
+//     zurückgeholt.
+//   • Anmerkungen werden für neu hochgeladene Blätter (und für Blätter ohne eigene Anmerkungen) eingespielt.
+// ---------------------------------------------------------------
+
+// ZIP lesen (Methode 0 «store» und 8 «deflate» via DecompressionStream). Rückgabe: Map Name → async () => Uint8Array
+async function readZip(blob) {
+  const buf = new Uint8Array(await blob.arrayBuffer()), dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 22 - 65535); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('Keine gültige ZIP-Datei');
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const out = new Map(), dec = new TextDecoder('utf-8');
+  for (let k = 0; k < count; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('ZIP-Verzeichnis beschädigt');
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true), loff = dv.getUint32(p + 42, true);
+    const name = dec.decode(buf.subarray(p + 46, p + 46 + nlen));
+    p += 46 + nlen + xlen + clen;
+    if (name.endsWith('/')) continue;
+    out.set(name, async () => {
+      const start = loff + 30 + dv.getUint16(loff + 26, true) + dv.getUint16(loff + 28, true);
+      const raw = buf.subarray(start, start + csize);
+      if (method === 0) return raw;
+      if (method === 8) {
+        if (typeof DecompressionStream === 'undefined') throw new Error('Dieser Browser kann komprimierte ZIP-Dateien nicht entpacken');
+        return new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+      }
+      throw new Error('ZIP-Methode ' + method + ' wird nicht unterstützt');
+    });
+  }
+  return out;
+}
+
+// Text-Blatt aus der eigenständigen HTML-Seite des Backups zurückholen (Original-Fragment steht zwischen </h1> und </body>)
+function fragmentFromStandalone(html) {
+  const a = html.indexOf('</h1>'), b = html.lastIndexOf('</body>');
+  if (a >= 0 && b > a) return html.slice(a + 5, b).trim();
+  const i = html.indexOf('<div class="lyrics-doc"');
+  return i >= 0 ? html.slice(i, b > i ? b : undefined).trim() : html;
+}
+
+// Verweise einer Bibliothek auf Drive-IDs umschreiben (Blätter, Anhänge, Referenzmelodie)
+function remapLibIds(L, idMap) {
+  const m = (id) => idMap.get(id) || id;
+  const files = {};
+  for (const [id, f] of Object.entries(L.files || {})) files[m(id)] = f;
+  L.files = files;
+  for (const s of Object.values(L.songs || {})) {
+    s.sheets = (s.sheets || []).map(m);
+    (s.audio || []).forEach(a => { a.id = m(a.id); });
+    if (s.ref) s.ref.id = m(s.ref.id);
+  }
+  return L;
+}
+
+async function prepareRestore(zipBlob) {
+  const zip = await readZip(zipBlob);
+  const txt = async (n) => zip.has(n) ? new TextDecoder().decode(await zip.get(n)()) : null;
+  const libTxt = await txt('_Daten/library.json');
+  if (!libTxt) throw new Error('Das ist kein Backup der Gesangs-App (_Daten/library.json fehlt).');
+  const blib = JSON.parse(libTxt);
+  const index = JSON.parse((await txt('_Daten/dateien.json')) || '[]');
+  const info = ((await txt('LIESMICH.txt')) || '').split('\n')[0];
+  // Welche Blätter/Anhänge fehlen in Drive?
+  await loadFileList().catch(() => {});
+  const have = new Set(files.map(f => f.id));
+  const missing = [];
+  for (const e of index) {
+    if (!zip.has(e.path)) continue;
+    if (e.kind) {                                        // Audio/Referenz (ab v2.8.0 im Verzeichnis)
+      let ok = false;
+      try { ok = !!(await driveMeta(e.id)); } catch (x) { ok = false; }
+      if (!ok) missing.push(e);
+    } else if (!have.has(e.id)) missing.push(e);
+  }
+  const deleted = [];
+  for (const key of ['songs', 'folders', 'setlists']) {
+    for (const [id, x] of Object.entries(blib[key] || {})) { const c = lib[key][id]; if (!x.d && c && c.d) deleted.push({ key, id, n: x.n }); }
+  }
+  const newSongs = Object.entries(blib.songs || {}).filter(([id, x]) => !x.d && !lib.songs[id]).length;
+  return { zip, blib, index, info, missing, deleted, newSongs };
+}
+
+async function runRestore(P, { undelete }, progress) {
+  const idMap = new Map(), failed = [];
+  let n = 0;
+  for (const e of P.missing) {
+    progress(`Lade hoch ${++n}/${P.missing.length} …`);
+    try {
+      let data = await P.zip.get(e.path)();
+      let type = e.mimeType || 'application/octet-stream';
+      if (!e.kind && e.mimeType === TXT_MIME) data = new TextEncoder().encode(fragmentFromStandalone(new TextDecoder().decode(data)));
+      const file = new File([data], e.name, { type });
+      const created = await uploadOne(file);
+      idMap.set(e.id, created.id);
+      await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType || type }, file).catch(() => {});
+    } catch (x) { failed.push(e.name + ' (' + x.message + ')'); }
+  }
+  // Bibliothek umschreiben und zusammenführen
+  const B = remapLibIds(JSON.parse(JSON.stringify(P.blib)), idMap);
+  const now = Date.now();
+  if (undelete) P.deleted.forEach(d => { if (B[d.key][d.id]) B[d.key][d.id].u = now; });
+  for (const key of ['folders', 'files', 'setlists', 'songs']) B[key] = B[key] || {};
+  const merged = mergeLib(remapLibIds(JSON.parse(JSON.stringify(lib)), idMap), B);
+  lib.folders = merged.folders; lib.files = merged.files; lib.setlists = merged.setlists; lib.songs = merged.songs;
+  if (undelete) P.deleted.forEach(d => { const x = lib[d.key][d.id]; if (x) { delete x.d; x.u = now; } });
+  // Anmerkungen: neu hochgeladene Blätter bekommen die Anmerkungen aus dem Backup, bestehende nur, wenn sie keine haben
+  let an = 0;
+  for (const e of P.index) {
+    if (e.kind) continue;
+    const src = '_Daten/Anmerkungen/' + e.id + '.annotations.json';
+    if (!P.zip.has(src)) continue;
+    const newId = idMap.get(e.id) || e.id;
+    if (!idMap.has(e.id) && !files.some(f => f.id === newId)) continue;
+    try {
+      if (!idMap.has(e.id)) {
+        const loc = await safe(IDB.get('annots', newId));
+        if (loc && loc.json && hasContent(normalizeAnnot(JSON.parse(loc.json)))) continue;
+        if (await findByName(newId + '.annotations.json')) continue;
+      }
+      const a = normalizeAnnot(JSON.parse(new TextDecoder().decode(await P.zip.get(src)())));
+      await driveUploadJson(newId + '.annotations.json', a);
+      an++;
+    } catch (x) { failed.push('Anmerkungen ' + e.name + ' (' + x.message + ')'); }
+  }
+  libChanged();
+  await loadFileList().catch(() => {});
+  migrateSongs();
+  renderSidebar();
+  return { uploaded: idMap.size, annots: an, failed };
+}
+
+function restoreDialog() {
+  const inp = h('input', { type: 'file', accept: '.zip,application/zip', style: 'display:none;' });
+  inp.addEventListener('change', async () => {
+    const f = inp.files[0]; inp.value = '';
+    if (!f) return;
+    if (!(await requireOnline('Backup einspielen'))) return;
+    let P;
+    try { setStatus('Backup wird gelesen …', 'saving'); P = await prepareRestore(f); setStatus('Backup gelesen', 'ok'); }
+    catch (e) { fail('Backup konnte nicht gelesen werden', e); return; }
+    const songsN = Object.values(P.blib.songs || {}).filter(x => !x.d).length;
+    const cbDel = h('input', { type: 'checkbox', checked: true });
+    const body = [
+      h('p', { style: 'margin-top:0; font-size:13px;', text: P.info || 'Backup der Gesangs-App' }),
+      h('ul', { style: 'font-size:13px; padding-left:18px;' },
+        h('li', { text: songsN + ' Songs im Backup' + (P.newSongs ? ', davon ' + P.newSongs + ' hier nicht vorhanden' : '') }),
+        h('li', { text: P.missing.length ? P.missing.length + ' Dateien fehlen in Google Drive und werden aus dem Backup hochgeladen' : 'Alle Dateien sind in Google Drive noch vorhanden' })),
+      P.deleted.length ? h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:13px;' }, cbDel,
+        h('span', { text: 'Seit dem Backup gelöschte Einträge zurückholen (' + P.deleted.length + ': ' + P.deleted.slice(0, 4).map(d => d.n).join(', ') + (P.deleted.length > 4 ? ' …' : '') + ')' })) : null,
+      h('p', { class: 'sub', style: 'font-size:12px;', text: 'Aktuelle Änderungen bleiben erhalten – das Backup ergänzt nur, was fehlt.' })
+    ];
+    openModal({
+      title: '♻ Backup einspielen', body,
+      buttons: [{ label: 'Abbrechen' }, { label: 'Einspielen', primary: true, fn: () => {
+        runRestore(P, { undelete: !!(P.deleted.length && cbDel.checked) }, (m) => setStatus(m, 'saving')).then(r => {
+          setStatus('Backup eingespielt', 'ok');
+          toast('Backup eingespielt' + (r.uploaded ? ` – ${r.uploaded} Dateien neu hochgeladen` : '') + (r.failed.length ? `, ${r.failed.length} fehlgeschlagen` : ''), 4500);
+          if (r.failed.length) console.warn('Wiederherstellen fehlgeschlagen:', r.failed);
+        }).catch(e => fail('Backup einspielen fehlgeschlagen', e));
+      } }]
+    });
+  });
+  inp.click();
+}
 
 </script>
 </body>
