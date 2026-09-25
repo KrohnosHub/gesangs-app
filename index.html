@@ -633,7 +633,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.8.1';
+const APP_VERSION = '2.8.2';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -7785,9 +7785,24 @@ async function runBackingImport(songId, file, { name, semi = 0, ext, dir = null 
 }
 
 // --- Abschnitt «x-minus.pro» in den Verknüpfungen ---------------------------------------------
+// Ab v2.8.2 zeigt der Abschnitt auch die als Datei hinterlegten Backing-Tracks (z. B. von x-minus.pro
+// importiert) – abspielbar im Mini-Player wie die übrigen Verknüpfungen.
+function backingFileRow(item) {
+  const loaded = mp.kind === 'audio' && mp.audioItem && mp.audioItem.id === item.id;
+  const st = loaded ? mpState() : null, playing = !!(st && st.playing);
+  return h('div', { class: 'pick-row bt-file' + (loaded ? ' playing' : '') },
+    h('span', { class: 'type-icon', text: '🎵' }),
+    h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playAudioItemToggle(item) },
+      h('div', { class: 'name', text: item.name }),
+      h('div', { class: 'sub' }, h('span', { text: 'Backing-Track (Datei)' + (item.kt ? ' · Tonart ' + (item.kt > 0 ? '+' : '') + item.kt : '') + (cachedIds.has(item.id) ? ' · offline' : '') }),
+        h('span', { class: 'mp-time', 'data-mpid': item.id, text: loaded ? mpTimeLabel() : '' }))),
+    h('button', { class: 'more', text: playing ? '❚❚' : '▶', title: playing ? 'Pause' : (loaded ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter)'), onclick: (e) => { e.stopPropagation(); playAudioItemToggle(item); } }),
+    loaded ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null);
+}
 function xmSection(s, list, linkRow, redraw) {
   const wrap = h('div');
-  wrap.append(h('div', { class: 'sub', style: 'padding:8px 6px 2px; font-weight:600;', text: '🎚 x-minus.pro (Karaoke in allen Tonarten)' }));
+  wrap.append(h('div', { class: 'sub', style: 'padding:8px 6px 2px; font-weight:600;', text: '🎚 x-minus.pro & Backing-Tracks' }));
+  songAudio(s.id, 'backing').forEach(it => wrap.append(backingFileRow(it)));
   list.forEach(l => wrap.append(linkRow(l)));
   wrap.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => xmOpenSearch(s.id) },
     h('span', { text: '🔎' }), h('span', { text: 'Auf x-minus.pro suchen …' })));
@@ -7795,7 +7810,7 @@ function xmSection(s, list, linkRow, redraw) {
   inp.addEventListener('change', () => { const f = inp.files[0]; inp.value = ''; if (f) importBackingDialog(s.id, f, redraw); });
   wrap.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() },
     h('span', { text: '⇩' }), h('span', { text: 'Heruntergeladenen Track als Backing-Track importieren …' }), inp));
-  if (!list.length) wrap.append(h('div', { class: 'empty-note', text: 'Tipp: Die Seite des Tracks bei x-minus.pro kannst du unten als Link einfügen – dann öffnet sie sich hier direkt.' }));
+  if (!list.length && !songAudio(s.id, 'backing').length) wrap.append(h('div', { class: 'empty-note', text: 'Tipp: Die Seite des Tracks bei x-minus.pro kannst du unten als Link einfügen – dann öffnet sie sich hier direkt. Importierte Tracks erscheinen ebenfalls hier.' }));
   return wrap;
 }
 
