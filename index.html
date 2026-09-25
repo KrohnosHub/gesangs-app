@@ -402,6 +402,22 @@
   .bt-import .sub{font-size:12px; color:var(--muted);}
   .jchip{color:var(--accent);} .jchip.late{color:var(--danger); font-weight:600;}
   @media (max-width: 800px){ .mp-bar button{padding:3px 7px; min-width:30px;} #metroChip{left:auto; right:6px; top:58px; bottom:auto;} .pa-row{grid-template-columns:minmax(80px,2fr) 1fr 1fr; } .pa-row span:nth-child(n+4){display:none;} }
+  /* --- v2.8.3: Seitenwechsel unten, Notizen im Auftrittsmodus als eigener Bereich --- */
+  #pageFloat{position:absolute; left:50%; bottom:12px; transform:translateX(-50%); z-index:15; display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.96); border:1px solid var(--border); border-radius:999px; padding:4px; box-shadow:0 3px 14px rgba(0,0,0,.22); font-size:13px;}
+  #pageFloat.hide-sel{display:none !important;}
+  #pageFloat{pointer-events:none;} #pageFloat button{pointer-events:auto;}
+  #pageFloat button{border-radius:999px; padding:6px 12px; font-size:14px; min-width:40px; white-space:nowrap;}
+  #pageFloat button:disabled{opacity:.35;}
+  #pageFloat #pfNext{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
+  #pageFloat #pfNext:disabled{background:var(--panel); color:var(--muted); border-color:var(--border);}
+  #pageFloat #pfLabel{padding:0 6px; font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap;}
+  #pageFloat.end #pfNext{animation:pfPulse 1.2s ease-in-out 2;}
+  @keyframes pfPulse{50%{transform:scale(1.12);}}
+  body.perf #pageFloat, body.mode-text #pageFloat{display:none !important;}
+  #canvasWrap.has-pf{padding-bottom:72px;}
+  body.perf.pn-on #canvasWrap{margin-bottom:var(--pnh, 0px);}
+  body.perf.pn-on #perfPage{bottom:calc(var(--pnh, 0px) + 8px);}
+  body.perf.pn-on #perfNotes{left:0; right:0; bottom:0; width:auto; max-height:34vh; border-radius:0; box-shadow:0 -2px 12px rgba(0,0,0,.35); padding-bottom:calc(10px + env(safe-area-inset-bottom));}
 </style>
 </head>
 <body>
@@ -516,6 +532,7 @@
         <button id="txtChord" class="tool txt-tool" title="Akkord an der Cursorposition einfügen (vorhandenen Akkord antippen = ändern/löschen)">🎸 Akkord</button>
         <button id="txtTrDown" class="tool txt-tool" title="Alle Akkorde einen Halbton tiefer">♭ −½</button>
         <button id="txtTrUp" class="tool txt-tool" title="Alle Akkorde einen Halbton höher">♯ +½</button>
+        <button class="tool" data-tool="view" title="Lesen: mit dem Finger/der Maus scrollen und blättern (zeichnet nicht)">📖 Lesen</button>
         <button class="tool" data-tool="pen" title="Stift">✎ Stift</button>
         <button class="tool" data-tool="hl" title="Textmarker">▬ Marker</button>
         <button class="tool" data-tool="eraser" title="Radiergummi (löscht ganze Objekte)">⌫ Radierer</button>
@@ -562,6 +579,11 @@
       <div id="sheetTabs" style="display:none;"></div>
 
       <div id="canvasArea">
+        <div id="pageFloat" style="display:none;">
+          <button id="pfPrev" title="Vorherige Seite">‹</button>
+          <span id="pfLabel">Seite 1 / 1</span>
+          <button id="pfNext" title="Nächste Seite">Seite 2 ›</button>
+        </div>
         <div id="canvasWrap">
           <div id="canvasStack">
             <canvas id="baseCanvas"></canvas>
@@ -633,7 +655,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.8.2';
+const APP_VERSION = '2.8.4';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1267,11 +1289,26 @@ function createSongRaw(name, { folder = null, sheetFileId = null } = {}) {
 // noch nicht zugeordnete Datei wird ein Song mit deterministischer ID (sg_<fileId>)
 // angelegt und Ordner/Tags/Favorit/Zuletzt-geöffnet übernommen – so entstehen auch
 // bei parallelem Erstlauf auf zwei Geräten keine doppelten Songs (gleiche ID, LWW-Merge).
+// Lebender Song, der ein Blatt bereits in seiner Blattliste führt (ausser dem automatischen «sg_<Datei-ID>»)
+function songOwningSheet(fid, exceptId) {
+  for (const [id, x] of Object.entries(lib.songs)) if (id !== exceptId && !x.d && (x.sheets || []).includes(fid)) return id;
+  return null;
+}
 function migrateSongs() {
   let changed = false;
   for (const f of files) {
     const m = lib.files[f.id];
-    if (!(m && m.sg && lib.songs[m.sg])) {
+    if (!(m && m.sg && lib.songs[m.sg] && !lib.songs[m.sg].d)) {
+      // Ab v2.8.4: Gehört das Blatt schon zu einem Song (z. B. gerade auf einem anderen Gerät beim
+      // Anlegen eines Songs erstellt – Text-Blatt, Scan –, dessen Zuordnung noch nicht synchronisiert
+      // ist), KEINEN eigenen Song dafür anlegen, sondern die Zuordnung übernehmen.
+      const owner = songOwningSheet(f.id, 'sg_' + f.id);
+      if (owner) {
+        const mm = lib.files[f.id] || (lib.files[f.id] = newFmeta());
+        if (mm.sg !== owner) { mm.sg = owner; mm.u = Date.now(); changed = true; }
+        continue;
+      }
+      if (m && m.sg && lib.songs[m.sg]) continue;       // gehört zu einem gelöschten Song: nichts neu anlegen
       const sid = 'sg_' + f.id;
       if (!lib.songs[sid]) {
         const meta = m || newFmeta();
@@ -1284,6 +1321,24 @@ function migrateSongs() {
       const meta2 = lib.files[f.id] || (lib.files[f.id] = newFmeta());
       if (meta2.sg !== sid) { meta2.sg = sid; changed = true; }
     }
+  }
+  // Reparatur (ab v2.8.4): Durch diesen Zeitversatz entstandene Einzel-Songs «Text», «Scan mit Notizen» …
+  // (automatische ID sg_<Datei-ID>, genau dieses eine Blatt), deren Blatt zugleich zu einem echten Song
+  // gehört, werden entfernt – sofern sie keine eigenen Inhalte (Aufnahmen, Aufgaben, Tags, Favorit,
+  // Referenz, von Hand gesetzte Links) haben. Das Blatt bleibt beim echten Song.
+  const now = Date.now();
+  for (const [sid, x] of Object.entries(lib.songs)) {
+    if (x.d || !sid.startsWith('sg_') || (x.sheets || []).length !== 1 || sid !== 'sg_' + x.sheets[0]) continue;
+    const fid = x.sheets[0], owner = songOwningSheet(fid, sid);
+    if (!owner) continue;
+    const own = (x.audio || []).length || (x.tasks || []).some(t => !t.x) || (x.links || []).some(l => !l.auto) || (x.tg || []).length || x.fv || x.ref || x.sh;
+    if (own) continue;
+    x.d = 1; x.sheets = []; x.u = now;
+    const mm = lib.files[fid] || (lib.files[fid] = newFmeta());
+    mm.sg = owner; mm.u = now;
+    for (const sl of Object.values(lib.setlists)) if (!sl.d && (sl.it || []).includes(sid)) { sl.it = sl.it.map(i => i === sid ? owner : i); sl.u = now; }
+    if (currentSongId === sid) currentSongId = owner;
+    changed = true;
   }
   // Setlisten zeigten bis v2.0.x auf Datei-IDs, ab v2.1 auf Song-IDs.
   for (const s of Object.values(lib.setlists)) {
@@ -2109,6 +2164,8 @@ async function openFile(f, opts = {}) {
   baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
   inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
   updateZoomLabel(); updatePageNav(); bindNotes(); applyDisplay();
+  // Handy/Tablet ohne Stift: Blatt öffnet zum Lesen (Finger scrollt/blättert); zum Zeichnen Stift/Marker wählen
+  if (fingerMode === 'auto' && !penSeen && matchMedia('(pointer:coarse)').matches && tool !== 'view') setTool('view');
   setStatus('Lädt …', 'saving');
   touchOpened(f.id);
 
@@ -2292,6 +2349,14 @@ function updatePageNav() {
   pageLabel.textContent = `${currentPage} / ${totalPages}`;
   $('prevPage').disabled = currentPage <= 1;
   $('nextPage').disabled = currentPage >= totalPages;
+  // Seitenwechsel gut sichtbar unten am Blatt (ab v2.8.3), nur bei mehrseitigen Blättern
+  const multi = totalPages > 1 && sheetKind !== 'text';
+  $('pageFloat').style.display = multi ? 'flex' : 'none';
+  canvasWrap.classList.toggle('has-pf', multi);
+  $('pfLabel').textContent = 'Seite ' + currentPage + ' / ' + totalPages;
+  $('pfPrev').disabled = currentPage <= 1;
+  $('pfNext').disabled = currentPage >= totalPages;
+  $('pfNext').textContent = currentPage < totalPages ? 'Seite ' + (currentPage + 1) + ' ›' : 'Ende';
   if (typeof updatePerfPage === 'function') updatePerfPage();
 }
 async function goPage(p) {
@@ -2312,6 +2377,41 @@ async function goPage(p) {
 }
 $('prevPage').addEventListener('click', () => goPage(currentPage - 1));
 $('nextPage').addEventListener('click', () => goPage(currentPage + 1));
+$('pfPrev').addEventListener('click', () => turnPage(-1));
+$('pfNext').addEventListener('click', () => turnPage(1));
+// Blättern per Scrollen (ab v2.8.3): am Seitenende weiter nach unten scrollen/ziehen = nächste Seite
+// (beginnt oben), am Seitenanfang weiter nach oben = vorherige Seite (steht am Ende).
+async function turnPage(dir) {
+  if (sheetKind === 'text') return;
+  const p = currentPage + dir;
+  if (p < 1 || p > totalPages) return;
+  await goPage(p);
+  if (dir < 0) canvasWrap.scrollTop = canvasWrap.scrollHeight;
+}
+function pageFloatHint(over) {
+  const pf = $('pageFloat');
+  pf.classList.toggle('end', over > 30 && currentPage < totalPages);
+}
+let wheelOver = 0, wheelT = 0;
+canvasWrap.addEventListener('wheel', (e) => {
+  if (e.ctrlKey || !ready || perf || sheetKind === 'text' || totalPages < 2) return;
+  const max = canvasWrap.scrollHeight - canvasWrap.clientHeight, st = canvasWrap.scrollTop;
+  const atEnd = st >= max - 1, atTop = st <= 0;
+  if (Date.now() - wheelT > 700) wheelOver = 0;
+  wheelT = Date.now();
+  if ((e.deltaY > 0 && atEnd) || (e.deltaY < 0 && atTop)) {
+    wheelOver += e.deltaY;
+    pageFloatHint(wheelOver);
+    if (wheelOver > 240) { wheelOver = 0; pageFloatHint(0); turnPage(1); }
+    else if (wheelOver < -240) { wheelOver = 0; turnPage(-1); }
+  } else wheelOver = 0;
+}, { passive: true });
+// Ende erreicht: Knopf «Seite n ›» kurz hervorheben
+canvasWrap.addEventListener('scroll', () => {
+  if (!ready || sheetKind === 'text' || totalPages < 2) return;
+  const max = canvasWrap.scrollHeight - canvasWrap.clientHeight;
+  if (max > 20 && canvasWrap.scrollTop >= max - 2) pageFloatHint(40);
+});
 
 // --- Zoom ------------------------------------------------------------
 function updateZoomLabel() { $('zoomLabel').textContent = Math.round(zoom * 100) + '%'; }
@@ -2750,6 +2850,7 @@ $('layerBtn').addEventListener('click', () => { $('dispPop').classList.remove('s
 function updateSelBar() {
   const bar = $('selBar'), o = (tool === 'select' || tool === 'text' || tool === 'stamp') ? selObj() : null;
   bar.innerHTML = '';
+  $('pageFloat').classList.toggle('hide-sel', !!o);      // Auswahlleiste und Seitenwechsel teilen sich den Platz unten (ab v2.8.3)
   if (!o) { bar.classList.remove('show'); return; }
   const btn = (t, fn, title) => h('button', { text: t, title, onclick: fn });
   if (o.t === 'x') bar.append(btn('✎ Text', () => textDialog(o)));
@@ -2835,8 +2936,8 @@ stack.addEventListener('pointerdown', (e) => {
   }
   if (pointers.size > 2) return;
 
-  const fingerPan = e.pointerType === 'touch' && !fingerActs();
-  if (fingerPan) { action = { kind: 'pan', sx: e.clientX, sy: e.clientY, sl: canvasWrap.scrollLeft, st: canvasWrap.scrollTop, moved: false }; return; }
+  const fingerPan = (e.pointerType === 'touch' && !fingerActs()) || tool === 'view';     // «📖 Lesen» (ab v2.8.3): Finger/Maus scrollt immer
+  if (fingerPan) { action = { kind: 'pan', sx: e.clientX, sy: e.clientY, sl: canvasWrap.scrollLeft, st: canvasWrap.scrollTop, moved: false, over: 0 }; return; }
   startTool(e);
 });
 
@@ -2901,6 +3002,10 @@ stack.addEventListener('pointermove', (e) => {
     const dx = e.clientX - action.sx, dy = e.clientY - action.sy;
     if (Math.abs(dx) + Math.abs(dy) > 3) action.moved = true;
     canvasWrap.scrollLeft = action.sl - dx; canvasWrap.scrollTop = action.st - dy;
+    // Über das Seitenende hinaus ziehen = nächste Seite, über den Anfang hinaus = vorherige (ab v2.8.3)
+    const want = action.st - dy, max = canvasWrap.scrollHeight - canvasWrap.clientHeight;
+    action.over = want > max ? want - max : (want < 0 ? want : 0);
+    pageFloatHint(action.over);
   } else if (action.kind === 'stroke' && live) {
     const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
     const list = evs.length ? evs : [e], P = live.o.p;
@@ -2925,6 +3030,7 @@ function endPointer(e, cancelled) {
   try { stack.releasePointerCapture(e.pointerId); } catch (er) {}
   if (pinch) { if (pointers.size < 2) { pinch = null; action = null; } return; }
   const a = action; action = null;
+  if (a && a.kind === 'pan' && !cancelled) { pageFloatHint(0); if (a.over > 90) turnPage(1); else if (a.over < -90) turnPage(-1); }
   if (!a || cancelled) { if (a && a.kind === 'stroke') { live = null; requestInk(); } if (a && a.kind === 'erase' && a.items.length) { a.items.sort((x, y) => x.idx - y.idx).forEach(it => pageArr().splice(it.idx, 0, it.o)); commitChange(); } return; }
   if (a.kind === 'stroke' && live) {
     const o = live.o; live = null;
@@ -2965,7 +3071,7 @@ function setTool(t) {
   $('stampBar').classList.toggle('show', t === 'stamp' || t === 'text');
   $('stampBar').classList.toggle('text-only', t === 'text');
   fillObjSizeSel();
-  stack.style.cursor = t === 'select' ? 'default' : (t === 'eraser' ? 'cell' : 'crosshair');
+  stack.style.cursor = t === 'view' ? 'grab' : t === 'select' ? 'default' : (t === 'eraser' ? 'cell' : 'crosshair');
   updateSelBar(); requestInk();
 }
 document.querySelectorAll('#toolbar .tool[data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
@@ -3340,7 +3446,7 @@ const perfTitleText = () => { const s = sget(currentSongId); return s ? s.n + (s
 function renderPerfNotes() {
   const el = $('perfNotes'), on = perf && lsGet('gapp_perfnotes') === '1';
   $('perfNotesBtn').classList.toggle('on', on);
-  if (!on) { el.classList.remove('show'); return; }
+  if (!on) { el.classList.remove('show'); perfNotesSpace(false); return; }
   const fileNote = (annotData.notes || '').trim(), pageNote = ((annotData.pageNotes || {})[String(currentPage)] || '').trim();
   const sig = fileNote + '\u0000' + pageNote + '\u0000' + currentPage;
   if (el.dataset.sig !== sig) {
@@ -3350,10 +3456,20 @@ function renderPerfNotes() {
     if (!fileNote && !pageNote) el.append(h('div', { class: 'pn-t', style: 'color:var(--muted); font-size:13px;', text: 'Keine Notizen zu diesem Blatt.' }));
   }
   el.classList.add('show');
+  perfNotesSpace(true);
+}
+// Notizen im Auftrittsmodus als eigener Bereich unten (ab v2.8.3): das Blatt wird darüber eingepasst,
+// statt von den Notizen überdeckt zu werden.
+function perfNotesSpace(on) {
+  const el = $('perfNotes'), was = document.body.classList.contains('pn-on');
+  document.body.classList.toggle('pn-on', !!on);
+  const hgt = on ? el.offsetHeight : 0, prev = document.body.style.getPropertyValue('--pnh');
+  document.body.style.setProperty('--pnh', hgt + 'px');
+  if ((was !== !!on || prev !== hgt + 'px') && ready && sheetKind !== 'text') { applyCssSize(); scheduleRender(120); }
 }
 $('perfNotesBtn').addEventListener('click', () => { lsSet('gapp_perfnotes', lsGet('gapp_perfnotes') === '1' ? '0' : '1'); renderPerfNotes(); setPerfBar(true); });
 function updatePerfPage() {
-  if (!perf) { $('perfNotes').classList.remove('show'); return; }
+  if (!perf) { $('perfNotes').classList.remove('show'); if (document.body.classList.contains('pn-on')) perfNotesSpace(false); return; }
   renderPerfNotes();
   let t = `${currentPage} / ${totalPages}`;
   if (perfCtx && lib.setlists[perfCtx.setId]) t += ` · Lied ${perfCtx.idx + 1}/${lib.setlists[perfCtx.setId].it.length}`;
