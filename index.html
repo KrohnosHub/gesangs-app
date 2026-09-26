@@ -2,6 +2,12 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ur+4XGzuOH1S/K5G+qt3x1Z3Lkz84A39kMuxViq8Ie4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
+     aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
+     (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ur+4XGzuOH1S/K5G+qt3x1Z3Lkz84A39kMuxViq8Ie4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -29,8 +35,20 @@
     // Spotify: developer.spotify.com/dashboard → App erstellen → Client-ID und Client-Secret.
     // Nur für die automatische Suche nötig; Abspielen selbst braucht keinen Schlüssel.
     SPOTIFY_CLIENT_ID: 'cba857fdd8fc4118bed7aad8e470ea5d',
-    SPOTIFY_CLIENT_SECRET: 'e0103fb0825043398c193cf58138800d'
+    // Ab v2.9.0 bewusst NICHT mehr hier im Quellcode: diese Datei ist die live ausgelieferte Seite,
+    // ihr Quelltext ist also für jeden einsehbar, der die URL hat. Ein Secret, das API-Anfragen
+    // autorisiert, gehört da nicht hinein. Stattdessen wird es einmalig pro Gerät unten in
+    // "⚙ Einstellungen" eingetragen und nur lokal in diesem Browser gespeichert (localStorage) --
+    // nie in dieser Datei, nie über Drive synchronisiert. Ohne Eintrag bleibt die automatische
+    // Spotify-Suche einfach leer (YouTube funktioniert unabhängig davon weiter).
+    SPOTIFY_CLIENT_SECRET: ''
   };
+  // Spotify Client-ID/Secret aus den lokalen Geräte-Einstellungen laden (siehe openSettingsDialog()
+  // in 11_links.js) -- vor dem Test-Override unten, damit Tests weiterhin Vorrang haben.
+  try {
+    const spi = localStorage.getItem('sp_id'); if (spi) CONFIG.SPOTIFY_CLIENT_ID = spi;
+    const sps = localStorage.getItem('sp_secret'); if (sps) CONFIG.SPOTIFY_CLIENT_SECRET = sps;
+  } catch (e) {}
   // Für automatisierte Tests: erlaubt, einzelne Werte oben ohne Codeänderung zu überschreiben.
   if (window.__TEST_CFG) Object.assign(CONFIG, window.__TEST_CFG);
 </script>
@@ -467,6 +485,7 @@
       <div id="sbFooter">
         <button id="offlineAllBtn">⇩ Alle offline speichern</button>
         <button id="backupBtn" title="Ganze Bibliothek als ZIP sichern">💾 Backup</button>
+        <button id="settingsBtn" title="Einstellungen (u. a. Spotify-Zugang)">⚙ Einstellungen</button>
       </div>
     </div>
 
@@ -655,7 +674,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.8.4';
+const APP_VERSION = '2.9.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -686,6 +705,13 @@ const uid = (p) => p + Math.random().toString(36).slice(2, 8) + Date.now().toStr
 const hash = (str) => { let x = 5381; for (let i = 0; i < str.length; i++) x = ((x << 5) + x + str.charCodeAt(i)) | 0; return (x >>> 0).toString(36); };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const isOnline = () => navigator.onLine !== false;
+// Ab v2.9.0: Pixelspeicher einer Offscreen-Canvas (Seiten-Render, Vorab-Rendern der nächsten Seite)
+// sofort freigeben, statt auf den GC zu warten -- auf manchen Mobil-Browsern bleibt der Speicher sonst
+// länger reserviert, was bei mehreren gleichzeitig gehaltenen grossen Canvases (Basis-/Ink-Layer,
+// Offscreen-Render, Vorab-Rendern im Auftrittsmodus) zu Speicherdruck/Abstürzen führen kann.
+function freeCanvas(c) { if (c) { try { c.width = 0; c.height = 0; } catch (e) {} } }
+// Externe Links nur als https öffnen (Links stammen u. a. aus library.json/Backups – kein javascript: o. Ä.)
+function openExternal(url) { if (/^https:\/\/[^\s]+$/i.test(String(url || ''))) window.open(url, '_blank', 'noopener'); else toast('Ungültiger Link.'); }
 
 function toast(msg, ms = 2600) {
   const t = $('toast');
@@ -708,7 +734,11 @@ function openModal({ title, body, buttons = [], wide = false }) {
   box.append(btns);
   const api = {
     el: box, body: b, btns,
-    close() { if (!bg.isConnected) return; bg.remove(); document.removeEventListener('keydown', esc, true); if (api.onClose) api.onClose(); }
+    close(force) {
+      if (!bg.isConnected) return;
+      if (!force && api.beforeClose && api.beforeClose() === false) return;    // z. B. laufende Aufnahme nicht versehentlich verwerfen
+      bg.remove(); document.removeEventListener('keydown', esc, true); if (api.onClose) api.onClose();
+    }
   };
   function esc(e) { if (e.key === 'Escape') { e.stopPropagation(); api.close(); } }
   buttons.forEach(bt => btns.append(h('button', {
@@ -831,7 +861,7 @@ function ensureMiniPlayer() {
       mp.playBtn,
       mp.pracBtn = h('button', { class: 'mp-prac', text: '🎚', title: 'Üben: Tempo, Tonart, A–B-Schleife', onclick: () => prToggle() }),
       h('button', { text: '■', title: 'Stoppen', onclick: () => stopMiniPlayer() }),
-      h('button', { text: '↗', title: 'Extern öffnen', onclick: () => { if (mp.link) window.open(mp.link.url, '_blank', 'noopener'); } })),
+      h('button', { text: '↗', title: 'Extern öffnen', onclick: () => { if (mp.link) openExternal(mp.link.url); } })),
     mp.hintEl,
     mp.mount = h('div', { class: 'mp-mount' }));
   document.body.append(mp.el);
@@ -852,7 +882,8 @@ function stopMiniPlayer() {
   mp.ytPlayer = null;
   if (mp.spCtrl && mp.spCtrl.destroy) try { mp.spCtrl.destroy(); } catch (e) {}
   mp.spCtrl = null; mp.spState = null;
-  if (mp.audioEl) { try { mp.audioEl.pause(); } catch (e) {} mp.audioEl = null; }
+  if (mp.audioEl) { try { mp.audioEl.pause(); mp.audioEl.removeAttribute('src'); } catch (e) {} mp.audioEl = null; }
+  if (mp.audioUrl) { URL.revokeObjectURL(mp.audioUrl); mp.audioUrl = null; }   // Speicher des Audio-Blobs freigeben (v2.8.5)
   mp.audioBlob = null;
   mp.mount.innerHTML = '';
   mp.hintEl.style.display = 'none'; mp.hintEl.innerHTML = '';
@@ -917,7 +948,7 @@ function loadSpotifyApi() {
 }
 function spotifyHint(link, text) {
   mp.hintEl.innerHTML = '';
-  mp.hintEl.append(h('span', { text }), h('button', { text: 'In Spotify öffnen', onclick: () => window.open(link.url, '_blank', 'noopener') }));
+  mp.hintEl.append(h('span', { text }), h('button', { text: 'In Spotify öffnen', onclick: () => openExternal(link.url) }));
   mp.hintEl.style.display = 'flex';
 }
 function startSpotifyInMiniPlayer(link) {
@@ -955,7 +986,7 @@ function playAudioBlobInMiniPlayer(item, blob) {
   mp.el.style.display = 'flex'; mpApplyMin();
   const audioEl = h('audio', { controls: true });
   mp.audioEl = audioEl; mp.mount.append(audioEl);
-  audioEl.src = URL.createObjectURL(blob);
+  audioEl.src = mp.audioUrl = URL.createObjectURL(blob);
   ['play', 'pause', 'loadedmetadata', 'ended'].forEach(ev => audioEl.addEventListener(ev, () => mpTick()));
   audioEl.play().catch(() => {});
   mpNotify();
@@ -978,7 +1009,13 @@ const IDB = {
       await new Promise((res, rej) => {
         const r = indexedDB.open('gesangs-app', 1);
         r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('blobs'); d.createObjectStore('annots'); d.createObjectStore('kv'); };
-        r.onsuccess = () => { IDB.db = r.result; res(); };
+        r.onsuccess = () => {
+          IDB.db = r.result;
+          // ab v2.8.5: Verbindung, die der Browser im Hintergrund schliesst (Samsung Internet u. a.), beim nächsten Zugriff neu öffnen
+          IDB.db.onclose = () => { IDB.db = null; };
+          IDB.db.onversionchange = () => { try { IDB.db.close(); } catch (e) {} IDB.db = null; };
+          res();
+        };
         r.onerror = () => rej(r.error);
         r.onblocked = () => rej(new Error('blocked'));
       });
@@ -986,8 +1023,16 @@ const IDB = {
     } catch (e) { IDB.ok = false; console.warn('IndexedDB nicht verfügbar:', e); }
     return IDB.ok;
   },
-  tx(store, mode, fn) {
-    if (!IDB.ok) return Promise.resolve(undefined);
+  async tx(store, mode, fn, retried) {
+    if (!IDB.ok) return undefined;
+    if (!IDB.db) { IDB._op = IDB._op || IDB.open().finally(() => { IDB._op = null; }); await IDB._op; if (!IDB.ok || !IDB.db) return undefined; }
+    try { return await IDB.tx1(store, mode, fn); }
+    catch (e) {
+      if (!retried && e && e.name === 'InvalidStateError') { IDB.db = null; return IDB.tx(store, mode, fn, true); }
+      throw e;
+    }
+  },
+  tx1(store, mode, fn) {
     return new Promise((res, rej) => {
       let out;
       try {
@@ -1114,8 +1159,12 @@ function touchOpened(id) {
   const m = lib.files[id] || (lib.files[id] = newFmeta());
   m.lo = Date.now();
   if (m.sg && lib.songs[m.sg]) lib.songs[m.sg].lo = m.lo;
-  libDirty = true; libVer++; libPersist(); scheduleLibSync(); renderSidebar();
+  // ab v2.8.5 kein sofortiger Upload der ganzen Bibliothek nur fürs «zuletzt geöffnet» (geht mit dem nächsten
+  // regulären Abgleich mit, spätestens nach einer Minute) und Seitenleiste gebündelt neu zeichnen
+  libDirty = true; libVer++; libPersist(); scheduleSidebar();
 }
+let sidebarRaf = 0;
+function scheduleSidebar() { if (sidebarRaf) return; sidebarRaf = requestAnimationFrame(() => { sidebarRaf = 0; renderSidebar(); }); }
 function libChanged() { libDirty = true; libVer++; libPersist(); scheduleLibSync(); renderSidebar(); updateSyncState(); }
 
 const folderAlive = (id) => !!(id && lib.folders[id] && !lib.folders[id].d);
@@ -1143,45 +1192,82 @@ function allTags() {
 }
 const aliveSetlists = () => Object.entries(lib.setlists).filter(([id, s]) => !s.d).map(([id, s]) => ({ id, ...s })).sort((a, b) => a.n.localeCompare(b.n, 'de', { numeric: true }));
 
+// Zusammenführen zweier Bibliotheksstände (lokal a, Drive b). Ab v2.8.5 deterministisch: Beide Geräte
+// kommen unabhängig von der Reihenfolge zum gleichen Ergebnis (sonst luden zwei Geräte bei gleicher
+// Zeit oder anderer Listenreihenfolge endlos abwechselnd hoch, und Umsortierungen gingen verloren).
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const TOMB_TTL = 180 * 864e5;                      // Grabsteine nach 180 Tagen entfernen (Datei bleibt klein)
+function pickWinner(x, y) {
+  if ((y.u || 0) !== (x.u || 0)) return (y.u || 0) > (x.u || 0) ? y : x;
+  return stableStr(y) > stableStr(x) ? y : x;     // gleiche Zeit: fest nach Inhalt entscheiden
+}
+function unionById(winList, otherList) {           // Reihenfolge des Gewinners, dann Neues; je id der neuere Eintrag
+  const m = new Map();
+  [...(winList || []), ...(otherList || [])].forEach(t => { if (t && t.id && !UNSAFE_KEYS.has(t.id) && (!m.has(t.id) || (t.u || 0) > (m.get(t.id).u || 0))) m.set(t.id, t); });
+  return [...m.values()];
+}
 function mergeLib(a, b) {
-  const out = emptyLib();
+  const out = emptyLib(), cutoff = Date.now() - TOMB_TTL;
   for (const key of ['folders', 'files', 'setlists', 'songs']) {
     const ids = new Set([...Object.keys(a[key] || {}), ...Object.keys(b[key] || {})]);
     for (const id of ids) {
+      if (UNSAFE_KEYS.has(id)) continue;
       const x = (a[key] || {})[id], y = (b[key] || {})[id];
       if (x && y) {
-        const win = (y.u || 0) > (x.u || 0) ? y : x;
-        out[key][id] = JSON.parse(JSON.stringify(win));
-        if (key === 'files') out[key][id].lo = Math.max(x.lo || 0, y.lo || 0);
+        const win = pickWinner(x, y), other = win === x ? y : x;
+        const o = out[key][id] = JSON.parse(JSON.stringify(win));
+        if (key === 'files') o.lo = Math.max(x.lo || 0, y.lo || 0);
+        if (key === 'setlists') {
+          // Ab v2.9.0 (#10): Wurden auf beiden Geräten unabhängig voneinander Songs zur SELBEN Setliste
+          // hinzugefügt, bevor synchronisiert wurde, ersetzte die reine Gewinner-nach-Zeitstempel-Auswahl
+          // bisher die ganze Liste `it` des unterlegenen Geräts -- eine dort neu hinzugefügte Zeile ging
+          // verloren. Jetzt: Reihenfolge des Gewinners bleibt massgeblich, danach werden nur beim Verlierer
+          // vorhandene (dort neu hinzugefügte) Song-IDs ans Ende angehängt, statt sie zu verwerfen.
+          // Abwägung: Setlisten-Einträge tragen (anders als z.B. Blätter/Verknüpfungen) keinen eigenen
+          // Zeitstempel, nur die ganze Setliste einen; ein WIRKLICH gleichzeitiges Entfernen auf Gerät A und
+          // Hinzufügen dessselben Songs auf Gerät B kann den entfernten Song daher in seltenen Fällen wieder
+          // auftauchen lassen -- ein deutlich selteneres und harmloseres Problem als der bisherige garantierte
+          // Datenverlust bei gleichzeitigen Ergänzungen.
+          const orderWin = win.it || [], orderOther = other.it || [];
+          o.it = [...orderWin, ...orderOther.filter(sid2 => !orderWin.includes(sid2))];
+        }
         if (key === 'songs') {
-          out[key][id].lo = Math.max(x.lo || 0, y.lo || 0);
-          out[key][id].sheets = [...new Set([...(x.sheets || []), ...(y.sheets || [])])];
-          // Verknüpfungen: Vereinigung nach id (wie sheets) – bei gleicher id gewinnt der neuere Eintrag.
-          const lm = new Map();
-          [...(x.links || []), ...(y.links || [])].forEach(l => { if (l && l.id && (!lm.has(l.id) || (l.u || 0) >= (lm.get(l.id).u || 0))) lm.set(l.id, l); });
-          out[key][id].links = [...lm.values()];
-          // Aufnahmen/Backing-Track: Vereinigung nach id (=Drive-Datei-id des Audio-Anhangs), wie links.
-          const amp = new Map();
-          [...(x.audio || []), ...(y.audio || [])].forEach(a => { if (a && a.id && (!amp.has(a.id) || (a.u || 0) >= (amp.get(a.id).u || 0))) amp.set(a.id, a); });
-          out[key][id].audio = [...amp.values()];
-          // Ab v2.8.1: gelöschte Verknüpfungen/Audio-Anhänge als Grabstein (gone: {id: Zeit}), damit ein
-          // anderes Gerät sie beim Zusammenführen nicht wieder hineinmischt; lxk = entfernte Medien
-          // (z. B. 'sp:5PJh…'), die nie wieder automatisch verlinkt werden.
-          const gone = Object.assign({}, x.gone || {});
-          Object.entries(y.gone || {}).forEach(([k, t]) => { gone[k] = Math.max(gone[k] || 0, t); });
-          const lxk = [...new Set([...(x.lxk || []), ...(y.lxk || [])])];
+          o.lo = Math.max(x.lo || 0, y.lo || 0);
+          const unionSheets = [...new Set([...(win.sheets || []), ...(other.sheets || [])])];
+          // Ab v2.9.0 (#10): Ein Blatt, das auf einem Gerät inzwischen zu einem ANDEREN Song verschoben
+          // wurde (attachSheet() entfernt es dort aus .sheets, trägt die neue Zuordnung mit eigenem,
+          // neuerem Zeitstempel in lib.files[fileId].sg ein), soll nach der reinen Vereinigung oben nicht
+          // im alten Song wiederauftauchen, nur weil das unterlegene Gerät die Verschiebung noch nicht
+          // kennt. lib.files[].sg (hier bereits vollständig zusammengeführt, da 'files' vor 'songs'
+          // verarbeitet wird) ist die neuere, pro Datei geführte und damit autoritative Quelle.
+          // Bewusst NUR hier (innerhalb eines echten Zwei-Geräte-Merges DIESES Songs) angewendet, nicht
+          // pauschal auf alle Songs: die (befristete) Phantom-Song-Migration in migrateSongs() erkennt
+          // verwaiste Einzelblatt-Songs gerade daran, dass ihr eigenes sheets-Array das Blatt noch nennt,
+          // obwohl lib.files[].sg schon auf den echten Song zeigt -- dieser Zustand entsteht beim erst-
+          // maligen Laden (nur eine Seite hat überhaupt einen Eintrag) und darf hier nicht vorweggenommen
+          // werden.
+          o.sheets = unionSheets.filter(fid => { const m = out.files[fid]; return !m || !m.sg || m.sg === id; });
+          // Verknüpfungen, Aufnahmen/Backing-Tracks: Vereinigung nach id – bei gleicher id gewinnt der neuere Eintrag
+          o.links = JSON.parse(JSON.stringify(unionById(win.links, other.links)));
+          o.audio = JSON.parse(JSON.stringify(unionById(win.audio, other.audio)));
+          // Ab v2.8.1: gelöschte Verknüpfungen/Audio-Anhänge als Grabstein (gone: {id: Zeit}); lxk = entfernte
+          // Medien (z. B. 'sp:5PJh…'), die nie wieder automatisch verlinkt werden.
+          const gone = {};
+          [x.gone, y.gone].forEach(g => Object.entries(g || {}).forEach(([k, t]) => { if (!UNSAFE_KEYS.has(k) && t > cutoff) gone[k] = Math.max(gone[k] || 0, t); }));
+          const lxk = [...new Set([...(win.lxk || []), ...(other.lxk || [])])];
+          delete o.gone; delete o.lxk;
           if (Object.keys(gone).length) {
-            out[key][id].gone = gone;
-            out[key][id].links = out[key][id].links.filter(l => !(gone[l.id] >= (l.u || 0)));
-            out[key][id].audio = out[key][id].audio.filter(a => !(gone[a.id] >= (a.u || 0)));
+            o.gone = gone;
+            // IDs werden nie wiederverwendet (Drive-Datei-ID bzw. zufällige Link-ID) → Grabstein gilt immer
+            o.links = o.links.filter(l => !gone[l.id]);
+            o.audio = o.audio.filter(a2 => !gone[a2.id]);
           }
-          if (lxk.length) { out[key][id].lxk = lxk; out[key][id].links = out[key][id].links.filter(l => !(l.auto && lxk.includes(l.type + ':' + l.mediaId))); }
-          // Übungsjournal (ab v2.8.0): Aufgaben und Einträge ebenfalls nach id vereinigt, gelöschte als {id,x:1,u}
+          if (lxk.length) { o.lxk = lxk; o.links = o.links.filter(l => !(l.auto && lxk.includes(l.type + ':' + l.mediaId))); }
+          // Übungsjournal (ab v2.8.0): Aufgaben und Einträge nach id vereinigt, gelöschte als {id,x:1,u}
           for (const k of ['tasks', 'log']) {
+            delete o[k];
             if (!x[k] && !y[k]) continue;
-            const m = new Map();
-            [...(x[k] || []), ...(y[k] || [])].forEach(t => { if (t && t.id && (!m.has(t.id) || (t.u || 0) >= (m.get(t.id).u || 0))) m.set(t.id, t); });
-            out[key][id][k] = [...m.values()];
+            o[k] = JSON.parse(JSON.stringify(unionById(win[k], other[k]).filter(t => !(t.x && (t.u || 0) < cutoff))));
           }
         }
       } else out[key][id] = JSON.parse(JSON.stringify(x || y));
@@ -1208,9 +1294,12 @@ function songForFile(fileId) {
   return (m && m.sg && songAlive(m.sg)) ? m.sg : null;
 }
 function aliveSongs() { return Object.entries(lib.songs).filter(([id, s]) => !s.d).map(([id, s]) => ({ id, ...s })); }
-function songSheets(id) {                       // vorhandene Blätter eines Songs, gespeicherte Reihenfolge
+function songSheets(id, idx) {                   // vorhandene Blätter eines Songs, gespeicherte Reihenfolge
+  // idx (optional): vorab gebautes Map(fileId -> file) für Aufrufer, die das für viele Songs auf
+  // einmal brauchen (z.B. die Seitenleiste bei hunderten Songs) -- vermeidet ein files.find() (O(Dateien))
+  // pro Blatt und Song; ohne idx unverändertes Verhalten für alle anderen, seltener aufrufenden Stellen.
   const s = lib.songs[id]; if (!s) return [];
-  return s.sheets.map(fid => files.find(f => f.id === fid)).filter(Boolean);
+  return s.sheets.map(fid => (idx ? idx.get(fid) : files.find(f => f.id === fid))).filter(Boolean);
 }
 function primarySheet(id) {                      // zuletzt geöffnetes, sonst erstes vorhandenes Blatt
   const s = lib.songs[id]; if (!s || !s.sheets.length) return null;
@@ -1538,8 +1627,12 @@ async function driveFetch(url, opts = {}, retry = true, interactive = true) {
   if (interactive) await ensureToken(); else if (!tokenValid()) throw new Error('unauthorized');
   const headers = Object.assign({ Authorization: 'Bearer ' + accessToken }, opts.headers || {});
   let res;
-  try { res = await fetch(url, Object.assign({}, opts, { headers })); }
+  // ab v2.8.5 mit Zeitlimit bis zur Antwort (eine hängende Anfrage blockierte sonst die ganze Sync-Warteschlange)
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const tm = ctrl ? setTimeout(() => ctrl.abort(), opts.timeout || 45000) : null;
+  try { res = await fetch(url, Object.assign({}, opts, { headers }, ctrl && !opts.signal ? { signal: ctrl.signal } : {})); }
   catch (e) { throw new Error('offline'); }
+  finally { if (tm) clearTimeout(tm); }
   if (res.status === 401) {
     dropToken();
     if (retry && interactive) return driveFetch(url, opts, false, true);
@@ -1592,15 +1685,22 @@ async function loadFileList(interactive = true) {
     all = all.concat(data.files || []);
     token = data.nextPageToken || null;
   } while (token);
+  const sig = all.map(f => f.id + ':' + f.modifiedTime + ':' + f.name).join('|');
+  const changedList = sig !== loadFileList.sig || !filesKnown;
   files = all; filesKnown = true;
   // Songs werden bewusst NICHT hier migriert, sondern in syncLibrary() – erst nachdem
   // library.json von Drive gemerged wurde (sonst könnte ein noch leerer lokaler Stand
   // vorübergehend leere Songs anlegen und hochladen, bevor Ordner/Tags/Favoriten da sind).
-  safe(IDB.put('kv', 'files', files));
-  // Lokale Kopien von Blättern entfernen, die es in Drive nicht mehr gibt
+  if (changedList) safe(IDB.put('kv', 'files', files));      // ab v2.8.5 nur bei Änderung (sync läuft minütlich)
+  loadFileList.sig = sig;
+  // Lokale Kopien von Blättern entfernen, die es in Drive nicht mehr gibt – Aufnahmen, Backing-Tracks und
+  // Referenzmelodien liegen im selben Speicher, stehen aber nicht in dieser Liste (ab v2.8.5 ausgenommen,
+  // vorher wurden sie bei jedem Sync wieder gelöscht und waren nie wirklich offline verfügbar).
   const ids = new Set(files.map(f => f.id));
-  for (const id of [...cachedIds]) if (!ids.has(id)) { cachedIds.delete(id); safe(IDB.del('blobs', id)); }
-  renderSidebar();
+  Object.values(lib.songs).forEach(s => { (s.audio || []).forEach(a => ids.add(a.id)); if (s.ref && s.ref.id) ids.add(s.ref.id); });
+  let pruned = false;
+  for (const id of [...cachedIds]) if (!ids.has(id)) { cachedIds.delete(id); safe(IDB.del('blobs', id)); pruned = true; }
+  if (changedList || pruned) renderSidebar();
 }
 
 
@@ -1633,15 +1733,15 @@ let sbTab = 'sheets', currentFolder = null, searchQ = '', tagSel = '', favOnly =
 let sortMode = lsGet('gapp_sort') || 'name';
 $('sortSel').value = sortMode;
 
-function songAdded(s) {                         // frühestes Erstellungsdatum unter den Blättern (für Sortierung)
-  const ds = s.sheets.map(fid => files.find(f => f.id === fid)).filter(Boolean).map(f => f.createdTime || f.modifiedTime || '').filter(Boolean).sort();
+function songAdded(s, idx) {                    // frühestes Erstellungsdatum unter den Blättern (für Sortierung)
+  const ds = s.sheets.map(fid => (idx ? idx.get(fid) : files.find(f => f.id === fid))).filter(Boolean).map(f => f.createdTime || f.modifiedTime || '').filter(Boolean).sort();
   return ds[0] || '';
 }
-function sortSongs(arr) {
+function sortSongs(arr, idx) {
   const byName = (a, b) => a.n.localeCompare(b.n, 'de', { numeric: true });
   return arr.sort((a, b) => {
     if (sortMode === 'opened') return ((b.lo || 0) - (a.lo || 0)) || byName(a, b);
-    if (sortMode === 'added') return songAdded(b).localeCompare(songAdded(a)) || byName(a, b);
+    if (sortMode === 'added') return songAdded(b, idx).localeCompare(songAdded(a, idx)) || byName(a, b);
     return byName(a, b);
   });
 }
@@ -1685,6 +1785,10 @@ function renderSheets() {
   }
 
   const list = fileListEl; list.innerHTML = '';
+  // Einmal pro Render ein fileId->file-Nachschlagewerk bauen (O(Dateien)), statt dass jeder einzelne
+  // Song beim Rendern (songSheets/songAdded) selbst mit files.find() die ganze Dateiliste durchsucht
+  // (O(Songs·Dateien)) -- macht bei hunderten Songs den spürbaren Unterschied (#9).
+  const filesIdx = new Map(files.map(f => [f.id, f]));
   let arr = aliveSongs();
   if (global) {
     if (q) arr = arr.filter(s => s.n.toLowerCase().includes(q) || (s.tg || []).some(t => t.toLowerCase().includes(q)) || songPathLabel(s.id).toLowerCase().includes(q));
@@ -1694,8 +1798,8 @@ function renderSheets() {
     arr = arr.filter(s => effSongFolder(s.id) === currentFolder);
     childFolders(currentFolder).forEach(fo => list.append(folderItem(fo)));
   }
-  sortSongs(arr);
-  arr.forEach(s => list.append(songItem(s, global)));
+  sortSongs(arr, filesIdx);
+  arr.forEach(s => list.append(songItem(s, global, filesIdx)));
   if (!list.children.length) {
     if (!filesKnown && !global) list.append(h('div', { class: 'empty-note' },
       h('p', { text: 'Deine Songs liegen in Google Drive und sind auf diesem Gerät noch nicht geladen.' }),
@@ -1718,9 +1822,9 @@ function folderItem(fo) {
     h('button', { class: 'more', text: '⋯', title: 'Ordner-Menü', onclick: (e) => { e.stopPropagation(); folderMenu(fo); } }));
 }
 
-function songItem(s, global) {
+function songItem(s, global, idx) {
   const path = global ? songPathLabel(s.id) : '';
-  const sheets = songSheets(s.id);
+  const sheets = songSheets(s.id, idx);
   const sub = h('div', { class: 'sub' },
     (s.tg || []).map(t => h('span', { class: 'tagchip', text: t })),
     sheets.length > 1 ? h('span', { text: '📄 ' + sheets.length + ' Blätter' }) : null,
@@ -1864,8 +1968,8 @@ function manageSheets(s) {
 }
 async function removeSheetFromSong(s, f, after) {
   if (!confirm(`«${f.name}» in den Papierkorb verschieben?`)) return;
+  if (!(await trashFile(f, true))) return;            // ab v2.8.5: erst nach erfolgreichem Löschen in Drive vom Song lösen
   detachSheet(s.id, f.id);
-  await trashFile(f, true);
   if (!songSheets(s.id).length) sTouch(s.id, x => { x.d = 1; });
   if (after) after();
 }
@@ -1874,7 +1978,9 @@ function deleteSong(s) {
   const sheets = songSheets(s.id);
   if (!confirm(`Song «${s.n}» mit ${sheets.length} Blatt/Blättern in den Papierkorb verschieben?`)) return;
   (async () => {
-    for (const f of sheets) await trashFile(f, true);
+    let ok = true;
+    for (const f of sheets) if (!(await trashFile(f, true))) ok = false;
+    if (!ok) { toast('Nicht alle Blätter konnten gelöscht werden – der Song bleibt erhalten. Bitte mit Internet erneut versuchen.', 4500); return; }
     sTouch(s.id, x => { x.d = 1; });
   })();
 }
@@ -2034,7 +2140,15 @@ function renderSheetTabs() {
 
 // --- Verdrahtung -------------------------------------------------------------
 document.querySelectorAll('#sbTabs button').forEach(b => b.addEventListener('click', () => { sbTab = b.dataset.tab; renderSidebar(); }));
-$('searchInput').addEventListener('input', (e) => { searchQ = e.target.value; renderSidebar(); });
+// Leicht entprellt (statt bei jedem Tastendruck neu zu rendern): bei hunderten Songs kostet ein
+// voller Seitenleisten-Render spürbar Zeit (Filtern+Sortieren+DOM neu aufbauen); ohne Entprellung
+// wirkt die Suche beim Tippen ruckelig (#9).
+let searchDebounceT = null;
+$('searchInput').addEventListener('input', (e) => {
+  const v = e.target.value;
+  clearTimeout(searchDebounceT);
+  searchDebounceT = setTimeout(() => { searchQ = v; renderSidebar(); }, 100);
+});
 $('sortSel').addEventListener('change', (e) => { sortMode = e.target.value; lsSet('gapp_sort', sortMode); renderSidebar(); });
 $('tagFilter').addEventListener('change', (e) => { tagSel = e.target.value; renderSidebar(); });
 $('favFilter').addEventListener('click', () => { favOnly = !favOnly; renderSidebar(); });
@@ -2065,7 +2179,7 @@ async function storeBlob(f, blob) {
   const buf = await blob.arrayBuffer();
   await safe(IDB.put('blobs', f.id, { buf, mime: blob.type || f.mimeType, md5: f.md5Checksum || null, name: f.name }));
   cachedIds.add(f.id);
-  renderSidebar();
+  scheduleSidebar();
 }
 async function loadBlob(f) {
   const rec = await getBlobRec(f.id);
@@ -2110,6 +2224,7 @@ function closeCurrent() {
   if (renderTask) { try { renderTask.cancel(); } catch (e) {} renderTask = null; }
   if (currentDoc) { destroyDoc(currentDoc); currentDoc = null; }
   if (currentImgUrl) { URL.revokeObjectURL(currentImgUrl); currentImgUrl = null; }
+  freeCanvas(baseCache); if (prefetched) freeCanvas(prefetched.canvas);
   currentImg = null; currentBlob = null; prefetched = null; baseCache = null;
   currentFile = null; currentSongId = null; annotRec = { aid: null, aTime: null, base: null }; annotData = emptyAnnot();
   undoStack = []; zoom = 1; currentPage = 1; totalPages = 1; notesScope = 'file'; selId = null; dirty = false;
@@ -2140,7 +2255,7 @@ async function loadAnnotFor(f) {
   }
   if (canSyncNow()) {
     setStatus('Lädt Notizen …', 'saving');
-    try { return { a: await pullAnnotFirst(f.id), rec: null }; } catch (e) { console.warn('Erstes Laden der Notizen:', e); }
+    try { const r = await pullAnnotFirst(f.id); return r ? { a: r.obj, rec: r.rec } : { a: null, rec: null }; } catch (e) { console.warn('Erstes Laden der Notizen:', e); }
   }
   return { a: null, rec: null };
 }
@@ -2238,7 +2353,7 @@ async function openFile(f, opts = {}) {
     await renderPage();
     if (seq === openSeq) { setStatus(''); updateSyncState(); }
     if (perf) { $('perfTitle').textContent = perfTitleText(); updatePerfPage(); }
-    if (canSyncNow()) enqueue(() => syncAnnot(f.id));
+    if (canSyncNow()) enqueue(() => syncAnnot(f.id)).catch(syncFail);
   } catch (e) {
     if (seq === openSeq) {
       if (e.message === 'offline_uncached') { fail('Nicht offline verfügbar', new Error('Dieses Blatt wurde noch nicht auf dieses Gerät geladen. Bitte einmal mit Internet öffnen oder «Offline speichern» wählen.')); toast('Dieses Blatt ist nicht offline verfügbar.'); }
@@ -2262,14 +2377,21 @@ function applyCssSize() {
   [baseCanvas, inkCanvas].forEach(c => { c.style.width = w + 'px'; c.style.height = h_ + 'px'; });
 }
 function targetPixelWidth() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
-  let px = Math.min(Math.round(fitWidth() * zoom * dpr), 4096);
-  const maxArea = 16e6;
+  // Ab v2.9.0: auf Geräten mit Grob-Zeigern (i. d. R. Handy/Tablet) deutlich kleineres Speicherbudget --
+  // sonst können bei starkem Zoomen mehrere gleichzeitig gehaltene grosse Canvases (Basis-/Ink-Layer,
+  // Offscreen-Render, Vorab-Rendern der nächsten Seite im Auftrittsmodus) hunderte MB belegen und auf
+  // Android zu leeren/abstürzenden Seiten führen. Auf echten Desktop-Geräten bleibt es beim alten Budget.
+  const mobile = isTouchDevice();
+  const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 2 : 3);
+  let px = Math.min(Math.round(fitWidth() * zoom * dpr), mobile ? 2600 : 4096);
+  let maxArea = mobile ? 6e6 : 16e6;
+  if (mobile && navigator.deviceMemory && navigator.deviceMemory <= 4) maxArea = 3.5e6;
   if (px * px * pageAspect > maxArea) px = Math.floor(Math.sqrt(maxArea / pageAspect));
   return Math.max(px, 100);
 }
 function commitCanvas(off) {
   [baseCanvas, inkCanvas].forEach(c => { c.width = off.width; c.height = off.height; });
+  if (baseCache && baseCache !== off) freeCanvas(baseCache);
   baseCache = off;
   baseCtx.drawImage(off, 0, 0);
   inkCacheValid = false;
@@ -2335,7 +2457,10 @@ function schedulePrefetch() {
       const off = document.createElement('canvas');
       off.width = Math.ceil(vp.width); off.height = Math.ceil(vp.height);
       await page.render({ canvasContext: off.getContext('2d'), viewport: vp }).promise;
-      if (doc === currentDoc && perf) prefetched = { page: n, px, aspect, canvas: off };
+      if (doc === currentDoc && perf) {
+        if (prefetched && prefetched.canvas !== off) freeCanvas(prefetched.canvas);   // alten, nicht verbrauchten Vorab-Render freigeben
+        prefetched = { page: n, px, aspect, canvas: off };
+      } else freeCanvas(off);   // Seite/Modus inzwischen gewechselt -- Render war umsonst, Speicher sofort wieder freigeben
     } catch (e) { /* egal */ }
   }, 250);
 }
@@ -2531,11 +2656,11 @@ async function renameFile(f) {
 $('renameBtn').addEventListener('click', () => { if (currentSongId) renameSong(currentSongId); else if (currentFile) renameFile(currentFile); });
 
 async function trashFile(f, silent) {
-  if (!silent && !confirm(`"${f.name}" in den Papierkorb verschieben?`)) return;
+  if (!silent && !confirm(`"${f.name}" in den Papierkorb verschieben?`)) return false;
   const isCur = currentFile && currentFile.id === f.id;
   try {
     await driveFetch(`${DRIVE_FILES}/${f.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) });
-  } catch (e) { fail('Löschen fehlgeschlagen', e); return; }
+  } catch (e) { fail('Löschen fehlgeschlagen', e); return false; }
   if (isCur) {
     openSeq++;
     clearTimeout(saveTimer);
@@ -2550,6 +2675,7 @@ async function trashFile(f, silent) {
   cachedIds.delete(f.id); dirtyIds.delete(f.id); persistDirtyIds(); dropTextDirty(f.id); textConflicts.delete(f.id);
   safe(IDB.del('blobs', f.id)); safe(IDB.del('annots', f.id)); safe(IDB.put('kv', 'files', files));
   renderSidebar();
+  return true;
 }
 
 
@@ -3216,9 +3342,12 @@ async function pullAnnotFirst(id) {
   const meta = await findByName(id + '.annotations.json');
   if (!meta) return null;
   const obj = normalizeAnnot(JSON.parse(await driveText(meta.id)));
-  annotRec = { aid: meta.id, aTime: meta.modifiedTime, base: JSON.stringify(obj) };
-  await safe(IDB.put('annots', id, { json: JSON.stringify(obj), aid: annotRec.aid, aTime: annotRec.aTime, base: annotRec.base, dirty: false }));
-  return obj;
+  // Ab v2.8.5 wird annotRec NICHT mehr hier gesetzt (sonst konnte ein inzwischen geöffnetes anderes Blatt
+  // die Sync-Daten dieses Blatts erben und seine Striche in die falsche Datei schreiben) – der Aufrufer
+  // übernimmt rec nur, wenn das Blatt noch das aktuelle ist.
+  const rec = { aid: meta.id, aTime: meta.modifiedTime, base: JSON.stringify(obj) };
+  await safe(IDB.put('annots', id, { json: JSON.stringify(obj), aid: rec.aid, aTime: rec.aTime, base: rec.base, dirty: false }));
+  return { obj, rec };
 }
 
 function applyMergedLive(m) {
@@ -3238,7 +3367,7 @@ async function syncAnnot(id) {
   try {
     for (let attempt = 0; attempt < 3; attempt++) {
       if (!(startedCur && isCur()) && !rec0) { rec0 = await safe(IDB.get('annots', id)); if (!rec0) return; }
-      const R = () => (startedCur && isCur()) ? annotRec : rec0;
+      const R = () => ((startedCur && isCur()) ? annotRec : rec0) || {};
       // 1) Stand in Drive
       let meta = R().aid ? await driveMeta(R().aid) : null;
       if (!meta) meta = await findByName(id + '.annotations.json');
@@ -3247,6 +3376,7 @@ async function syncAnnot(id) {
       if (meta && (!R().aTime || meta.modifiedTime !== R().aTime || meta.id !== R().aid)) remoteObj = normalizeAnnot(JSON.parse(await driveText(meta.id)));
       // 3) zusammenführen – synchron mit dem aktuellen lokalen Stand
       const live = startedCur && isCur();
+      if (!live && !rec0) { rec0 = await safe(IDB.get('annots', id)); if (!rec0) return; }   // Blatt wurde inzwischen gewechselt
       const ver = editVer;
       const localObj = live ? annotData : normalizeAnnot(JSON.parse(rec0.json));
       const snapshotJson = live ? JSON.stringify(localObj) : rec0.json;
@@ -3404,7 +3534,12 @@ document.addEventListener('visibilitychange', () => {
   else { updateAuthBtn(); updateSyncState(); syncAll(); }
 });
 window.addEventListener('pagehide', () => { persistAnnot(); persistTextLocal(); libPersist(); });
-setInterval(() => { updateAuthBtn(); if (tokenValid()) clearAuthStatusIfStale(); if (document.visibilityState === 'visible') { updateSyncState(); syncAll(); } }, 60000);
+// Intervall bewusst auf 2 Minuten verlaengert (statt 1 Minute) und pausiert komplett waehrend
+// des Auftrittsmodus (perf), um Drive-API-Aufrufe/Akkuverbrauch zu reduzieren. Lokal geaenderte
+// Daten werden davon unabhaengig weiterhin ueber die bestehenden debounced queueSave()/
+// persistAnnot()-Pfade gesichert; beim Verlassen des Auftrittsmodus holt exitPerf() per
+// syncAll(true) sofort nach, was waehrend der Pause auf anderen Geraeten geaendert wurde.
+setInterval(() => { updateAuthBtn(); if (tokenValid()) clearAuthStatusIfStale(); if (document.visibilityState === 'visible' && !perf) { updateSyncState(); syncAll(); } }, 120000);
 
 
 // ---------------------------------------------------------------
@@ -3506,6 +3641,9 @@ function exitPerf() {
   if (sheetKind === 'text') {
     if (ready) { textSheetEl.contentEditable = 'true'; applyTxtStyle(); }
   } else if (ready) { applyCssSize(); updateZoomLabel(); scheduleRender(30); }
+  // Waehrend des Auftrittsmodus pausiert der periodische Sync (siehe 07_sync.js); beim Verlassen
+  // sofort nachholen, damit Aenderungen von anderen Geraeten zuegig eintreffen.
+  syncAll(true);
 }
 $('perfBtn').addEventListener('click', enterPerf);
 $('perfExit').addEventListener('click', exitPerf);
@@ -4355,7 +4493,7 @@ function cleanAllLinks() {
     bad.forEach(l => { s.gone[l.id] = now; });
     s.lxk = [...new Set([...(s.lxk || []), ...bad.map(linkKey)])];
     s.links = s.links.filter(l => !bad.includes(l));
-    s.u = now; changed = true;
+    changed = true;                     // Song-Zeitstempel bleibt (Grabsteine werden unabhängig davon zusammengeführt)
   }
   return changed;
 }
@@ -4392,12 +4530,12 @@ function manageLinks(s) {
   function linkRow(l) {
     return h('div', { class: 'pick-row' + (isLoaded(l) ? ' playing' : '') },
       h('span', { class: 'type-icon', text: linkIcon(l) }),
-      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => (playableLink(l) ? playLinkInMiniPlayer(l) : window.open(l.url, '_blank', 'noopener')) },
+      h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => (playableLink(l) ? playLinkInMiniPlayer(l) : openExternal(l.url)) },
         h('div', { class: 'name', text: l.title || l.url }),
         h('div', { class: 'sub' }, h('span', { text: linkSourceLabel(l) }), h('span', { class: 'mp-time', 'data-mpid': l.id, text: isLoaded(l) ? mpTimeLabel() : '' }))),
       playableLink(l) ? h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }) : null,
       isLoaded(l) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
-      h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); window.open(l.url, '_blank', 'noopener'); } }),
+      h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); openExternal(l.url); } }),
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } }));
   }
   function section(title, list) {
@@ -4423,7 +4561,9 @@ function manageLinks(s) {
       h('div', { style: 'display:flex; gap:6px; margin-top:6px;' }, kindOrig, kindKaraoke),
       h('button', { text: 'Hinzufügen', style: 'margin-top:6px;', onclick: () => addManual(manualInput.value) })));
     if (!CONFIG.YOUTUBE_API_KEY && !(CONFIG.SPOTIFY_CLIENT_ID && CONFIG.SPOTIFY_CLIENT_SECRET)) {
-      body.append(h('div', { class: 'empty-note', text: 'Automatische Vorschläge sind noch nicht eingerichtet (kein API-Schlüssel hinterlegt). Manuelles Verlinken über einen eingefügten Link funktioniert bereits.' }));
+      body.append(h('div', { class: 'empty-note' },
+        'Automatische Vorschläge sind noch nicht eingerichtet (kein API-Schlüssel hinterlegt). Manuelles Verlinken über einen eingefügten Link funktioniert bereits. ',
+        h('span', { style: 'text-decoration:underline; cursor:pointer; color:var(--accent);', onclick: () => openSettingsDialog() }, 'Spotify-Zugang einrichten →')));
     }
   }
   mp.listeners.add(draw);
@@ -4485,6 +4625,41 @@ function manageLinks(s) {
   api.onClose = () => mp.listeners.delete(draw);   // Wiedergabe im Mini-Player läuft nach dem Schliessen weiter
   autoLinkIfEmpty();
 }
+
+// ---------------------------------------------------------------
+// Einstellungen (ab v2.9.0): aktuell nur der Spotify Client-Secret, der bewusst
+// NICHT im Quellcode (01_head.html) hinterlegt ist, da diese Datei die live
+// ausgelieferte Seite ist und ihr Quelltext für jeden mit der URL einsehbar wäre.
+// Stattdessen wird das Secret hier eingetragen und nur lokal in diesem Browser
+// gespeichert (localStorage, Schlüssel 'sp_secret') -- nie über Drive synchronisiert,
+// muss also pro Gerät einmal eingerichtet werden. Ohne Eintrag bleibt die
+// automatische Spotify-Suche einfach leer, YouTube ist davon unabhängig.
+// ---------------------------------------------------------------
+function openSettingsDialog() {
+  const body = h('div');
+  body.append(h('div', { class: 'empty-note', style: 'margin-bottom:10px;' },
+    'Der Spotify-Zugang (Client-Secret) wird aus Sicherheitsgründen nicht mehr in der App-Datei mitgeliefert, ',
+    'sondern nur lokal auf diesem Gerät gespeichert. Client-ID und Client-Secret erhältst du unter ',
+    h('a', { href: 'https://developer.spotify.com/dashboard', target: '_blank', rel: 'noopener', style: 'color:var(--accent);' }, 'developer.spotify.com/dashboard'),
+    ' (eigene App anlegen, falls noch nicht geschehen).'));
+  const idInput = h('input', { type: 'text', placeholder: 'Spotify Client-ID', value: CONFIG.SPOTIFY_CLIENT_ID || '', style: 'width:100%; margin-bottom:6px;' });
+  const secretInput = h('input', { type: 'password', placeholder: 'Spotify Client-Secret', value: CONFIG.SPOTIFY_CLIENT_SECRET || '', style: 'width:100%;' });
+  body.append(h('div', { style: 'padding:9px 6px;' }, idInput, secretInput));
+  openModal({
+    title: '⚙ Einstellungen', body,
+    buttons: [
+      { label: 'Zurücksetzen', fn: () => { lsDel('sp_id'); lsDel('sp_secret'); CONFIG.SPOTIFY_CLIENT_ID = 'cba857fdd8fc4118bed7aad8e470ea5d'; CONFIG.SPOTIFY_CLIENT_SECRET = ''; spotifyToken = null; toast('Zurückgesetzt.'); return false; } },
+      { label: 'Speichern', primary: true, fn: () => {
+        const id = idInput.value.trim(), sec = secretInput.value.trim();
+        if (id) { lsSet('sp_id', id); CONFIG.SPOTIFY_CLIENT_ID = id; } else { lsDel('sp_id'); }
+        if (sec) { lsSet('sp_secret', sec); CONFIG.SPOTIFY_CLIENT_SECRET = sec; } else { lsDel('sp_secret'); CONFIG.SPOTIFY_CLIENT_SECRET = ''; }
+        spotifyToken = null; spotifyTokenExp = 0;   // altes Token verwerfen, ggf. neue Zugangsdaten sofort nutzen
+        toast('Gespeichert.');
+      } }
+    ]
+  });
+}
+$('settingsBtn').addEventListener('click', openSettingsDialog);
 
 
 // ---------------------------------------------------------------
@@ -4561,7 +4736,7 @@ async function loadAudioBlob(item) {
 async function trashAudio(item) {
   try { if (isOnline() && tokenValid()) await driveFetch(`${DRIVE_FILES}/${item.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) }); }
   catch (e) { /* lokal trotzdem entfernen; Drive-Aufräumen kann später nachgeholt werden */ }
-  cachedIds.delete(item.id); await safe(IDB.del('blobs', item.id));
+  cachedIds.delete(item.id); await safe(IDB.del('blobs', item.id)); await safe(IDB.del('kv', 'pitch:' + item.id));
 }
 
 // --- YouTube-IFrame-API einmalig laden (für Mitspielen mit einer verlinkten Karaoke-Version) ---
@@ -4688,29 +4863,44 @@ function openRecorder(song) {
     drawTrace();
   }
 
+  // Ab v2.9.0: die eigentliche Tonhöhenerkennung (Autokorrelation, pro Aufruf einiges an Rechenarbeit)
+  // nicht mehr bei jedem requestAnimationFrame (auf manchen Handys/Displays bis zu ~120x/s) ausführen,
+  // sondern höchstens alle 40 ms (~25x/s) -- für Gesangs-Feedback am Auge völlig ausreichend, spart aber
+  // spürbar Akku/CPU beim Aufnehmen. Der rAF-Takt selbst bleibt bestehen (pausiert automatisch, wenn der
+  // Tab/Bildschirm nicht sichtbar ist), es wird nur zwischen den Terminen nichts Teures mehr berechnet.
+  let lastPitchT = 0;
   function tick() {
     if (!analyser) return;
-    const buf = new Float32Array(analyser.fftSize);
-    analyser.getFloatTimeDomainData(buf);
-    const freq = detectPitch(buf, actx.sampleRate);
-    const info = freq ? freqToNote(freq) : null;
-    if (info) {
-      noteEl.textContent = info.note;
-      centsEl.textContent = (info.cents >= 0 ? '+' : '') + info.cents + ' ct';
-      centsEl.className = 'tuner-cents ' + (Math.abs(info.cents) <= 8 ? 'good' : Math.abs(info.cents) <= 20 ? 'ok' : 'bad');
-      needle.style.left = (50 + clamp(info.cents, -50, 50) / 50 * 45) + '%';
-      pushPitch(info.midi);
-    } else {
-      noteEl.textContent = '–'; centsEl.textContent = ''; centsEl.className = 'tuner-cents';
-      needle.style.left = '50%';
-      pushPitch(null);
+    const now = performance.now();
+    if (now - lastPitchT >= 40) {
+      lastPitchT = now;
+      const buf = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(buf);
+      const freq = detectPitch(buf, actx.sampleRate);
+      const info = freq ? freqToNote(freq) : null;
+      if (info) {
+        noteEl.textContent = info.note;
+        centsEl.textContent = (info.cents >= 0 ? '+' : '') + info.cents + ' ct';
+        centsEl.className = 'tuner-cents ' + (Math.abs(info.cents) <= 8 ? 'good' : Math.abs(info.cents) <= 20 ? 'ok' : 'bad');
+        needle.style.left = (50 + clamp(info.cents, -50, 50) / 50 * 45) + '%';
+        pushPitch(info.midi);
+      } else {
+        noteEl.textContent = '–'; centsEl.textContent = ''; centsEl.className = 'tuner-cents';
+        needle.style.left = '50%';
+        pushPitch(null);
+      }
     }
     raf = requestAnimationFrame(tick);
   }
 
+  let starting = false, previewUrl = null, unsaved = false;
   async function start() {
+    if (starting || recording) return;                      // ab v2.8.5: Doppelklick erzeugt keinen zweiten Mikrofon-Stream
+    starting = true;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
-    catch (e) { statusEl.textContent = 'Mikrofonzugriff verweigert oder nicht verfügbar.'; statusEl.style.display = 'block'; return; }
+    catch (e) { starting = false; statusEl.textContent = 'Mikrofonzugriff verweigert oder nicht verfügbar.'; statusEl.style.display = 'block'; return; }
+    starting = false;
+    if (!api.el.isConnected) { stream.getTracks().forEach(t => t.stop()); stream = null; return; }   // Dialog inzwischen geschlossen
     statusEl.style.display = 'none';
     actx = new (window.AudioContext || window.webkitAudioContext)();
     const src = actx.createMediaStreamSource(stream);
@@ -4747,16 +4937,18 @@ function openRecorder(song) {
   }
   // Der Mini-Player selbst wird beim Schliessen NICHT gestoppt -- er soll (wie gewünscht) auch
   // ausserhalb dieser Ansicht und im Vollbildmodus weiterlaufen; Stoppen erfolgt über sein eigenes ✕.
-  function cleanup() { stop(); }
+  const dropPreview = () => { if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; unsaved = false; previewWrap.innerHTML = ''; };
+  function cleanup() { stop(); dropPreview(); }
   function onStopped() {
     const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
-    const url = URL.createObjectURL(blob);
-    previewWrap.innerHTML = '';
+    dropPreview();
+    const url = previewUrl = URL.createObjectURL(blob);
+    unsaved = true;
     const audioEl = h('audio', { class: 'take-preview', controls: true, src: url, style: 'width:100%; margin-top:8px;' });
     previewWrap.append(audioEl,
       h('div', { style: 'display:flex; gap:8px; margin-top:8px;' },
         h('button', { class: 'primary', text: '💾 Speichern', onclick: () => saveTake(blob) }),
-        h('button', { text: 'Verwerfen', onclick: () => { previewWrap.innerHTML = ''; } })));
+        h('button', { text: 'Verwerfen', onclick: () => dropPreview() })));
   }
   startBtn.addEventListener('click', () => { recording ? stop() : start(); });
 
@@ -4772,13 +4964,19 @@ function openRecorder(song) {
       addAudio(song.id, { id: created.id, name: label, kind: 'take' });
       await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType }, blob);
       setStatus('Aufnahme gespeichert', 'ok'); toast('Aufnahme gespeichert');
-      api.close();
+      unsaved = false;
+      api.close(true);
       manageAudio(song);
     } catch (e) { fail('Aufnahme konnte nicht hochgeladen werden', e); }
   }
 
   const api = openModal({ title: '🔴 Neue Aufnahme – «' + song.n + '»', body, wide: true, buttons: [{ label: 'Schliessen' }] });
   api.onClose = cleanup;
+  api.beforeClose = () => {
+    if (recording || starting) return confirm('Die Aufnahme läuft noch. Abbrechen und verwerfen?');
+    if (unsaved) return confirm('Die Aufnahme ist noch nicht gespeichert. Verwerfen?');
+    return true;
+  };
 }
 
 // --- Übersicht: eigene Aufnahmen, Backing-Tracks, Referenzmelodie (vom Song-Menü aus) ----------
@@ -5189,14 +5387,30 @@ function plainTextToLyricsHtml(text, fontSize, lineHeight, opts = {}) {
 // Inhalt aus Drive stammt zwar aus dem eigenen Konto, wird aber trotzdem auf erlaubte Elemente/
 // Attribute reduziert, bevor er ins DOM kommt (kein Script, keine Event-Handler, keine fremden URLs).
 const TXT_ALLOWED = new Set(['P', 'DIV', 'SPAN', 'B', 'STRONG', 'I', 'EM', 'U', 'BR']);
+const TXT_CLASSES = new Set(['ch', 'sym', 'dyn', 'lbl', 'ref', 'bri', 'lyrics-doc']);
+const TXT_STYLES = ['font-size', 'line-height', 'font-family', 'text-align', 'font-weight', 'font-style', 'text-decoration'];
+// Fremdes HTML nur in einem inerten Dokument parsen: dort werden weder Bilder geladen noch
+// Event-Handler (z. B. <img onerror>) ausgeführt – im aktiven Dokument passiert das schon beim
+// Zuweisen von innerHTML, also noch bevor bereinigt werden kann (Sicherheitskorrektur v2.8.5).
+const inertDoc = () => document.implementation.createHTMLDocument('');
 function sanitizeTextDoc(root) {
   root.querySelectorAll('*').forEach(el => {
-    if (!TXT_ALLOWED.has(el.tagName)) { el.replaceWith(document.createTextNode(el.textContent || '')); return; }
+    if (/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|TEMPLATE|NOSCRIPT|SVG|MATH)$/i.test(el.tagName)) { el.remove(); return; }
+    if (!TXT_ALLOWED.has(el.tagName)) { el.replaceWith(el.ownerDocument.createTextNode(el.textContent || '')); return; }
     [...el.attributes].forEach(a => {
       const n = a.name.toLowerCase();
-      if (n === 'class' || n === 'data-c' || n === 'data-k') return;
+      if (n === 'data-c' || n === 'data-k') return;
+      if (n === 'class') {                                           // ab v2.8.5: nur eigene Klassen
+        const cls = a.value.split(/\s+/).filter(c => TXT_CLASSES.has(c));
+        if (cls.length) el.setAttribute('class', cls.join(' ')); else el.removeAttribute('class');
+        return;
+      }
       if (n === 'contenteditable' && (el.classList.contains('ch') || el.classList.contains('sym'))) return;
-      if (n === 'style' && !/url\(|expression|javascript:/i.test(a.value)) return;
+      if (n === 'style') {                                           // ab v2.8.5: nur erlaubte, geparste Eigenschaften
+        const st = TXT_STYLES.map(pn => { const v = el.style.getPropertyValue(pn); return v && !/url\(|expression|javascript:|\\/i.test(v) ? pn + ':' + v : ''; }).filter(Boolean).join(';');
+        if (st) el.setAttribute('style', st); else el.removeAttribute('style');
+        return;
+      }
       el.removeAttribute(a.name);
     });
   });
@@ -5204,14 +5418,17 @@ function sanitizeTextDoc(root) {
   root.querySelectorAll('.sym').forEach(el => { el.textContent = symGlyph(el.dataset.k); el.setAttribute('contenteditable', 'false'); el.classList.toggle('dyn', !!DYN[el.dataset.k]); });
   return root;
 }
+// Bereinigtes, vollständiges Text-Blatt-HTML (für Backup/Wiederherstellen/Teilen)
+function cleanTextDocHtml(raw) { const p = parseLyricsHtml(raw); return docHtml(p.html, p.fontSize, p.lineHeight, p.lrc, p.align); }
 function parseLyricsHtml(raw) {
-  const tmp = document.createElement('div');
+  const doc = inertDoc();
+  const tmp = doc.createElement('div');
   tmp.innerHTML = String(raw || '');
   const root = tmp.querySelector('.lyrics-doc') || tmp;
   const fs = parseFloat(root.style && root.style.fontSize) || DEFAULT_TXT_FONT_SIZE;
   const lh = parseFloat(root.style && root.style.lineHeight) || DEFAULT_TXT_LINE_HEIGHT;
   const lrc = (root.getAttribute && root.getAttribute('data-lrc')) || '';
-  const body = document.createElement('div');
+  const body = doc.createElement('div');
   body.innerHTML = root.innerHTML;
   sanitizeTextDoc(body);
   const align = (root.style && root.style.textAlign) || 'left';
@@ -6111,12 +6328,24 @@ const safeFileName = (s) => String(s || '').replace(/[\\/:*?"<>|]+/g, '-').repla
 const shareFolderUrl = (fid) => 'https://drive.google.com/drive/folders/' + fid;
 const LINK_KIND = { orig: 'Original', karaoke: 'Karaoke/Playback' };
 
+// Sicherheitsprüfung (v2.8.5): Die gemerkte Ordner-ID stammt aus library.json (bzw. einem Backup) und
+// darf nur ein eigener «Freigabe – …»-Ordner direkt im App-Ordner sein – sonst würde «Aktualisieren»
+// bzw. «Freigabe beenden» fremde Dateien oder den App-Ordner selbst in den Papierkorb verschieben.
+const validDriveId = (id) => typeof id === 'string' && /^[\w-]{1,200}$/.test(id);
+async function isOwnShareFolder(fid) {
+  if (!validDriveId(fid) || fid === folderId) return false;
+  try {
+    const m = await (await driveFetch(`${DRIVE_FILES}/${fid}?fields=id,name,mimeType,trashed,parents`)).json();
+    return !m.trashed && m.mimeType === 'application/vnd.google-apps.folder' && (m.parents || []).includes(folderId) && /^Freigabe – /.test(m.name || '');
+  } catch (e) { return false; }
+}
 async function driveCreateFolder(name, parent) {
   const r = await driveFetch(`${DRIVE_FILES}?fields=id`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parent] }) });
   return (await r.json()).id;
 }
 async function driveListChildren(fid) {
-  const q = encodeURIComponent(`'${fid}' in parents and trashed=false`);
+  if (!validDriveId(fid)) return [];
+  const q = encodeURIComponent(`'${escQ(fid)}' in parents and trashed=false`);
   const r = await driveFetch(`${DRIVE_FILES}?q=${q}&pageSize=500&fields=files(id,name)`);
   return (await r.json()).files || [];
 }
@@ -6180,7 +6409,7 @@ async function songInfoText(songId, withNotes) {
 async function runShare(target, opts, progress) {
   const obj = target.obj, prev = obj.sh || null;
   let fid = prev && prev.fid;
-  if (fid) { const m = await driveMeta(fid).catch(() => null); if (!m) fid = null; }
+  if (fid && !(await isOwnShareFolder(fid))) fid = null;
   if (!fid) fid = await driveCreateFolder('Freigabe – ' + safeFileName(target.name), folderId);
   else for (const c of await driveListChildren(fid)) await driveTrashId(c.id);
   const songs = target.songs.filter(sid => songAlive(sid));
@@ -6269,7 +6498,7 @@ function shareResultDialog(fid, count, opts) {
       h('p', { style: 'font-size:12px; color:var(--muted);', text: 'Die Freigabe ist eine Momentaufnahme. Nach Änderungen einfach erneut «Teilen» → «Aktualisieren» wählen.' })],
     buttons: [
       { label: 'Link kopieren', fn: () => { try { navigator.clipboard.writeText(url).then(() => toast('Link kopiert')); } catch (e) { toast('Kopieren nicht möglich – Link bitte markieren.'); } return false; } },
-      { label: 'In Drive öffnen', fn: () => { window.open(url, '_blank', 'noopener'); return false; } },
+      { label: 'In Drive öffnen', fn: () => { openExternal(url); return false; } },
       { label: 'Fertig', primary: true }
     ]
   });
@@ -6279,7 +6508,7 @@ async function stopShare(t) {
   if (!sh || !confirm('Freigabe beenden? Der Freigabe-Ordner wird in den Papierkorb verschoben – der Link funktioniert danach nicht mehr.')) return;
   if (!(await requireOnline('Freigabe beenden'))) return;
   try {
-    await driveTrashId(sh.fid).catch(e => { if (!/ 404 /.test(e.message)) throw e; });
+    if (await isOwnShareFolder(sh.fid)) await driveTrashId(sh.fid).catch(e => { if (!/ 404 /.test(e.message)) throw e; });
     if (t.kind === 'set') setTouch(t.id, x => { delete x.sh; }); else sTouch(t.id, x => { delete x.sh; });
     toast('Freigabe beendet');
   } catch (e) { fail('Freigabe beenden fehlgeschlagen', e); }
@@ -6306,32 +6535,43 @@ function crc32(u8) {
   for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
   return (c ^ 0xFFFFFFFF) >>> 0;
 }
-function makeZip(entries) {                         // entries: [{ name, data: Uint8Array }]
+// entries: [{ name, data: Uint8Array|Blob, size, crc }] -- size/crc müssen vorab bekannt sein (siehe add()
+// weiter unten), damit hier nichts mehr gelesen werden muss. data darf ab v2.9.0 auch ein Blob sein: der
+// Blob-Konstruktor kann Blob-Teile ohne sofortige Kopie aneinanderhängen (anders als bei einem Uint8Array,
+// das er immer kopiert) -- so muss nicht die gesamte Bibliothek gleichzeitig als Kopie im Speicher liegen.
+function makeZip(entries) {
   const enc = new TextEncoder(), d = new Date();
   const time = (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2);
   const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
   const parts = [], central = [];
   let offset = 0, cdSize = 0;
   for (const e of entries) {
-    const nb = enc.encode(e.name), data = e.data, crc = crc32(data);
+    const nb = enc.encode(e.name), data = e.data, crc = e.crc, size = e.size;
     const lh = new DataView(new ArrayBuffer(30));
     lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
     lh.setUint16(10, time, true); lh.setUint16(12, date, true); lh.setUint32(14, crc, true);
-    lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, nb.length, true); lh.setUint16(28, 0, true);
+    lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, nb.length, true); lh.setUint16(28, 0, true);
     parts.push(lh.buffer, nb, data);
     const ch = new DataView(new ArrayBuffer(46));
     ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
     ch.setUint16(12, time, true); ch.setUint16(14, date, true); ch.setUint32(16, crc, true);
-    ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, nb.length, true);
+    ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, nb.length, true);
     ch.setUint32(42, offset, true);
     central.push(ch.buffer, nb);
     cdSize += 46 + nb.length;
-    offset += 30 + nb.length + data.length;
+    offset += 30 + nb.length + size;
   }
   const end = new DataView(new ArrayBuffer(22));
   end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true);
   end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
   return new Blob([...parts, ...central, end.buffer], { type: 'application/zip' });
+}
+// CRC32 einer Datenquelle (Uint8Array oder Blob) -- bei einem Blob wird dafür genau einmal kurz dessen
+// eigener Speicher materialisiert (unvermeidbar für die Prüfsumme), aber NICHT dauerhaft behalten: add()
+// unten hält danach nur noch den ursprünglichen Blob (praktisch speicherfrei), nicht diese Kopie.
+async function crcAndSize(data) {
+  if (data instanceof Blob) { const u8 = new Uint8Array(await data.arrayBuffer()); return { crc: crc32(u8), size: u8.length }; }
+  return { crc: crc32(data), size: data.length };
 }
 
 // Text-Blatt als eigenständige, im Browser lesbare HTML-Seite (das Original-Fragment bleibt darin unverändert erhalten)
@@ -6349,11 +6589,16 @@ ${fragment}
 
 async function buildBackup(opts, progress) {
   const enc = new TextEncoder(), entries = [], used = new Set(), missing = [], index = [];
-  const add = (path, data) => {
+  // Ab v2.9.0: data darf ein Blob sein (Original-Datei aus loadBlob()/loadAudioBlob(), ohne vorherige
+  // Kopie in ein Uint8Array) -- so liegt beim Sichern nie die gesamte Bibliothek gleichzeitig als Kopie
+  // im Speicher, sondern jeweils nur die eine Datei, die gerade für die Prüfsumme gelesen wird.
+  const add = async (path, data) => {
     let p = path, i = 2;
     while (used.has(p.toLowerCase())) { p = path.replace(/(\.[^./]+)?$/, (m) => ` (${i})` + (m || '')); i++; }
     used.add(p.toLowerCase());
-    entries.push({ name: p, data: data instanceof Uint8Array ? data : (typeof data === 'string' ? enc.encode(data) : new Uint8Array(data)) });
+    const norm = data instanceof Blob ? data : (data instanceof Uint8Array ? data : enc.encode(data));
+    const { crc, size } = await crcAndSize(norm);
+    entries.push({ name: p, data: norm, size, crc });
     return p;
   };
   const songDir = (sid) => folderPath(effSongFolder(sid)).map(x => safeFileName(x.n)).concat(safeFileName(lib.songs[sid].n)).join('/');
@@ -6367,24 +6612,24 @@ async function buildBackup(opts, progress) {
       try {
         if (f.mimeType === TXT_MIME) {
           const html = await textHtmlForSheet(f);
-          const path = add(dir + safeFileName(f.name.replace(/\.[^.]+$/, '')) + '.html', standaloneTextHtml(s.n, html));
+          const path = await add(dir + safeFileName(f.name.replace(/\.[^.]+$/, '')) + '.html', standaloneTextHtml(s.n, cleanTextDocHtml(html)));
           index.push({ id: f.id, name: f.name, mimeType: f.mimeType, song: s.id, path });
           const a = await annotForSheet(f);                      // Anmerkungen auf Text-Blättern (ab v2.7.0)
-          if (hasContent(a)) add('_Daten/Anmerkungen/' + f.id + '.annotations.json', JSON.stringify(a));
+          if (hasContent(a)) await add('_Daten/Anmerkungen/' + f.id + '.annotations.json', JSON.stringify(a));
         } else {
           const blob = await loadBlob(f);
-          const path = add(dir + safeFileName(f.name), new Uint8Array(await blob.arrayBuffer()));
+          const path = await add(dir + safeFileName(f.name), blob);
           index.push({ id: f.id, name: f.name, mimeType: f.mimeType, song: s.id, path });
           const a = await annotForSheet(f);
           if (hasContent(a)) {
-            add('_Daten/Anmerkungen/' + f.id + '.annotations.json', JSON.stringify(a));
-            if (opts.pdf) add(dir + safeFileName(f.name.replace(/\.[^.]+$/, '')) + ' (mit Anmerkungen).pdf', await buildAnnotatedPdfBytes(f, blob, a, { visible: () => true }));
+            await add('_Daten/Anmerkungen/' + f.id + '.annotations.json', JSON.stringify(a));
+            if (opts.pdf) await add(dir + safeFileName(f.name.replace(/\.[^.]+$/, '')) + ' (mit Anmerkungen).pdf', await buildAnnotatedPdfBytes(f, blob, a, { visible: () => true }));
           }
         }
       } catch (e) { missing.push(s.n + ' – ' + f.name + ' (' + (e.message === 'offline_uncached' ? 'nicht offline gespeichert' : e.message) + ')'); }
     }
     const info = await songInfoText(s.id, true).catch(() => null);
-    if (info) add(dir + 'Links & Notizen.txt', info);
+    if (info) await add(dir + 'Links & Notizen.txt', info);
     // Aufnahmen/Backing-Tracks optional, Referenzmelodie (klein) immer; ab v2.8.0 im Verzeichnis, damit
     // «Backup einspielen» sie wiederherstellen kann
     for (const a of songAudio(s.id).filter(x => opts.audio || x.kind === 'ref')) {
@@ -6392,15 +6637,15 @@ async function buildBackup(opts, progress) {
       try {
         const blob = await loadAudioBlob(a);
         const ext = /\.[a-z0-9]{2,5}$/i.test(a.name) ? '' : audioExt(blob.type);
-        const path = add('Audio/' + songDir(s.id) + '/' + safeFileName(a.name) + ext, new Uint8Array(await blob.arrayBuffer()));
+        const path = await add('Audio/' + songDir(s.id) + '/' + safeFileName(a.name) + ext, blob);
         index.push({ id: a.id, name: a.name + ext, mimeType: blob.type || 'application/octet-stream', song: s.id, kind: a.kind, path });
       } catch (e) { missing.push(s.n + ' – Audio ' + a.name + ' (' + e.message + ')'); }
     }
   }
   const d = new Date();
-  add('_Daten/library.json', JSON.stringify(lib, null, 1));
-  add('_Daten/dateien.json', JSON.stringify(index, null, 1));
-  add('LIESMICH.txt', [
+  await add('_Daten/library.json', JSON.stringify(lib, null, 1));
+  await add('_Daten/dateien.json', JSON.stringify(index, null, 1));
+  await add('LIESMICH.txt', [
     'Gesangs-App – Backup vom ' + d.toLocaleString('de-CH') + ' (App-Version ' + APP_VERSION + ')',
     '',
     songs.length + ' Songs, ' + index.filter(e => !e.kind).length + ' Blätter' + (opts.audio ? ', inkl. Aufnahmen/Backing-Tracks' : ''),
@@ -6515,6 +6760,64 @@ async function pitchShiftChannels(chs, sr, semi, onProgress) {
   return chs.map(c => { const y = resampleLinear(applyWsola(c, plan), f); return y.length > c.length ? y.subarray(0, c.length) : y; });
 }
 async function pitchShiftSamples(x, sr, semi) { return (await pitchShiftChannels([x], sr, semi))[0]; }
+
+// --- Ab v2.9.0: WSOLA-Berechnung in einem Web Worker, statt den Hauptthread zu blockieren -----------------
+// (bei längeren Backing-Tracks konnte das vorher beim Tonart-Wechsel spürbar ruckeln/einfrieren). Der
+// Worker bekommt denselben Code per Function.toString() mit (keine zweite Quelle der Wahrheit) und läuft
+// komplett unabhängig von der Bedienoberfläche; schlägt das Erzeugen fehl (sehr alte Browser, blockierte
+// Blob-Worker), wird ganz normal auf dem Hauptthread weitergerechnet wie bisher.
+let pitchWorker = null, pitchWorkerFailed = false, pitchWorkerReqId = 0;
+const pitchWorkerHandlers = new Map();
+function pitchWorkerSrc() {
+  return [
+    'const clamp = (v, a, b) => Math.min(b, Math.max(a, v));',
+    'const sleep = (ms) => new Promise(r => setTimeout(r, ms));',
+    wsolaPositions.toString(),
+    applyWsola.toString(),
+    resampleLinear.toString(),
+    pitchShiftChannels.toString(),
+    'self.onmessage = async (e) => {',
+    '  const { id, chs, sr, semi } = e.data;',
+    '  try {',
+    '    const out = await pitchShiftChannels(chs, sr, semi, (f) => self.postMessage({ id, progress: f }));',
+    '    self.postMessage({ id, result: out }, out.map(c => c.buffer));',
+    '  } catch (err) { self.postMessage({ id, error: String((err && err.message) || err) }); }',
+    '};'
+  ].join('\n');
+}
+function getPitchWorker() {
+  if (pitchWorker || pitchWorkerFailed) return pitchWorker;
+  try {
+    const url = URL.createObjectURL(new Blob([pitchWorkerSrc()], { type: 'application/javascript' }));
+    const w = new Worker(url);
+    w.onmessage = (e) => {
+      const { id } = e.data;
+      const hnd = pitchWorkerHandlers.get(id);
+      if (!hnd) return;
+      if ('progress' in e.data) { if (hnd.onProgress) hnd.onProgress(e.data.progress); return; }
+      pitchWorkerHandlers.delete(id);
+      if ('error' in e.data) hnd.reject(new Error(e.data.error)); else hnd.resolve(e.data.result);
+    };
+    w.onerror = () => {
+      pitchWorkerFailed = true; pitchWorker = null;
+      pitchWorkerHandlers.forEach(hnd => hnd.reject(new Error('Worker-Fehler')));
+      pitchWorkerHandlers.clear();
+    };
+    pitchWorker = w;
+  } catch (e) { pitchWorkerFailed = true; pitchWorker = null; }
+  return pitchWorker;
+}
+function pitchShiftChannelsAsync(chs, sr, semi, onProgress) {
+  const w = typeof Worker !== 'undefined' ? getPitchWorker() : null;
+  if (!w) return pitchShiftChannels(chs, sr, semi, onProgress);
+  return new Promise((resolve, reject) => {
+    const id = ++pitchWorkerReqId;
+    const copies = chs.map(c => c.slice());       // Kopien übertragen -- die Originale (evtl. wiederverwendet) bleiben unangetastet
+    pitchWorkerHandlers.set(id, { resolve, reject, onProgress });
+    try { w.postMessage({ id, chs: copies, sr, semi }, copies.map(c => c.buffer)); }
+    catch (e) { pitchWorkerHandlers.delete(id); resolve(pitchShiftChannels(chs, sr, semi, onProgress)); }
+  });
+}
 function encodeWav(chs, sr) {
   const nc = chs.length, n = chs[0].length, buf = new ArrayBuffer(44 + n * nc * 2), dv = new DataView(buf);
   const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
@@ -6572,27 +6875,37 @@ async function prSetKey(semi) {
   if (PR.cache.has(PR.semi)) { PR.msg = ''; prSwapSrc(PR.cache.get(PR.semi)); prRender(); return; }
   PR.msg = 'Tonart wird umgerechnet …'; prRender();
   try {
-    if (!PR.decoded) {
+    // ab v2.8.5: nur in lokale Variablen rechnen und vor jeder Übernahme prüfen, ob noch derselbe Track
+    // läuft (sonst konnte beim schnellen Wechsel Track B die Tonspur von Track A bekommen)
+    let dec = PR.decoded;
+    if (!dec) {
       const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
       const ab = await new AC(1, 1, 44100).decodeAudioData(await mp.audioBlob.arrayBuffer());
-      PR.decoded = { sr: ab.sampleRate, chs: Array.from({ length: Math.min(2, ab.numberOfChannels) }, (_, c) => ab.getChannelData(c)) };
+      dec = { sr: ab.sampleRate, chs: Array.from({ length: Math.min(2, ab.numberOfChannels) }, (_, c) => ab.getChannelData(c)) };
+      if (my !== PR.busy || mp.audioItem !== item) return;
+      PR.decoded = dec;
     }
     if (my !== PR.busy || mp.audioItem !== item) return;
     const semiNow = PR.semi;
-    const out = await pitchShiftChannels(PR.decoded.chs, PR.decoded.sr, semiNow, (f) => { if (my === PR.busy) { PR.msg = 'Tonart wird umgerechnet … ' + Math.round(f * 100) + ' %'; prRender(); } });
-    const url = URL.createObjectURL(encodeWav(out, PR.decoded.sr));
-    if (PR.cache.size >= 3) { const [k0, u0] = PR.cache.entries().next().value; URL.revokeObjectURL(u0); PR.cache.delete(k0); }
-    PR.cache.set(semiNow, url);
+    const out = await pitchShiftChannelsAsync(dec.chs, dec.sr, semiNow, (f) => { if (my === PR.busy) { PR.msg = 'Tonart wird umgerechnet … ' + Math.round(f * 100) + ' %'; prRender(); } });
     if (my !== PR.busy || mp.audioItem !== item) return;
+    const url = URL.createObjectURL(encodeWav(out, dec.sr));
+    if (PR.cache.size >= 2) { const [k0, u0] = PR.cache.entries().next().value; URL.revokeObjectURL(u0); PR.cache.delete(k0); }
+    PR.cache.set(semiNow, url);
     PR.msg = ''; prSwapSrc(url);
   } catch (e) { PR.msg = 'Umrechnen nicht möglich: ' + e.message; PR.semi = 0; }
   prRender();
 }
-setInterval(() => {
-  if (!PR.loop || PR.a == null || PR.b == null || PR.b <= PR.a) return;
-  const s = mpState();
-  if (s && s.playing && s.t >= PR.b) mpSeek(PR.a);
-}, 80);
+// A–B-Schleife: Zeitgeber läuft nur, solange eine Schleife aktiv ist (ab v2.8.5)
+let prLoopIv = null;
+function prLoopTimer() {
+  if (PR.loop && !prLoopIv) prLoopIv = setInterval(() => {
+    if (!PR.loop || PR.a == null || PR.b == null || PR.b <= PR.a) return;
+    const s = mpState();
+    if (s && s.playing && s.t >= PR.b) mpSeek(PR.a);
+  }, 80);
+  else if (!PR.loop && prLoopIv) { clearInterval(prLoopIv); prLoopIv = null; }
+}
 
 // Tempo in 5-%-Schritten; YouTube kennt nur feste Stufen (meist 0.25er) → zur nächsten verfügbaren Stufe
 function prStep(dir) {
@@ -6608,6 +6921,7 @@ function prStep(dir) {
 // --- Bedienfeld im Mini-Player ------------------------------------------------------------
 function prToggle() { PR.open = !PR.open; prRender(); }
 function prRender() {
+  prLoopTimer();
   if (!mp.el) return;
   if (!PR.el) { PR.el = h('div', { class: 'mp-practice', style: 'display:none;' }); mp.el.insertBefore(PR.el, mp.hintEl); }
   if (mp.pracBtn) mp.pracBtn.classList.toggle('on', PR.open || PR.rate !== 1 || PR.semi !== 0 || PR.loop);
@@ -6757,7 +7071,7 @@ async function takeStats(songId, item, onProgress) {
   const st = pitchStats(res, mel), s = sget(songId), rk = refSig(s);
   const summary = { acc: st.acc, dev: st.dev, bias: st.bias, lo: st.lo, hi: st.hi, ra: st.ra, rb: st.rb, v: st.v, rk };
   const cur = (s.audio || []).find(a => a.id === item.id);
-  if (cur && JSON.stringify(cur.st || {}) !== JSON.stringify(summary)) sTouch(songId, x => { const it = (x.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.st = summary; it.u = Date.now(); } });
+  if (cur && JSON.stringify(cur.st || {}) !== JSON.stringify(summary)) { const it = (s.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.st = summary; it.u = Date.now(); libChanged(); } }   // ohne den Song-Zeitstempel zu erhöhen (v2.8.5)
   return { res, mel, st };
 }
 const tendText = (b) => Math.abs(b) < 6 ? 'ausgeglichen' : (b < 0 ? 'eher zu tief (' + b + ' ct)' : 'eher zu hoch (+' + b + ' ct)');
@@ -6779,7 +7093,7 @@ function openPitchAnalysis(songId, itemId) {
   const body = h('div', { class: 'pitch-analysis' }, status, statsEl, h('div', { class: 'pa-wrap' }, axis, scroller), legend,
     h('div', { style: 'display:flex; gap:8px; align-items:center; margin-top:8px;' }, playBtn, h('span', { class: 'sub', text: 'Antippen im Verlauf springt an diese Stelle.' })), spotsEl);
   const api = openModal({ title: '📈 Tonhöhenverlauf – ' + item.name, body, wide: true, buttons: [{ label: 'Schliessen' }] });
-  const PX = 50;                                      // Pixel pro Sekunde
+  let PX = 50;                                        // Pixel pro Sekunde (bei sehr langen Aufnahmen weniger, Canvas max. 16000 px)
   let data = null, iv = null, lo = 48, hi = 76;
   const yOf = (m) => 8 + (hi - m) / (hi - lo) * (cv.height - 16);
   const seek = (t) => {
@@ -6791,6 +7105,7 @@ function openPitchAnalysis(songId, itemId) {
   function draw() {
     const { res, mel } = data;
     const dur = Math.max(res.dur || 0, res.p.length * res.hop, 1);
+    PX = Math.min(50, 16000 / dur);
     cv.width = Math.max(560, Math.ceil(dur * PX) + 20);
     const cx = cv.getContext('2d'), ax = axis.getContext('2d');
     cx.clearRect(0, 0, cv.width, cv.height); ax.clearRect(0, 0, axis.width, axis.height);
@@ -6837,7 +7152,7 @@ function openPitchAnalysis(songId, itemId) {
     if (!api.el.isConnected) return;
     data = { res, mel };
     const ms = res.p.filter(m => m != null).concat(mel ? mel.notes.filter(n => n.t + (mel.ofs || 0) <= res.p.length * res.hop).map(n => n.m) : []);
-    if (ms.length) { lo = Math.floor(Math.min(...ms)) - 2; hi = Math.ceil(Math.max(...ms)) + 2; if (hi - lo < 12) { const c = (hi + lo) / 2; lo = Math.floor(c - 6); hi = Math.ceil(c + 6); } }
+    if (ms.length) { lo = Math.floor(ms.reduce((m, v) => Math.min(m, v), Infinity)) - 2; hi = Math.ceil(ms.reduce((m, v) => Math.max(m, v), -Infinity)) + 2; if (hi - lo < 12) { const c = (hi + lo) / 2; lo = Math.floor(c - 6); hi = Math.ceil(c + 6); } }
     status.style.display = 'none';
     draw(); showStats(st, mel);
     iv = setInterval(() => {
@@ -7127,6 +7442,7 @@ async function playRefMelody(songId, onEnd) {
   const mel = await getRefMelody(songId);
   if (!mel || !mel.notes.length) { toast('Keine Melodie gefunden.'); return false; }
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   const t0 = ctx.currentTime + 0.15;
   mel.notes.forEach(n => synthNote(ctx, n.m, t0 + n.t, n.d * 0.95));
   const last = mel.notes[mel.notes.length - 1];
@@ -7322,13 +7638,19 @@ function openWarmup() {
       info.textContent = (msg ? msg + ' · ' : '') + 'Gesamt: ' + hit + '/' + n + ' Töne getroffen (' + Math.round(hit / Math.max(1, n) * 100) + ' %)';
     } else if (msg) info.textContent = msg;
   }
+  let starting = false;
   async function start() {
+    if (starting) return;
     const o = read(); lsSet('gapp_warmup', JSON.stringify(o));
     let stream;
+    starting = true;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true } }); }
-    catch (e) { info.textContent = 'Mikrofonzugriff verweigert oder nicht verfügbar.'; return; }
+    catch (e) { starting = false; info.textContent = 'Mikrofonzugriff verweigert oder nicht verfügbar.'; return; }
+    starting = false;
+    if (!api.el.isConnected || run) { stream.getTracks().forEach(t => t.stop()); return; }   // Dialog geschlossen / läuft schon
     metroStop();
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     const an = ctx.createAnalyser(); an.fftSize = 2048;
     ctx.createMediaStreamSource(stream).connect(an);
     const beat = 60 / o.bpm, bases = warmupBases(o.base, o.reps, o.dir), L = WARMUPS[o.ex].s.length + 1;   // Takte je Durchgang (letzter Ton 2 Schläge)
@@ -7607,28 +7929,60 @@ updateTasksBtn();
 // ---------------------------------------------------------------
 
 // ZIP lesen (Methode 0 «store» und 8 «deflate» via DecompressionStream). Rückgabe: Map Name → async () => Uint8Array
+//
+// Ab v2.9.0 bewusst NICHT mehr die gesamte ZIP-Datei auf einmal einlesen (bei einem Backup mit Aufnahmen/
+// Backing-Tracks kann das mehrere hundert MB sein, die für die gesamte Dauer von «Backup einspielen» im
+// Speicher gehalten würden) -- stattdessen wird per blob.slice() gezielt nachgeladen: zuerst nur das Ende
+// der Datei (EOCD-Record), dann nur das zentrale Verzeichnis (i. d. R. klein), und schliesslich je Eintrag
+// nur dessen eigene Bytes, erst wenn dieser Eintrag tatsächlich gebraucht wird.
+const ZIP_MAX_ENTRY = 300 * 1024 * 1024;       // max. 300 MB je entpacktem Eintrag
 async function readZip(blob) {
-  const buf = new Uint8Array(await blob.arrayBuffer()), dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  let eocd = -1;
-  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 22 - 65535); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-  if (eocd < 0) throw new Error('Keine gültige ZIP-Datei');
-  const count = dv.getUint16(eocd + 10, true);
-  let p = dv.getUint32(eocd + 16, true);
+  const size = blob.size;
+  const tailLen = Math.min(size, 65557);       // max. EOCD-Grösse (22) + max. Kommentarlänge (65535)
+  const tailBuf = new Uint8Array(await blob.slice(size - tailLen, size).arrayBuffer());
+  const tailDv = new DataView(tailBuf.buffer, tailBuf.byteOffset, tailBuf.byteLength);
+  let eocdInTail = -1;
+  for (let i = tailBuf.length - 22; i >= 0; i--) if (tailDv.getUint32(i, true) === 0x06054b50) { eocdInTail = i; break; }
+  if (eocdInTail < 0) throw new Error('Keine gültige ZIP-Datei');
+  const count = tailDv.getUint16(eocdInTail + 10, true);
+  const cdSize = tailDv.getUint32(eocdInTail + 12, true);
+  const cdOffset = tailDv.getUint32(eocdInTail + 16, true);
+  if (cdOffset + cdSize > size) throw new Error('ZIP-Verzeichnis beschädigt');
+  const cdBuf = new Uint8Array(await blob.slice(cdOffset, cdOffset + cdSize).arrayBuffer());
+  const dv = new DataView(cdBuf.buffer, cdBuf.byteOffset, cdBuf.byteLength);
+  let p = 0;
   const out = new Map(), dec = new TextDecoder('utf-8');
   for (let k = 0; k < count; k++) {
-    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('ZIP-Verzeichnis beschädigt');
-    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    if (p + 46 > cdBuf.length || dv.getUint32(p, true) !== 0x02014b50) throw new Error('ZIP-Verzeichnis beschädigt');
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), usize = dv.getUint32(p + 24, true);
     const nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true), loff = dv.getUint32(p + 42, true);
-    const name = dec.decode(buf.subarray(p + 46, p + 46 + nlen));
+    if (p + 46 + nlen > cdBuf.length) throw new Error('ZIP-Verzeichnis beschädigt');
+    const name = dec.decode(cdBuf.subarray(p + 46, p + 46 + nlen));
     p += 46 + nlen + xlen + clen;
     if (name.endsWith('/')) continue;
     out.set(name, async () => {
-      const start = loff + 30 + dv.getUint16(loff + 26, true) + dv.getUint16(loff + 28, true);
-      const raw = buf.subarray(start, start + csize);
-      if (method === 0) return raw;
+      // Schutz vor beschädigten Dateien und «ZIP-Bomben» (v2.8.5): Grenzen prüfen, entpackte Grösse begrenzen
+      if (loff + 30 > size) throw new Error('ZIP-Eintrag beschädigt: ' + name);
+      const lh = new Uint8Array(await blob.slice(loff, loff + 30).arrayBuffer());
+      const lhDv = new DataView(lh.buffer, lh.byteOffset, lh.byteLength);
+      const start = loff + 30 + lhDv.getUint16(26, true) + lhDv.getUint16(28, true);
+      if (start + csize > size) throw new Error('ZIP-Eintrag beschädigt: ' + name);
+      if (method === 0) return new Uint8Array(await blob.slice(start, start + csize).arrayBuffer());
       if (method === 8) {
         if (typeof DecompressionStream === 'undefined') throw new Error('Dieser Browser kann komprimierte ZIP-Dateien nicht entpacken');
-        return new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+        const LIMIT = Math.min(ZIP_MAX_ENTRY, Math.max(usize, 1) * 1.05 + 1024);
+        const reader = blob.slice(start, start + csize).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+        const parts = []; let total = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          total += value.length;
+          if (total > LIMIT) { try { reader.cancel(); } catch (e) {} throw new Error('ZIP-Eintrag zu gross oder beschädigt: ' + name); }
+          parts.push(value);
+        }
+        const outBuf = new Uint8Array(total); let o = 0;
+        parts.forEach(pp => { outBuf.set(pp, o); o += pp.length; });
+        return outBuf;
       }
       throw new Error('ZIP-Methode ' + method + ' wird nicht unterstützt');
     });
@@ -7694,7 +8048,7 @@ async function runRestore(P, { undelete }, progress) {
     try {
       let data = await P.zip.get(e.path)();
       let type = e.mimeType || 'application/octet-stream';
-      if (!e.kind && e.mimeType === TXT_MIME) data = new TextEncoder().encode(fragmentFromStandalone(new TextDecoder().decode(data)));
+      if (!e.kind && e.mimeType === TXT_MIME) data = new TextEncoder().encode(cleanTextDocHtml(fragmentFromStandalone(new TextDecoder().decode(data))));   // bereinigt (v2.8.5)
       const file = new File([data], e.name, { type });
       const created = await uploadOne(file);
       idMap.set(e.id, created.id);
