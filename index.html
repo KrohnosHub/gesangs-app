@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ur+4XGzuOH1S/K5G+qt3x1Z3Lkz84A39kMuxViq8Ie4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-IPrcyDjp3sGTJTSXIm418ZZPBQQ7sBycGCVT0gQrhdg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ur+4XGzuOH1S/K5G+qt3x1Z3Lkz84A39kMuxViq8Ie4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-IPrcyDjp3sGTJTSXIm418ZZPBQQ7sBycGCVT0gQrhdg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -266,6 +266,7 @@
   .tuner-cents.good{color:var(--ok);}
   .tuner-cents.ok{color:var(--warn);}
   .tuner-cents.bad{color:var(--danger);}
+  .tuner-live-acc{font-size:12px; color:var(--muted); text-align:center; min-height:15px;}
   .tuner-meter{position:relative; width:min(320px,90%); height:8px; border-radius:999px; background:var(--accent-light); margin-top:4px;}
   .tuner-meter::before{content:''; position:absolute; left:50%; top:-3px; width:2px; height:14px; background:var(--border);}
   .tuner-needle{position:absolute; top:-3px; left:50%; width:4px; height:14px; border-radius:2px; background:var(--accent); transform:translateX(-50%); transition:left .08s linear;}
@@ -365,7 +366,7 @@
   #perfBar input[type=range]{width:110px;}
   #perfPage{position:absolute; right:10px; bottom:calc(8px + env(safe-area-inset-bottom)); background:rgba(0,0,0,.55); color:#fff; font-size:12px; padding:3px 9px; border-radius:999px;}
   /* --- v2.8.0: Üben, Analyse, Einsingen, Metronom, Journal --- */
-  #sbPractice{display:flex; gap:6px; padding:0 8px 8px;}
+  #sbPractice{display:flex; flex-wrap:wrap; gap:6px; padding:0 8px 8px;}
   #sbPractice button{flex:1; padding:6px 4px; font-size:12px; white-space:nowrap;}
   #sbPractice button.late{color:var(--danger); border-color:var(--danger);}
   .mp-bar button.mp-prac.on{background:var(--accent); color:#fff;}
@@ -391,6 +392,11 @@
   .pa-table{font-size:12px;}
   .pa-row{display:grid; grid-template-columns:minmax(90px,2fr) 1fr 1fr 1fr 1.6fr 1.2fr; gap:6px; padding:6px 4px; border-bottom:1px solid var(--border); cursor:pointer;}
   .pa-row.hd{font-weight:700; color:var(--muted); cursor:default;}
+  .pa-row.pa-best{background:rgba(230,180,40,.12); font-weight:600;}
+  .vr-row{display:grid; grid-template-columns:minmax(90px,1.6fr) 1.3fr 1.6fr auto; gap:8px; padding:6px 4px; border-bottom:1px solid var(--border); align-items:center; font-size:12.5px;}
+  .vr-row.hd{font-weight:700; color:var(--muted);}
+  .vr-rec.good{color:var(--ok); font-weight:600;} .vr-rec.ok{color:var(--warn); font-weight:600;} .vr-rec.bad{color:var(--danger); font-weight:600;}
+  .vr-sug{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:2px 6px 10px; font-size:12.5px;}
   .wu-form{display:flex; flex-wrap:wrap; gap:8px;}
   .wu-f{display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--muted);}
   .wu-f select, .wu-f input{font-size:13px;}
@@ -467,6 +473,7 @@
         <button id="warmupBtn" title="Einsingen: Tonleitern und Intervalle nachsingen, mit Treffer-Anzeige">🎵 Einsingen</button>
         <button id="metroBtn" title="Metronom">⏱ Metronom</button>
         <button id="tasksBtn" title="Alle offenen Lehrer-Aufgaben">📓 Aufgaben</button>
+        <button id="voiceRangeBtn" title="Stimmumfang über die Zeit verfolgen, Transpositionsvorschläge für Songs">📏 Umfang</button>
       </div>
       <div id="sbSearch">
         <input id="searchInput" type="search" placeholder="Suchen (Name, Tag) …">
@@ -674,7 +681,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.12.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -4760,15 +4767,26 @@ function loadYouTubeApi() {
 function openRecorder(song) {
   let chunks = [], recorder = null, stream = null, actx = null, analyser = null, raf = null;
   let recording = false, mimeType = '', pitchHist = [], timer = null;
-  // Referenzmelodie (ab v2.8.0): Soll-Ton während der Aufnahme anzeigen und im Verlauf grau einblenden
-  let refMel = null, refHist = [], t0 = 0;
+  // Referenzmelodie (ab v2.8.0): Soll-Ton während der Aufnahme anzeigen und im Verlauf grau einblenden.
+  // Ab v2.10.0 («Live-Pitch-Overlay», Vorschlag A Phase 2): die komplette Melodie ist schon vor dem
+  // Start geladen, daher lassen sich auch die NÄCHSTEN Töne einblenden (Ultrastar-/Rock-Band-Stil,
+  // eine feste «Jetzt»-Linie, an der von rechts kommende Notenbalken vorbeiziehen), statt nur die
+  // Vergangenheit zu zeichnen. Zusätzlich wird die eigene Tonspur wie in der Tonhöhenanalyse
+  // (21_analysis.js) grün/orange/rot nach Treffergenauigkeit eingefärbt und eine laufende
+  // Treffsicherheit mitgezählt.
+  let refMel = null, t0 = 0, liveHit = 0, liveTotal = 0;
   getRefMelody(song.id).then(m => { refMel = m; if (m) refEl.textContent = 'Soll: –'; }).catch(() => {});
+  // Mehrstimmigkeit/Duett (ab v2.12.0): zweite Stimme rein zur Anzeige im Live-Overlay (andere Farbe),
+  // nimmt NICHT an der Treffsicherheits-Berechnung teil (die bleibt an refMel/rm gebunden).
+  let refMel2 = null;
+  getRefMelody2(song.id).then(m => { refMel2 = m; }).catch(() => {});
 
   const statusEl = h('div', { class: 'empty-note', text: 'Mikrofon wird erst beim Start angefragt.' });
   const noteEl = h('div', { class: 'tuner-note', text: '–' });
   const centsEl = h('div', { class: 'tuner-cents', text: '' });
   const needle = h('div', { class: 'tuner-needle', style: 'left:50%;' });
   const refEl = h('div', { class: 'tuner-ref', title: 'Ton der Referenzmelodie an dieser Stelle', text: '' });
+  const liveAccEl = h('div', { class: 'tuner-live-acc', text: '' });
   const canvas = h('canvas', { class: 'pitch-canvas', width: 640, height: 140 });
   const cctx = canvas.getContext('2d');
   const startBtn = h('button', { class: 'primary', text: '🔴 Aufnahme starten' });
@@ -4817,49 +4835,74 @@ function openRecorder(song) {
   const body = h('div', { class: 'recorder' },
     statusEl,
     h('div', { class: 'tuner' }, noteEl, centsEl, refEl, h('div', { class: 'tuner-meter' }, needle)),
-    canvas,
+    canvas, liveAccEl,
     h('div', { style: 'display:flex; align-items:center; gap:10px; margin-top:8px;' }, startBtn, timeEl),
     backingRow, previewWrap);
 
-  const LO = 48, HI = 84; // Anzeigebereich C3–C6 (typische Gesangslage)
+  const LO = 48, HI = 84;               // Anzeigebereich C3–C6 (typische Gesangslage)
+  const PXR = 60;                       // Pixel pro Sekunde in der Live-Ansicht
+  const CURSOR_FRAC = 0.32;             // «Jetzt»-Linie bei 32 % der Breite -- rechts davon ziehen kommende Töne heran
+  const yv = (m) => canvas.height - ((clamp(m, LO, HI) - LO) / (HI - LO)) * canvas.height;
   function drawTrace() {
     cctx.clearRect(0, 0, canvas.width, canvas.height);
-    cctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--border') || '#e2ddd6';
-    cctx.lineWidth = 1;
-    for (let m = LO; m <= HI; m += 3) {
-      const y = canvas.height - ((m - LO) / (HI - LO)) * canvas.height;
-      cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(canvas.width, y); cctx.stroke();
+    for (let m = Math.ceil(LO); m <= HI; m++) {
+      const y = yv(m), pc = ((m % 12) + 12) % 12, isC = pc === 0, white = [0, 2, 4, 5, 7, 9, 11].includes(pc);
+      cctx.strokeStyle = isC ? 'rgba(0,0,0,.22)' : (white ? 'rgba(0,0,0,.07)' : 'rgba(0,0,0,.03)');
+      cctx.lineWidth = 1; cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(canvas.width, y); cctx.stroke();
     }
-    // Referenzmelodie (grau, dick)
-    cctx.strokeStyle = 'rgba(120,120,120,.45)'; cctx.lineWidth = 6;
-    refHist.forEach((mval, i) => {
-      if (mval == null) return;
-      const x = (i / 300) * canvas.width, y = canvas.height - ((clamp(mval, LO, HI) - LO) / (HI - LO)) * canvas.height;
-      cctx.beginPath(); cctx.moveTo(x, y); cctx.lineTo(x + canvas.width / 300 + 0.5, y); cctx.stroke();
-    });
-    cctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent') || '#6b4f3b';
-    cctx.lineWidth = 2.5;
-    let started = false;
-    cctx.beginPath();
-    pitchHist.forEach((mval, i) => {
-      const x = (i / 300) * canvas.width;
-      if (mval == null) { started = false; return; }
-      const y = canvas.height - ((clamp(mval, LO, HI) - LO) / (HI - LO)) * canvas.height;
-      if (!started) { cctx.moveTo(x, y); started = true; } else cctx.lineTo(x, y);
-    });
-    cctx.stroke();
+    const now = pitchHist.length ? pitchHist[pitchHist.length - 1].t : 0;
+    const cursorX = canvas.width * CURSOR_FRAC;
+    const xOf = (t) => cursorX + (t - now) * PXR;
+    // Referenzmelodie: die ganze Melodie ist schon geladen, daher auch kommende Töne als Balken
+    // sichtbar (Ultrastar-/Rock-Band-Stil), nicht nur die bereits gesungene Vergangenheit.
+    if (refMel) {
+      cctx.fillStyle = 'rgba(120,120,120,.4)';
+      refMel.notes.forEach(n => {
+        const t = n.t + (refMel.ofs || 0), x = xOf(t), w = Math.max(2, n.d * PXR - 1);
+        if (x + w < 0 || x > canvas.width) return;
+        cctx.fillRect(x, yv(n.m) - 5, w, 10);
+      });
+    }
+    // Duett-Stimme (falls hinterlegt): eigene, klar unterscheidbare Farbe, etwas schmaler, damit sie
+    // sich nicht mit der Hauptstimme verwechseln lässt; rein informativ, geht in keine Wertung ein.
+    if (refMel2) {
+      cctx.fillStyle = 'rgba(90,110,210,.4)';
+      refMel2.notes.forEach(n => {
+        const t = n.t + (refMel2.ofs || 0), x = xOf(t), w = Math.max(2, n.d * PXR - 1);
+        if (x + w < 0 || x > canvas.width) return;
+        cctx.fillRect(x, yv(n.m) - 3, w, 6);
+      });
+    }
+    // eigene Tonhöhe: bereits gesungen, farbcodiert nach Treffergenauigkeit (wie in der Tonhöhenanalyse, 21_analysis.js)
+    cctx.lineWidth = 3; cctx.lineCap = 'round';
+    for (let i = 1; i < pitchHist.length; i++) {
+      const a = pitchHist[i - 1], b = pitchHist[i];
+      if (a.m == null || b.m == null) continue;
+      const c = b.rm != null ? foldCents((b.m - b.rm) * 100) : (b.m - Math.round(b.m)) * 100;
+      cctx.strokeStyle = devColor(c);
+      cctx.beginPath(); cctx.moveTo(xOf(a.t), yv(a.m)); cctx.lineTo(xOf(b.t), yv(b.m)); cctx.stroke();
+    }
+    cctx.strokeStyle = 'rgba(190,40,40,.55)'; cctx.lineWidth = 2;
+    cctx.beginPath(); cctx.moveTo(cursorX, 0); cctx.lineTo(cursorX, canvas.height); cctx.stroke();
   }
   drawTrace();
 
   function pushPitch(mval) {
     let rm = null;
-    if (refMel && recording) {
-      const rn = refNoteAt(refMel, (Date.now() - t0) / 1000);
+    const t = recording ? (Date.now() - t0) / 1000 : 0;
+    if (refMel) {
+      const rn = refNoteAt(refMel, t);
       rm = rn ? rn.m : null;
-      refEl.textContent = 'Soll: ' + (rn ? midiName(rn.m) : '–');
+      if (recording) {
+        refEl.textContent = 'Soll: ' + (rn ? midiName(rn.m) : '–');
+        if (mval != null && rm != null) {
+          liveTotal++; if (Math.abs(foldCents((mval - rm) * 100)) <= 50) liveHit++;
+          liveAccEl.textContent = 'Treffsicherheit bisher: ' + Math.round(liveHit / liveTotal * 100) + ' %';
+        }
+      }
     }
-    pitchHist.push(mval); refHist.push(rm);
-    if (pitchHist.length > 300) { pitchHist.shift(); refHist.shift(); }
+    pitchHist.push({ t, m: mval, rm });
+    while (pitchHist.length > 2 && pitchHist[0].t < t - 20) pitchHist.shift();   // nur die letzten ~20 s im Speicher
     drawTrace();
   }
 
@@ -4913,7 +4956,7 @@ function openRecorder(song) {
     recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
     recorder.onstop = onStopped;
     recorder.start();
-    recording = true; pitchHist = []; refHist = [];
+    recording = true; pitchHist = []; liveHit = 0; liveTotal = 0; liveAccEl.textContent = '';
     startBtn.textContent = '⏹ Aufnahme beenden'; startBtn.classList.add('danger'); startBtn.classList.remove('primary');
     startBackingPlayback();
     t0 = Date.now();
@@ -4987,6 +5030,9 @@ function manageAudio(s) {
   // Wiedergabe über den gemeinsamen Mini-Player (Pause/Fortsetzen, Zeitanzeige, läuft nach Schliessen weiter)
   const isLoaded = (item) => mp.kind === 'audio' && mp.audioItem && mp.audioItem.id === item.id;
   const isPlaying = (item) => { if (!isLoaded(item)) return false; const st = mpState(); return !!(st && st.playing); };
+  // Persönliche Bestaufnahme (ab v2.12.0): pro draw() neu ermittelt, damit die 🏆-Markierung nach dem
+  // Aktualisieren einer Analyse (z. B. nach openPitchAnalysis) sofort aktuell ist.
+  let bestId = null;
 
   function audioRow(item) {
     const st = item.st;
@@ -4994,7 +5040,7 @@ function manageAudio(s) {
       (item.kind === 'backing' && item.kt ? ' · Tonart ' + (item.kt > 0 ? '+' : '') + item.kt : '') +
       (item.kind === 'take' && st ? ' · Treffsicherheit ' + st.acc + ' %' + (st.ra != null ? ' (Melodie ' + st.ra + ' %)' : '') : '');
     return h('div', { class: 'pick-row' + (isLoaded(item) ? ' playing' : '') },
-      h('span', { class: 'type-icon', text: item.kind === 'backing' ? '🎵' : '🎤' }),
+      h('span', { class: 'type-icon', text: item.kind === 'backing' ? '🎵' : (item.id === bestId ? '🏆' : '🎤'), title: item.id === bestId ? 'Persönliche Bestaufnahme' : '' }),
       h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => playAudioItemToggle(item) },
         h('div', { class: 'name', text: item.name }),
         h('div', { class: 'sub' }, h('span', { text: info }), h('span', { class: 'mp-time', 'data-mpid': item.id, text: isLoaded(item) ? mpTimeLabel() : '' }))),
@@ -5008,6 +5054,7 @@ function manageAudio(s) {
     body.innerHTML = '';
     const takes = songAudio(s.id, 'take').slice().sort((a, b) => (b.u0 || b.u || 0) - (a.u0 || a.u || 0));
     const backing = songAudio(s.id, 'backing');
+    bestId = takes.length > 1 ? bestTakeId(s.id) : null;    // nur ab zwei Aufnahmen sinnvoll
     body.append(h('div', { class: 'sub', style: 'padding:6px 6px 2px; font-weight:600;', text: '🎤 Eigene Aufnahmen' }));
     if (!takes.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Aufnahme.' }));
     takes.forEach(t => body.append(audioRow(t)));
@@ -7077,6 +7124,26 @@ async function takeStats(songId, item, onProgress) {
 const tendText = (b) => Math.abs(b) < 6 ? 'ausgeglichen' : (b < 0 ? 'eher zu tief (' + b + ' ct)' : 'eher zu hoch (+' + b + ' ct)');
 const devColor = (c) => Math.abs(c) <= 25 ? '#2e8b57' : Math.abs(c) <= 50 ? '#e08a00' : '#c0392b';
 
+// Persönliche Bestaufnahme pro Song (ab v2.12.0): die Aufnahme mit dem höchsten Score (Melodie-Treffer
+// «ra», falls eine Referenzmelodie vorliegt, sonst allgemeine Treffsicherheit «acc») als Vergleichs-
+// Bestmarke. Bevorzugt Aufnahmen, deren gespeicherte Analyse noch zur aktuellen Referenzmelodie passt
+// (st.rk === refSig(s)); nur falls keine davon eine gültige Analyse hat (z. B. Referenz gerade erst
+// geändert, noch nicht neu ausgewertet), wird auf alle Aufnahmen mit vorhandener Analyse zurückgegriffen.
+// Nutzt ausschliesslich bereits vorhandene item.st (löst keine neue Analyse aus). Gibt die Item-ID der
+// besten Aufnahme zurück, oder null, wenn keine Aufnahme eine auswertbare Analyse hat.
+function bestTakeId(songId) {
+  const s = sget(songId);
+  if (!s) return null;
+  const takes = songAudio(songId, 'take').filter(t => t.st && t.st.v);
+  if (!takes.length) return null;
+  const score = (t) => t.st.ra != null ? t.st.ra : t.st.acc;
+  const rk = refSig(s), fresh = takes.filter(t => t.st.rk === rk);
+  const pool = fresh.length ? fresh : takes;
+  let best = pool[0];
+  pool.forEach(t => { if (score(t) > score(best)) best = t; });
+  return best.id;
+}
+
 function openPitchAnalysis(songId, itemId) {
   const s = sget(songId), item = s && (s.audio || []).find(a => a.id === itemId);
   if (!item) return;
@@ -7201,8 +7268,9 @@ function openProgress(songId) {
     table.innerHTML = '';
     const hd = h('div', { class: 'pa-row hd' }, ...['Aufnahme', 'Treffsicher', 'Melodie', 'Ø Abw.', 'Tendenz', 'Umfang'].map(x => h('span', { text: x })));
     table.append(hd);
-    rows.slice().reverse().forEach(r => table.append(h('div', { class: 'pa-row', onclick: () => openPitchAnalysis(songId, r.item.id) },
-      h('span', { text: r.item.name }),
+    const bestId = ok.length > 1 ? bestTakeId(songId) : null;   // nur ab zwei auswertbaren Aufnahmen sinnvoll
+    rows.slice().reverse().forEach(r => table.append(h('div', { class: 'pa-row' + (r.item.id === bestId ? ' pa-best' : ''), onclick: () => openPitchAnalysis(songId, r.item.id) },
+      h('span', { text: (r.item.id === bestId ? '🏆 ' : '') + r.item.name }),
       h('span', { text: r.st ? r.st.acc + ' %' : '–' }), h('span', { text: r.st && r.st.ra != null ? r.st.ra + ' %' : '–' }),
       h('span', { text: r.st ? r.st.dev + ' ct' : '–' }), h('span', { text: r.st ? tendText(r.st.ra != null ? r.st.rb : r.st.bias) : (r.err || '–') }),
       h('span', { text: r.st && r.st.lo != null ? midiName(r.st.lo) + '–' + midiName(r.st.hi) : '–' }))));
@@ -7413,6 +7481,18 @@ function refNoteAt(mel, t) {
   while (lo <= hi) { const mid = (lo + hi) >> 1; if (a[mid].t <= x) { f = mid; lo = mid + 1; } else hi = mid - 1; }
   return f >= 0 && x < a[f].t + a[f].d ? a[f] : null;
 }
+// Zweite Stimme für Mehrstimmigkeit/Duett (ab v2.12.0): eine WEITERE Spur AUS DERSELBEN Referenzdatei
+// (viele MIDI-/MusicXML-Dateien enthalten bereits mehrere Stimmen, z. B. ein Duett oder SATB) -- rein
+// zur Anzeige im Live-Overlay und zum Mit-Anhören; die Treffsicherheit während der Aufnahme bezieht
+// sich weiterhin nur auf die Hauptstimme (ref). Song: song.ref2 = { trk, tr }.
+async function getRefMelody2(songId) {
+  const s = sget(songId);
+  if (!s || !s.ref || !s.ref2) return null;
+  const tracks = await refTracks(songId);
+  if (!tracks || tracks.length < 2) return null;
+  const tr = tracks[clamp(s.ref2.trk || 0, 0, tracks.length - 1)];
+  return { notes: melodyLine(tr.notes).map(n => ({ t: n.t, d: n.d, m: n.m + (s.ref2.tr || 0) })), ofs: s.ref.ofs || 0, name: tr.name };
+}
 
 // --- Einfacher Synthesizer (auch für die Einsingübungen) --------------------------------
 const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -7441,12 +7521,14 @@ async function playRefMelody(songId, onEnd) {
   stopRefPlayback();
   const mel = await getRefMelody(songId);
   if (!mel || !mel.notes.length) { toast('Keine Melodie gefunden.'); return false; }
+  const mel2 = await getRefMelody2(songId).catch(() => null);   // Duett-Stimme, falls hinterlegt: leiser mitspielen
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   const t0 = ctx.currentTime + 0.15;
   mel.notes.forEach(n => synthNote(ctx, n.m, t0 + n.t, n.d * 0.95));
-  const last = mel.notes[mel.notes.length - 1];
-  refPlayer = { ctx, songId, timer: setTimeout(() => { stopRefPlayback(); if (onEnd) onEnd(); }, (last.t + last.d + 0.5) * 1000) };
+  if (mel2 && mel2.notes.length) mel2.notes.forEach(n => synthNote(ctx, n.m, t0 + n.t, n.d * 0.95, 0.13));
+  const last = (mel2 && mel2.notes.length ? mel.notes.concat(mel2.notes) : mel.notes).reduce((a, n) => Math.max(a, n.t + n.d), 0);
+  refPlayer = { ctx, songId, timer: setTimeout(() => { stopRefPlayback(); if (onEnd) onEnd(); }, (last + 0.5) * 1000) };
   return true;
 }
 
@@ -7462,6 +7544,7 @@ function refSection(songId, redraw) {
     return wrap;
   }
   const info = h('div', { class: 'sub', style: 'padding:0 6px;', text: 'Lade Melodie …' });
+  const sugBox = h('div', { class: 'vr-sug' });
   const trkSel = h('select', { title: 'Spur/Stimme mit der Gesangsmelodie' });
   const ofsIn = h('input', { type: 'number', step: '0.1', value: String(s.ref.ofs || 0), style: 'width:80px;', title: 'Versatz in Sekunden: um so viel später beginnt die Melodie gegenüber Aufnahme/Backing-Track' });
   const trSel = h('select', { title: 'Transponieren (Halbtöne), z. B. −12 für eine Oktave tiefer' });
@@ -7477,24 +7560,88 @@ function refSection(songId, redraw) {
   trkSel.addEventListener('change', () => { save({ trk: parseInt(trkSel.value, 10) || 0 }); showInfo(); });
   ofsIn.addEventListener('change', () => save({ ofs: Math.round((parseFloat(ofsIn.value) || 0) * 10) / 10 }));
   trSel.addEventListener('change', () => { save({ tr: parseInt(trSel.value, 10) || 0 }); showInfo(); });
+  // Mehrstimmigkeit/Duett (ab v2.12.0): eine weitere Spur AUS DERSELBEN Datei als zweite, parallel
+  // angezeigte Stimme -- nur sichtbar, wenn die Datei überhaupt mehr als eine Spur enthält.
+  const due2Sel = h('select', { title: 'Zweite Stimme für Mehrstimmigkeit/Duett (optional), aus derselben Datei' });
+  const tr2Sel = h('select', { title: 'Duett-Stimme transponieren (Halbtöne)' });
+  for (let i = -12; i <= 12; i++) tr2Sel.append(h('option', { value: String(i), text: 'Transponieren ' + (i > 0 ? '+' : '') + i }));
+  tr2Sel.value = String((s.ref2 && s.ref2.tr) || 0);
+  tr2Sel.disabled = !s.ref2;
+  const dueRow = h('div', { style: 'display:none; flex-wrap:wrap; gap:6px; align-items:center; padding:0 6px 6px;' },
+    h('span', { class: 'sub', text: '🎶 Duett-Stimme:' }), due2Sel, tr2Sel);
+  const save2 = (patch) => sTouch(songId, x => { x.ref2 = patch == null ? undefined : Object.assign({}, x.ref2, patch); if (patch == null) delete x.ref2; });
+  due2Sel.addEventListener('change', () => {
+    if (due2Sel.value === '') { save2(null); tr2Sel.disabled = true; }
+    else { save2({ trk: parseInt(due2Sel.value, 10) || 0, tr: parseInt(tr2Sel.value, 10) || 0 }); tr2Sel.disabled = false; }
+    showInfo();
+  });
+  tr2Sel.addEventListener('change', () => { save2({ tr: parseInt(tr2Sel.value, 10) || 0 }); showInfo(); });
   async function showInfo() {
     try {
       const mel = await getRefMelody(songId);
       if (!mel) { info.textContent = 'Keine Noten gefunden.'; return; }
       const ms = mel.notes.map(n => n.m), last = mel.notes[mel.notes.length - 1];
-      info.textContent = mel.notes.length + ' Töne · Umfang ' + midiName(Math.min(...ms)) + '–' + midiName(Math.max(...ms)) + ' · Dauer ' + fmtTime(last.t + last.d);
+      let txt = mel.notes.length + ' Töne · Umfang ' + midiName(Math.min(...ms)) + '–' + midiName(Math.max(...ms)) + ' · Dauer ' + fmtTime(last.t + last.d);
+      const mel2 = await getRefMelody2(songId).catch(() => null);
+      if (mel2 && mel2.notes.length) {
+        const ms2 = mel2.notes.map(n => n.m);
+        txt += ' · + Duett: ' + mel2.notes.length + ' Töne, Umfang ' + midiName(Math.min(...ms2)) + '–' + midiName(Math.max(...ms2));
+      }
+      info.textContent = txt;
     } catch (e) { info.textContent = 'Fehler: ' + e.message; }
+    updateSuggestion();
+  }
+  // Tonart-Vorschlag sofort beim Hinzufügen/Ändern der Referenzmelodie (statt erst nachträglich über
+  // «📏 Umfang»): nutzt denselben komfortablen Umfang (Median der letzten Aufnahmen, 27_voicerange.js)
+  // wie dort, direkt hier im Referenz-Abschnitt.
+  async function updateSuggestion() {
+    sugBox.innerHTML = '';
+    if (!wrap.isConnected) return;
+    let history;
+    try { history = await collectVoiceRangeHistory(); } catch (e) { return; }
+    if (!wrap.isConnected || !history.length) return;
+    const comfort = currentComfortRange(history);
+    const need = await songRangeNeeded(songId, history);
+    if (!wrap.isConnected || !comfort || !need) return;
+    const sug = suggestTranspose(need.lo, need.hi, comfort.lo, comfort.hi);
+    const comfortTxt = ' (dein aktueller Umfang: ' + midiName(comfort.lo) + '–' + midiName(comfort.hi) + ')';
+    if (sug.shift === 0 && sug.fits) {
+      sugBox.append(h('span', { class: 'vr-rec good', text: '✓ passt in deinen aktuellen Umfang' + comfortTxt }));
+      return;
+    }
+    const recTxt = (sug.fits ? 'Empfehlung: um ' + (sug.shift > 0 ? '+' : '') + sug.shift + ' Halbtöne transponieren' : 'passt auch transponiert knapp') + comfortTxt;
+    const recSpan = h('span', { class: 'vr-rec ' + (sug.fits ? 'ok' : 'bad'), text: recTxt });
+    const applyBtn = h('button', { class: 'more', text: '↧ Übernehmen', title: 'Referenzmelodie um ' + sug.shift + ' weitere Halbtöne transponieren',
+      onclick: () => {
+        // Kein Clamping auf ±12 (wie im «📏 Umfang»-Dialog): ein grösserer Vorschlag wird trotzdem
+        // vollständig übernommen; das Transponier-Dropdown (nur −12…+12) kann ihn dann ggf. nicht
+        // als Option anzeigen, der tatsächliche Wert (ref.tr) und die Melodie sind aber korrekt.
+        const newTr = (sget(songId).ref.tr || 0) + sug.shift;
+        save({ tr: newTr });
+        if (trSel.querySelector('option[value="' + newTr + '"]')) trSel.value = String(newTr);
+        showInfo();
+      } });
+    sugBox.append(recSpan, applyBtn);
   }
   refTracks(songId).then(tracks => {
     trkSel.innerHTML = '';
     (tracks || []).forEach((t, i) => trkSel.append(h('option', { value: String(i), text: t.name + ' (' + t.notes.length + ' Töne)' })));
     trkSel.value = String(clamp(s.ref.trk || 0, 0, Math.max(0, (tracks || []).length - 1)));
+    if (tracks && tracks.length > 1) {
+      due2Sel.innerHTML = '';
+      due2Sel.append(h('option', { value: '', text: '– keine (nur eine Stimme) –' }));
+      tracks.forEach((t, i) => due2Sel.append(h('option', { value: String(i), text: t.name + ' (' + t.notes.length + ' Töne)' })));
+      due2Sel.value = s.ref2 ? String(clamp(s.ref2.trk || 0, 0, tracks.length - 1)) : '';
+      dueRow.style.display = 'flex';
+    } else dueRow.style.display = 'none';
     showInfo();
   }).catch(e => { info.textContent = 'Datei konnte nicht gelesen werden: ' + e.message; });
   wrap.append(
     h('div', { class: 'pick-row', style: 'cursor:default;' }, h('span', { class: 'type-icon', text: '🎼' }), h('div', { class: 'mid', style: 'flex:1;' }, h('div', { class: 'name', text: s.ref.name }), info),
       h('button', { class: 'more', text: '🗑', title: 'Referenzmelodie entfernen', onclick: () => removeRef(songId).then(redraw) })),
     h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px;' }, trkSel, trSel, h('span', { class: 'sub', text: 'Versatz (s):' }), ofsIn, playBtn),
+    dueRow,
+    sugBox,
     h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() }, h('span', { text: '⇄' }), h('span', { text: 'Andere Datei wählen …' }), inp));
   return wrap;
 }
@@ -8283,6 +8430,150 @@ function xmSection(s, list, linkRow, redraw) {
   if (!list.length && !songAudio(s.id, 'backing').length) wrap.append(h('div', { class: 'empty-note', text: 'Tipp: Die Seite des Tracks bei x-minus.pro kannst du unten als Link einfügen – dann öffnet sie sich hier direkt. Importierte Tracks erscheinen ebenfalls hier.' }));
   return wrap;
 }
+
+
+// ---------------------------------------------------------------
+// Stimmumfang-Tracking (ab v2.10.0)
+// Nutzt die pro Aufnahme ohnehin berechneten Tonhöhen-Kennzahlen (21_analysis.js: item.st.lo/hi,
+// 5./95. Perzentil der erkannten Tonhöhe -- referenzunabhängig, ändert sich also nicht mit der
+// Referenzmelodie) und wertet sie liederübergreifend aus: Verlauf des Stimmumfangs über die Zeit,
+// aktueller «komfortabler» Umfang (Median der letzten Aufnahmen) sowie -- pro Song -- ein Vergleich
+// mit dem benötigten Umfang (aus der Referenzmelodie, falls hinterlegt, sonst grob aus den eigenen
+// Aufnahmen dieses Songs) inkl. Transpositionsvorschlag.
+// ---------------------------------------------------------------
+
+// Alle Aufnahmen aller (nicht gelöschten) Songs chronologisch, mit Tonumfang (lo/hi, MIDI, gerundet).
+// Bereits analysierte Aufnahmen (item.st) werden direkt verwendet; noch nicht analysierte werden
+// nachanalysiert (lo/hi hängen nicht von der Referenzmelodie ab, daher hier ohne rk-Abgleich nutzbar).
+async function collectVoiceRangeHistory(onProgress) {
+  const items = [];
+  aliveSongs().forEach(s => songAudio(s.id, 'take').forEach(it => items.push({ s, it })));
+  items.sort((a, b) => (a.it.u0 || a.it.u || 0) - (b.it.u0 || b.it.u || 0));
+  const out = [];
+  for (let i = 0; i < items.length; i++) {
+    if (onProgress) onProgress(i / items.length);
+    const { s, it } = items[i];
+    let lo = it.st && it.st.lo != null ? it.st.lo : null, hi = it.st && it.st.hi != null ? it.st.hi : null;
+    if (lo == null) {
+      try { const res = await analyzeTakePitch(it); const st = pitchStats(res, null); lo = st.lo; hi = st.hi; }
+      catch (e) { continue; }
+    }
+    if (lo == null) continue;
+    out.push({ t: it.u0 || it.u, lo, hi, songId: s.id, songName: s.n, itemId: it.id });
+    await sleep(0);
+  }
+  return out;
+}
+
+// Aktueller «komfortabler» Umfang: Median von lo/hi der letzten N Aufnahmen -- robuster als
+// Min/Max über die ganze Historie, das eine einzelne schwache Aufnahme stark verzerren könnte.
+function currentComfortRange(history, n = 8) {
+  if (!history.length) return null;
+  const recent = history.slice(-n);
+  const med = (a) => { const s = a.slice().sort((x, y) => x - y); return s[s.length >> 1]; };
+  return { lo: Math.round(med(recent.map(r => r.lo))), hi: Math.round(med(recent.map(r => r.hi))) };
+}
+
+// Benötigter Umfang eines Songs: aus der Referenzmelodie (verlässlich, src:'ref'), sonst grob aus
+// den eigenen bisherigen Aufnahmen dieses Songs (Min/Max über deren lo/hi, src:'takes' -- zeigt nur,
+// was bereits versucht wurde, nicht zwingend den vollen Songumfang).
+async function songRangeNeeded(songId, history) {
+  const mel = await getRefMelody(songId).catch(() => null);
+  if (mel && mel.notes.length) { const ms = mel.notes.map(n => n.m); return { lo: Math.min(...ms), hi: Math.max(...ms), src: 'ref' }; }
+  const own = history.filter(r => r.songId === songId);
+  if (!own.length) return null;
+  return { lo: Math.min(...own.map(r => r.lo)), hi: Math.max(...own.map(r => r.hi)), src: 'takes' };
+}
+
+// Transpositionsvorschlag (Halbtöne), damit [lo,hi] möglichst in [curLo,curHi] passt.
+// shift=0 & fits=true, wenn der Song schon passt; sonst der Shift, der den Song mittig in den
+// komfortablen Umfang schiebt, plus ob er danach wirklich vollständig hineinpasst (der Song kann
+// selbst weiter gespannt sein als der komfortable Umfang -- dann bestmöglicher Kompromiss).
+function suggestTranspose(lo, hi, curLo, curHi) {
+  if (lo >= curLo && hi <= curHi) return { shift: 0, fits: true };
+  const shift = Math.round(((curLo + curHi) / 2 - (lo + hi) / 2));
+  const fits = (lo + shift) >= curLo && (hi + shift) <= curHi;
+  return { shift, fits };
+}
+
+function drawVoiceRangeChart(cv, rows, comfort) {
+  const cx = cv.getContext('2d'), W = cv.width, H = cv.height, L = 34, R = 12, T = 10, B = 26;
+  cx.clearRect(0, 0, W, H);
+  if (!rows.length) return;
+  const allM = rows.flatMap(r => [r.lo, r.hi]).concat(comfort ? [comfort.lo, comfort.hi] : []);
+  let lo = Math.floor(Math.min(...allM)) - 2, hi = Math.ceil(Math.max(...allM)) + 2;
+  if (hi - lo < 12) { const c = (hi + lo) / 2; lo = Math.floor(c - 6); hi = Math.ceil(c + 6); }
+  const yOf = (m) => T + (hi - m) / (hi - lo) * (H - T - B);
+  const xOf = (i) => rows.length === 1 ? (L + W - R) / 2 : L + 10 + i / (rows.length - 1) * (W - L - R - 20);
+  cx.font = '10px system-ui'; cx.textAlign = 'right'; cx.textBaseline = 'middle';
+  for (let m = Math.ceil(lo / 3) * 3; m <= hi; m += 3) {
+    const y = yOf(m);
+    cx.strokeStyle = 'rgba(0,0,0,.08)'; cx.beginPath(); cx.moveTo(L, y); cx.lineTo(W - R, y); cx.stroke();
+    cx.fillStyle = '#777'; cx.fillText(midiName(m), L - 4, y);
+  }
+  if (comfort) { cx.fillStyle = 'rgba(107,79,59,.10)'; cx.fillRect(L, yOf(comfort.hi), W - L - R, yOf(comfort.lo) - yOf(comfort.hi)); }
+  rows.forEach((r, i) => { const x = xOf(i); cx.strokeStyle = '#6b4f3b'; cx.lineWidth = 3; cx.beginPath(); cx.moveTo(x, yOf(r.lo)); cx.lineTo(x, yOf(r.hi)); cx.stroke(); });
+  const lineKey = (key, color) => {
+    cx.strokeStyle = color; cx.lineWidth = 1.5;
+    cx.beginPath(); rows.forEach((r, i) => { const p = [xOf(i), yOf(r[key])]; i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1]); }); cx.stroke();
+  };
+  lineKey('hi', '#2471a3'); lineKey('lo', '#c0392b');
+  cx.textAlign = 'center'; cx.textBaseline = 'top'; cx.fillStyle = '#777';
+  const step = Math.max(1, Math.ceil(rows.length / 8));
+  rows.forEach((r, i) => { if (i % step === 0 || i === rows.length - 1) cx.fillText(new Date(r.t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), xOf(i), H - B + 6); });
+}
+
+async function openVoiceRange() {
+  const status = h('div', { class: 'sub', text: 'Werte Aufnahmen aus …' });
+  const cv = h('canvas', { class: 'pa-progress', width: 640, height: 220 });
+  const summary = h('div', { style: 'display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;' });
+  const listHead = h('div', { class: 'vr-row hd' }, h('span', { text: 'Song' }), h('span', { text: 'Benötigter Umfang' }), h('span', { text: 'Empfehlung' }), h('span', {}));
+  const list = h('div', { class: 'vr-list' }, listHead);
+  const body = h('div', {}, status, cv, summary,
+    h('div', { class: 'sub', style: 'font-weight:600; margin-top:10px;', text: '🎵 Songs im Vergleich zum aktuellen Umfang' }), list);
+  const api = openModal({ title: '📏 Stimmumfang', body, wide: true, buttons: [{ label: 'Schliessen' }] });
+  const history = await collectVoiceRangeHistory((f) => { status.textContent = 'Werte Aufnahmen aus … ' + Math.round(f * 100) + ' %'; });
+  if (!api.el.isConnected) return;
+  status.style.display = 'none';
+  if (!history.length) {
+    body.append(h('div', { class: 'empty-note', text: 'Noch keine auswertbaren Aufnahmen. Nimm dich beim Singen auf (🎙 Aufnahmen & Backing-Track), damit sich hier ein Stimmumfang-Verlauf zeigt.' }));
+    return;
+  }
+  const comfort = currentComfortRange(history);
+  const allLo = Math.min(...history.map(r => r.lo)), allHi = Math.max(...history.map(r => r.hi));
+  drawVoiceRangeChart(cv, history, comfort);
+  const box = (label, val) => h('div', { class: 'pa-box' }, h('div', { class: 'v', text: val }), h('div', { class: 'l', text: label }));
+  summary.append(
+    box('Aktueller komfortabler Umfang', midiName(comfort.lo) + '–' + midiName(comfort.hi)),
+    box('Bisher insgesamt erreicht', midiName(allLo) + '–' + midiName(allHi)),
+    box('Ausgewertete Aufnahmen', String(history.length)));
+  const songIds = aliveSongs().map(s => s.id);
+  for (const sid of songIds) {
+    const need = await songRangeNeeded(sid, history);
+    if (!need) continue;
+    const s = sget(sid);
+    const sug = suggestTranspose(need.lo, need.hi, comfort.lo, comfort.hi);
+    const rangeTxt = midiName(need.lo) + '–' + midiName(need.hi) + (need.src === 'takes' ? ' (aus eigenen Aufnahmen)' : '');
+    let recTxt = '✓ passt', recCls = 'good';
+    if (!(sug.shift === 0 && sug.fits)) {
+      recTxt = (sug.fits ? 'Transponieren um ' : 'auch transponiert knapp (') + (sug.shift > 0 ? '+' : '') + sug.shift + (sug.fits ? ' Halbtöne' : ')');
+      recCls = sug.fits ? 'ok' : 'bad';
+    }
+    const recSpan = h('span', { class: 'vr-rec ' + recCls, text: recTxt });
+    const applyBtn = (sug.shift !== 0 && need.src === 'ref' && s && s.ref)
+      ? h('button', { class: 'more', text: '↧ Übernehmen', title: 'Referenzmelodie um ' + sug.shift + ' Halbtöne transponieren',
+          onclick: (e) => {
+            sTouch(sid, x => { x.ref = Object.assign({}, x.ref, { tr: (x.ref.tr || 0) + sug.shift }); });
+            toast('Transponiert um ' + sug.shift + ' Halbtöne');
+            recSpan.textContent = '✓ übernommen'; recSpan.className = 'vr-rec good';
+            e.target.disabled = true;
+          } })
+      : h('span', {});
+    list.append(h('div', { class: 'vr-row' }, h('span', { text: s ? s.n : sid }), h('span', { text: rangeTxt }), recSpan, applyBtn));
+  }
+  if (list.children.length <= 1) list.append(h('div', { class: 'empty-note', text: 'Noch keine Songs mit Referenzmelodie oder eigenen Aufnahmen zum Vergleich.' }));
+}
+$('voiceRangeBtn').addEventListener('click', openVoiceRange);
 
 </script>
 </body>
