@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wZRKSH4oBRWoOSpKihPClWfJvj4+YaOheTLz+zOq6UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-TnAx61rkNhlOttj+XMhLObZrA6lXBEHIJZFriw/aDyU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wZRKSH4oBRWoOSpKihPClWfJvj4+YaOheTLz+zOq6UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-TnAx61rkNhlOttj+XMhLObZrA6lXBEHIJZFriw/aDyU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -89,6 +89,9 @@
   #syncState.warn{color:var(--warn); border-color:var(--warn);}
   #syncState.ok{color:var(--ok);}
 
+  #authBanner{display:none; align-items:center; gap:10px; padding:6px 12px; background:#fff3cd; color:#6b4a00; border-bottom:1px solid #e0c96a; font-size:13px; flex-shrink:0; z-index:19;}
+  #authBanner span{flex:1; min-width:0;}
+  #authBanner button{padding:5px 12px; flex-shrink:0;}
   #app{flex:1; display:flex; min-height:0; position:relative;}
 
   /* ---------- Seitenleiste ---------- */
@@ -457,6 +460,7 @@
   <span id="status"></span>
   <button id="authBtn" class="primary">Anmelden</button>
 </header>
+<div id="authBanner"><span id="authBannerText"></span><button id="authBannerBtn" class="primary">Anmelden</button></div>
 
 <div id="app">
   <div id="sidebar">
@@ -683,7 +687,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.15.0';
+const APP_VERSION = '2.15.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1582,7 +1586,19 @@ function loadStoredToken() {
   return false;
 }
 function dropToken() { accessToken = null; tokenExpiry = 0; lsDel('gapp_token'); updateAuthBtn(); }
-function updateAuthBtn() { authBtn.textContent = tokenValid() ? 'Angemeldet' : 'Anmelden'; }
+function updateAuthBtn() { authBtn.textContent = tokenValid() ? 'Angemeldet' : 'Anmelden'; updateAuthBanner(); }
+// Ab v2.15.1: Ohne gültige Google-Anmeldung (das Zugriffstoken gilt bei Google nur ca. 1 Stunde) zeigt ein
+// gut sichtbarer Balken den Zustand; ein Tippen irgendwo in der App erneuert die Anmeldung sofort.
+function hadLogin() { return !!(lsGet('gapp_hadlogin') || lsGet('gapp_folderId')); }
+function updateAuthBanner() {
+  const b = $('authBanner'); if (!b) return;
+  const show = !tokenValid() && hadLogin() && !perf;
+  b.style.display = show ? 'flex' : 'none';
+  if (show) $('authBannerText').textContent = isOnline()
+    ? '🔒 Bei Google abgemeldet – Änderungen bleiben vorerst nur auf diesem Gerät. Tippe irgendwo oder «Anmelden».'
+    : '📴 Offline und abgemeldet – alles bleibt lokal gespeichert und wird später abgeglichen.';
+}
+$('authBannerBtn').addEventListener('click', () => signIn());
 
 function initAuth() {
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -1593,7 +1609,7 @@ function initAuth() {
       if (resp.error || !resp.access_token) { w.forEach(x => x.reject(new Error(resp.error || 'no_token'))); return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + ((Number(resp.expires_in) || 3600) - 60) * 1000;
-      saveToken(); updateAuthBtn(); clearAuthStatusIfStale();
+      saveToken(); lsSet('gapp_hadlogin', '1'); updateAuthBtn(); clearAuthStatusIfStale();
       w.forEach(x => x.resolve(accessToken));
     },
     error_callback: (err) => {
@@ -1629,6 +1645,22 @@ async function signIn() {
 }
 authBtn.addEventListener('click', signIn);
 authBtn2.addEventListener('click', signIn);
+
+// Ab v2.15.1: Jede Bedienung (Tippen/Klicken) erneuert eine abgelaufene bzw. bald ablaufende Anmeldung sofort.
+// Das Google-Popup darf der Browser nur nach einer Nutzeraktion öffnen – deshalb hier, nicht im Hintergrund.
+// Bei Abbruch/Blockade erst nach einer Pause erneut versuchen (kein Dauer-Popup bei jedem Tipp).
+let authBusy = false, authCooldownUntil = 0;
+document.addEventListener('pointerup', (e) => {
+  if (!e.isTrusted || authBusy || perf || !tokenClient || !isOnline() || !hadLogin()) return;
+  if (Date.now() < authCooldownUntil) return;
+  if (tokenValid() && Date.now() < tokenExpiry - 5 * 60000) return;
+  if (e.target && e.target.closest && e.target.closest('#authBtn, #authBtn2, #authBannerBtn')) return;
+  authBusy = true;
+  requestToken()
+    .then(() => (folderId ? syncAll(true) : afterSignIn()))
+    .catch((err) => { authCooldownUntil = Date.now() + (/popup_closed|access_denied/.test(String(err && err.message)) ? 180000 : 45000); })
+    .finally(() => { authBusy = false; updateAuthBtn(); updateSyncState(); });
+}, true);
 
 // Diagnose: Diese Angaben müssen zur Google Cloud Console passen
 (function showDiag() {
@@ -3519,11 +3551,11 @@ function updateSyncState() {
   let t, c = '';
   if (syncing > 0) t = '⟳ Synchronisiere …';
   else if (!isOnline()) { t = '⚠ Offline' + (n ? ` · ${n} offen` : ''); c = 'warn'; }
-  else if (!tokenValid()) { t = 'Nicht angemeldet' + (n ? ` · ${n} offen` : ''); c = 'warn'; }
+  else if (!tokenValid()) { t = '🔒 Nicht angemeldet' + (n ? ` · ${n} offen` : ''); c = 'warn'; }
   else if (textConflicts.size) { t = '⚠ Konflikt – antippen'; c = 'warn'; }
   else if (n) { t = `● ${n} ausstehend`; c = 'warn'; }
   else { t = '✓ Synchronisiert'; c = 'ok'; }
-  el.textContent = t; el.className = c;
+  el.textContent = t; el.className = c; updateAuthBanner();
   el.title = 'Alles ist lokal gespeichert. ' + (c === 'ok' ? 'Drive ist auf dem neuesten Stand.' : 'Antippen zum Synchronisieren.');
 }
 $('syncState').addEventListener('click', async () => {
@@ -3571,6 +3603,7 @@ window.addEventListener('pagehide', () => { persistAnnot(); persistTextLocal(); 
 // Daten werden davon unabhaengig weiterhin ueber die bestehenden debounced queueSave()/
 // persistAnnot()-Pfade gesichert; beim Verlassen des Auftrittsmodus holt exitPerf() per
 // syncAll(true) sofort nach, was waehrend der Pause auf anderen Geraeten geaendert wurde.
+setInterval(() => { updateAuthBtn(); updateSyncState(); }, 30000);
 setInterval(() => { updateAuthBtn(); if (tokenValid()) clearAuthStatusIfStale(); if (document.visibilityState === 'visible' && !perf) { updateSyncState(); syncAll(); } }, 120000);
 
 

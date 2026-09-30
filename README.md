@@ -21,6 +21,14 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.15.1 – Anmeldung: sichtbarer Hinweis + Erneuerung bei jedem Tippen (30.09.2026)
+
+- **Ursache der «plötzlichen» Abmeldungen:** Die App nutzt Googles rein browserbasierte Anmeldung. Das Zugriffstoken gilt bei Google **nur etwa 1 Stunde** und lässt sich ohne Server nicht dauerhaft verlängern (kein Refresh-Token). Danach ist die App bis zur nächsten Anmeldung «abgemeldet» – unabhängig von Deploys. Ein Popup ohne Nutzeraktion blockiert der Browser, deshalb klappte die stille Erneuerung im Hintergrund nicht.
+- **Neu:** Bei abgelaufener oder in unter 5 Minuten ablaufender Anmeldung erneuert **das erste Tippen/Klicken irgendwo in der App** die Anmeldung sofort (das Google-Fenster schliesst sich meist von selbst, wenn du schon zugestimmt hast). Bei Abbruch wird erst nach einer Pause (45 s bzw. 3 Min.) erneut versucht.
+- **Neu:** Gelber Hinweisbalken unter der Kopfzeile, solange du abgemeldet bist («Bei Google abgemeldet – Änderungen bleiben vorerst nur auf diesem Gerät»), mit Knopf «Anmelden»; offline entsprechender Hinweis. Das Status-Symbol oben zeigt «🔒 Nicht angemeldet» und meldet bei Tipp an.
+- Im Auftrittsmodus wird bewusst nichts eingeblendet oder geöffnet.
+- Änderungen gehen dabei nie verloren: sie werden lokal gespeichert und nach der Anmeldung abgeglichen.
+
 ### v2.15.0 – PDF-Export-Vorschau zeigt alle Seiten (30.09.2026)
 
 - Der Export-Dialog für Text-Blätter zeigt jetzt **alle Seiten** als Miniaturen (statt nur Seite 1), jeweils mit «Seite x von y»; darunter die Gesamtzahl der Seiten und die Dateigrösse. Der Vorschaubereich scrollt für sich, die Regler (Seitenränder, Skalierung) bleiben sichtbar und aktualisieren die Vorschau weiterhin live.
