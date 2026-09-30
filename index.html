@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ftli5XupSfMDgNOzuwyQ5vb0zp+N26oCWU3+UvpZjKc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wZRKSH4oBRWoOSpKihPClWfJvj4+YaOheTLz+zOq6UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ftli5XupSfMDgNOzuwyQ5vb0zp+N26oCWU3+UvpZjKc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wZRKSH4oBRWoOSpKihPClWfJvj4+YaOheTLz+zOq6UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -242,6 +242,8 @@
   .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; display:flex; align-items:center; justify-content:center; padding:12px;}
   .modal{background:var(--panel); border-radius:14px; width:min(440px,100%); max-height:88vh; display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.35);}
   .modal.wide{width:min(720px,100%);}
+  .pv-wrap{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; align-content:start;}
+  .pv-wrap.pv-big{grid-template-columns:1fr;}
   .modal h3{margin:0; padding:14px 16px 6px; font-size:16px;}
   .modal .body{padding:6px 16px; overflow-y:auto; min-height:0; flex:1;}
   .modal .btns{display:flex; gap:8px; justify-content:flex-end; padding:10px 16px 14px; flex-wrap:wrap;}
@@ -681,7 +683,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.14.2';
+const APP_VERSION = '2.15.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -5944,25 +5946,38 @@ async function exportTextSheetPdf() {
     downloadName: songName.replace(/[\\/]+/g, '-') + ' – Text.pdf', sheetName: f.name.replace(/\.[^.]+$/, '') + ' (PDF).pdf', srcFile: f
   });
 }
-// Rendert Seite 1 fertiger PDF-Bytes in ein <canvas> (für die Vorschau im Export-Dialog).
-async function renderPdfPreview(bytes, canvas, targetW = 300) {
+// Rendert ALLE Seiten fertiger PDF-Bytes als Miniaturen in einen Container (Vorschau im Export-Dialog,
+// ab v2.15.0; vorher nur Seite 1). Liefert die Seitenzahl. maxPages begrenzt Speicher/Zeit bei Extremfällen.
+async function renderPdfPreview(bytes, container, { targetW = 360, maxPages = 30, isStale = () => false } = {}) {
   const pj = await getPdfjs();
   const task = pj.getDocument(Object.assign({ data: bytes }, PDF_OPTS));
   try {
-    const pdf = await task.promise, page = await pdf.getPage(1);
-    const vp1 = page.getViewport({ scale: 1 }), scale = targetW / vp1.width;
-    const vp = page.getViewport({ scale });
-    canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    const pdf = await task.promise, total = pdf.numPages, n = Math.min(total, maxPages);
+    const cells = [];
+    for (let i = 1; i <= n; i++) {
+      if (isStale()) return total;
+      const page = await pdf.getPage(i);
+      const vp1 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: targetW / vp1.width });
+      const canvas = h('canvas', { style: 'width:100%; height:auto; display:block; background:#fff; border:1px solid var(--muted); border-radius:3px; box-shadow:0 2px 8px rgba(0,0,0,.3);' });
+      canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+      cells.push(h('div', { class: 'pv-page' }, canvas, h('div', { class: 'sub', style: 'text-align:center; font-size:12px; margin-top:3px;', text: 'Seite ' + i + ' von ' + total })));
+    }
+    if (isStale()) return total;
+    container.replaceChildren(...cells);
+    return total;
   } finally { try { task.destroy(); } catch (e) {} }
 }
-// Export-Dialog für Text-Blätter: Live-Vorschau (Seite 1) + Seitenränder/Skalierung per Regler,
+// Export-Dialog für Text-Blätter: Live-Vorschau (alle Seiten) + Seitenränder/Skalierung per Regler,
 // Änderungen bauen das PDF neu und aktualisieren die Vorschau (entprellt).
 function textPdfExportDialog(songName, html, { downloadName, sheetName, srcFile }) {
   const sid = currentSongId && sget(currentSongId) ? currentSongId : null;
   const opts = { header: false, margin: 54, scale: 1 };
-  const canvas = h('canvas', { style: 'max-width:100%; border:1px solid var(--muted); border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,.3);' });
-  const previewWrap = h('div', { style: 'min-height:180px; display:flex; align-items:center; justify-content:center; padding:6px 0;' }, canvas);
+  // Vorschau: Miniaturen aller Seiten in einem eigenen, scrollbaren Bereich (Regler bleiben sichtbar);
+  // «Grosse Ansicht» zeigt die Seiten einspaltig in voller Breite.
+  const previewWrap = h('div', { class: 'pv-wrap', style: 'min-height:180px; max-height:46vh; overflow:auto; padding:8px; background:rgba(128,128,128,.12); border-radius:8px;' });
+  const cbBig = h('input', { type: 'checkbox' });
+  const applyLayout = () => { previewWrap.classList.toggle('pv-big', cbBig.checked); };
   const status = h('div', { class: 'sub', style: 'text-align:center; margin-top:2px;' });
   const cbHead = h('input', { type: 'checkbox' });
   const mLabel = h('span', { text: opts.margin + ' pt', style: 'width:46px; text-align:right;' });
@@ -5977,20 +5992,25 @@ function textPdfExportDialog(songName, html, { downloadName, sheetName, srcFile 
     try {
       const bytes = await buildTextSheetPdf(songName, html, opts);
       if (mySeq !== seq) return;
-      status.textContent = Math.round(bytes.length / 1024) + ' KB' + (bytes.length > 300000 ? ' – bei Bedarf Seitenränder oder Skalierung verkleinern' : '');
-      await renderPdfPreview(bytes, canvas);
+      const kb = Math.round(bytes.length / 1024) + ' KB';
+      status.textContent = 'Vorschau wird erstellt … (' + kb + ')';
+      const pages = await renderPdfPreview(bytes, previewWrap, { targetW: cbBig.checked ? 700 : 360, isStale: () => mySeq !== seq });
+      if (mySeq !== seq) return;
+      status.textContent = pages + (pages === 1 ? ' Seite' : ' Seiten') + ' · ' + kb + (bytes.length > 300000 ? ' – bei Bedarf Seitenränder oder Skalierung verkleinern' : '');
     } catch (e) { if (mySeq === seq) status.textContent = 'Vorschau fehlgeschlagen: ' + e.message; }
   }
   const debouncedUpdate = () => { clearTimeout(debTimer); debTimer = setTimeout(update, 250); };
 
   cbHead.addEventListener('change', () => { opts.header = cbHead.checked; update(); });
+  cbBig.addEventListener('change', () => { applyLayout(); update(); });
   mRange.addEventListener('input', () => { opts.margin = parseInt(mRange.value, 10); mLabel.textContent = opts.margin + ' pt'; debouncedUpdate(); });
   sRange.addEventListener('input', () => { opts.scale = parseInt(sRange.value, 10) / 100; sLabel.textContent = sRange.value + ' %'; debouncedUpdate(); });
 
   const row = (label, range, val) => h('div', { style: 'display:flex; gap:8px; align-items:center; margin-top:8px; font-size:13px;' }, h('span', { text: label, style: 'width:100px; flex-shrink:0;' }), range, val);
   const body = h('div', { class: 'text-pdf-export' },
     previewWrap, status,
-    h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:13px; margin-top:10px;' }, cbHead, h('span', { text: 'Songtitel «' + songName + '» als Überschrift einfügen' })),
+    h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:13px; margin-top:6px;' }, cbBig, h('span', { text: 'Grosse Ansicht (eine Seite pro Zeile)' })),
+    h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:13px; margin-top:8px;' }, cbHead, h('span', { text: 'Songtitel «' + songName + '» als Überschrift einfügen' })),
     row('Seitenränder', mRange, mLabel), row('Skalierung', sRange, sLabel),
     sid ? h('p', { class: 'sub', style: 'font-size:12.5px; color:var(--muted); margin-top:10px;', text: '«Als Blatt hinzufügen» legt das PDF als «' + sheetName + '» direkt hinter dem aktuellen Blatt in «' + sget(sid).n + '» ab (in Drive gespeichert und offline verfügbar).' }) : null);
 

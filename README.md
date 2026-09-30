@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.15.0 – PDF-Export-Vorschau zeigt alle Seiten (30.09.2026)
+
+- Der Export-Dialog für Text-Blätter zeigt jetzt **alle Seiten** als Miniaturen (statt nur Seite 1), jeweils mit «Seite x von y»; darunter die Gesamtzahl der Seiten und die Dateigrösse. Der Vorschaubereich scrollt für sich, die Regler (Seitenränder, Skalierung) bleiben sichtbar und aktualisieren die Vorschau weiterhin live.
+- Neu: Schalter «Grosse Ansicht (eine Seite pro Zeile)» für bessere Lesbarkeit einzelner Seiten. Aus Speichergründen werden höchstens 30 Seiten vorgeschaut (Export selbst ist nicht begrenzt).
+- Technik: `renderPdfPreview()` rendert alle Seiten in einen Container (bricht veraltete Durchläufe ab); die Inline-Skript-Prüfsumme in der Content-Security-Policy wurde neu berechnet (**bei jedem Build nötig**, sonst startet die App gar nicht).
+
 ### v2.14.2 – Kleinigkeit: Text im leeren Startbild aktualisiert (30.09.2026)
 
 - Der Hinweistext im leeren Startbild («Wähle links ein Blatt aus oder lade ein neues hoch.») stammte noch aus der Zeit vor v2.0, als es nur einzelne Dateien statt Songs gab. Jetzt: «Wähle links einen Song aus oder lege über «♪ Neuer Song» einen neuen an.»
