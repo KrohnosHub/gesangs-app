@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-TnAx61rkNhlOttj+XMhLObZrA6lXBEHIJZFriw/aDyU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-rH6WRF/4/FPFqvEOiF0jqOQl3kFZAj0aLRPjYpEUYtY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-TnAx61rkNhlOttj+XMhLObZrA6lXBEHIJZFriw/aDyU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-rH6WRF/4/FPFqvEOiF0jqOQl3kFZAj0aLRPjYpEUYtY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -152,6 +152,8 @@
   #sheetTabs{display:none; gap:6px; padding:6px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
   #sheetTabs button{flex:none; padding:5px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg); color:var(--muted); font-size:13px;}
   #sheetTabs button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+  #sheetTabs button.tab-edit{padding:5px 8px; margin-left:-4px;}
+  #sheetTabs button.tab-add{border-style:dashed; color:var(--accent);}
   #songBar{display:none; align-items:center; gap:5px; padding:6px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
   #songBar button{flex:none; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; white-space:nowrap;}
   #songBar button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
@@ -309,6 +311,9 @@
     #toolbar select{max-width:118px; padding-left:6px; padding-right:4px;}
   }
   @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(240px, calc(100vw - 12px));} }
+  #perfBtn{padding:8px 12px; flex-shrink:0;}
+  @media (min-width: 480px){ #perfBtn .lbl-t{display:inline;} }
+  @media (max-width: 600px){ #authBtn{display:none;} }
 
   /* ---------- Scan ---------- */
   #scanCv{max-width:100%; touch-action:none; background:#222; border-radius:8px; display:block; margin:0 auto;}
@@ -454,8 +459,8 @@
 <header>
   <button id="sidebarToggle" class="icon" title="Liste">☰</button>
   <h1 id="currentTitle">Gesangs-App – Lyric-Blätter</h1>
-  <button id="renameBtn" class="icon" title="Blatt umbenennen" style="display:none;">✎</button>
-  <button id="perfBtn" class="icon" title="Auftritts-/Übungsmodus" style="display:none;">⛶</button>
+  <button id="renameBtn" class="icon" title="Song umbenennen" style="display:none;">✎</button>
+  <button id="perfBtn" title="Auftritts-/Übungsmodus: Vollbild ohne Werkzeuge, Umblättern per Tipp an den Rand" style="display:none;"><span>▶</span><span class="lbl-t"> Auftritt</span></button>
   <span id="syncState" title="Synchronisierung – antippen zum Synchronisieren">…</span>
   <span id="status"></span>
   <button id="authBtn" class="primary">Anmelden</button>
@@ -520,6 +525,8 @@
     </div>
 
     <div id="mainViewer" style="display:none; flex:1; flex-direction:column; min-height:0;">
+      <div id="songBar" style="display:none;"></div>
+      <div id="sheetTabs" style="display:none;"></div>
       <div id="toolbar">
         <select id="txtFont" class="txt-tool" title="Schrift der markierten Zeilen/Absätze">
           <option value="sans">Schrift: Standard</option>
@@ -585,7 +592,7 @@
         <button id="clearBtn" class="icon" title="Seite leeren">🗑</button>
         <div class="sep"></div>
         <button id="layerBtn" class="tool" title="Ebenen">▤ Ebenen</button>
-        <button id="dispBtn" class="tool" title="Helligkeit / Kontrast des Blatts">☀ Anzeige</button>
+        <button id="dispBtn" class="tool" title="Helligkeit / Kontrast des Blatts">☀ Helligkeit</button>
         <div class="sep"></div>
         <div id="zoomNav">
           <button id="zoomOut" class="icon" title="Verkleinern">−</button>
@@ -593,8 +600,8 @@
           <button id="zoomIn" class="icon" title="Vergrössern">+</button>
           <button id="zoomFit" class="icon" title="Auf Breite einpassen">⤢</button>
         </div>
-        <button id="fingerBtn" class="tool" title="Finger: Auto = Finger zeichnet nur, solange noch kein Stift erkannt wurde">✋ Auto</button>
-        <button id="wakeBtn" class="tool" title="Display eingeschaltet lassen">☼ Display an</button>
+        <button id="fingerBtn" class="tool" title="Finger: Auto = Finger zeichnet nur, solange noch kein Stift erkannt wurde">✋ Finger: Auto</button>
+        <button id="wakeBtn" class="tool" title="Display eingeschaltet lassen">☼ Bildschirm an</button>
         <div class="sep"></div>
         <div id="pageNav">
           <button id="prevPage" class="icon">‹</button>
@@ -603,12 +610,9 @@
         </div>
         <div style="flex:1"></div>
         <button id="exportBtn" title="Als PDF mit Annotationen exportieren">⤓ PDF</button>
-        <button id="saveBtn" title="Speichern &amp; synchronisieren">💾 Speichern</button>
       </div>
-      <div id="songBar" style="display:none;"></div>
       <div id="stampBar"></div>
       <div id="txtSymBar"></div>
-      <div id="sheetTabs" style="display:none;"></div>
 
       <div id="canvasArea">
         <div id="pageFloat" style="display:none;">
@@ -663,7 +667,7 @@
     <button id="perfSync" class="perf-txt" title="Synchron zur Wiedergabe im Mini-Player mitlaufen (braucht Zeitstempel)">♫ Sync</button>
     <button id="perfOfsDown" class="perf-sync" title="Text läuft zu früh: 0.5 s später">−0.5 s</button>
     <button id="perfOfsUp" class="perf-sync" title="Text läuft zu spät: 0.5 s früher">+0.5 s</button>
-    <button id="perfFull" title="Vollbild">⛶ Vollbild</button>
+    <button id="perfFull" title="Vollbild">⤢ Vollbild</button>
   </div>
   <div id="perfNotes"></div>
   <div id="perfPage"></div>
@@ -687,7 +691,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.15.1';
+const APP_VERSION = '2.16.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1903,46 +1907,35 @@ function openSong(s) {
   return openFile(f);
 }
 
-function songMenu(s) {
+// Ab v2.16.0: EINE Definition der Song-Aktionen. Die Song-Leiste zeigt nur die Hauptaktionen (primary) und
+// «⋯ Mehr»; das ⋯-Menü in der Songliste enthält alle – dieselben Einträge, dieselben Beschriftungen.
+function songActionItems(s) {
   const sheets = songSheets(s.id);
-  menuSheet(s.n, [
-    { label: 'Öffnen', fn: () => openSong(s) },
-    { label: s.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
+  const offline = sheets.length && sheets.every(f => cachedIds.has(f.id));
+  const nOpen = openTasks(s.id).length;
+  return [
+    { primary: true, short: (s.fv ? '★' : '☆') + ' Favorit', on: !!s.fv, title: s.fv ? 'Favorit entfernen' : 'Als Favorit markieren', label: s.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
+    { primary: true, short: '🎙 Aufnahmen' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : ''), title: 'Aufnahmen, Backing-Tracks und Referenzmelodie', label: '🎙 Aufnahmen & Backing-Tracks' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : '') + ' …', fn: () => manageAudio(s) },
+    { primary: true, short: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : ''), title: 'Spotify-/YouTube-Verknüpfungen', label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
+    { primary: true, short: '📓 Journal' + (nOpen ? ` (${nOpen})` : ''), on: nOpen > 0, title: 'Übungsjournal: Lehrer-Aufgaben und Übungsnotizen', label: '📓 Übungsjournal' + (nOpen ? ` (${nOpen} offen)` : '') + ' …', fn: () => openJournal(s.id) },
+    { primary: true, short: '📤 Teilen' + (s.sh ? ' ✓' : ''), on: !!s.sh, title: s.sh ? 'Geteilt – Freigabe aktualisieren/beenden' : 'Mit Lehrer teilen (Drive-Freigabe)', label: '📤 Mit Lehrer teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('song', s.id) },
     { label: '✎ Song umbenennen', fn: () => renameSong(s.id) },
     { label: '📁 In Ordner verschieben …', fn: () => moveSong(s) },
-    { label: '🏷 Tags bearbeiten …', fn: () => editSongTags(s.id) },
+    { label: '🏷 Tags bearbeiten' + ((s.tg || []).length ? ` (${s.tg.length})` : '') + ' …', fn: () => editSongTags(s.id) },
     { label: '♫ Zur Setliste hinzufügen …', fn: () => addToSetlist(s.id) },
     { label: '📄 Blätter verwalten' + (sheets.length > 1 ? ` (${sheets.length})` : '') + ' …', fn: () => manageSheets(s) },
-    { label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
-    { label: '🎙 Aufnahmen & Backing-Tracks' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : '') + ' …', fn: () => manageAudio(s) },
-    { label: '📓 Übungsjournal' + (openTasks(s.id).length ? ` (${openTasks(s.id).length} offen)` : '') + ' …', fn: () => openJournal(s.id) },
-    { label: '📤 Mit Lehrer teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('song', s.id) },
-    { label: sheets.length && sheets.every(f => cachedIds.has(f.id)) ? '⇧ Offline-Kopien entfernen' : '⇩ Alle Blätter offline speichern', fn: () => toggleOfflineSong(s) },
+    { label: offline ? '⇧ Offline-Kopien entfernen' : '⇩ Alle Blätter offline speichern', fn: () => toggleOfflineSong(s) },
     { label: '🗑 Song in den Papierkorb', fn: () => deleteSong(s), danger: true }
-  ]);
+  ];
+}
+function songMenu(s) {
+  menuSheet(s.n, [{ label: 'Öffnen', fn: () => openSong(s) }, ...songActionItems(s)]);
+}
+function songMoreMenu(s) {
+  menuSheet(s.n, songActionItems(s).filter(it => !it.primary));
 }
 
 // --- 2. Menüleiste im Viewer: Song-Aktionen direkt sichtbar (statt nur über ⋯) ----
-function songBarActions(s) {
-  const sheets = songSheets(s.id);
-  const offline = sheets.length && sheets.every(f => cachedIds.has(f.id));
-  return [
-    { label: (s.fv ? '★' : '☆') + ' Favorit', on: !!s.fv, title: s.fv ? 'Favorit entfernen' : 'Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
-    { label: '✎ Umbenennen', fn: () => renameSong(s.id) },
-    { label: '📁 Verschieben', fn: () => moveSong(s) },
-    { label: '🏷 Tags' + ((s.tg || []).length ? ` (${s.tg.length})` : ''), fn: () => editSongTags(s.id) },
-    { label: '♫ Setliste', fn: () => addToSetlist(s.id) },
-    { sep: true },
-    { label: '📄 Blätter' + (sheets.length > 1 ? ` (${sheets.length})` : ''), fn: () => manageSheets(s) },
-    { label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : ''), fn: () => manageLinks(s) },
-    { label: '🎙 Aufnahmen' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : ''), fn: () => manageAudio(s) },
-    { label: '📓 Journal' + (openTasks(s.id).length ? ` (${openTasks(s.id).length})` : ''), on: openTasks(s.id).length > 0, title: 'Übungsjournal: Lehrer-Aufgaben und Übungsnotizen', fn: () => openJournal(s.id) },
-    { label: '📤 Teilen' + (s.sh ? ' ✓' : ''), on: !!s.sh, title: s.sh ? 'Geteilt – Freigabe aktualisieren/beenden' : 'Mit Lehrer teilen (Drive-Freigabe)', fn: () => shareDialog('song', s.id) },
-    { sep: true },
-    { label: offline ? '⇧ Offline entfernen' : '⇩ Offline speichern', fn: () => toggleOfflineSong(s) },
-    { label: '🗑 Löschen', danger: true, fn: () => deleteSong(s) }
-  ];
-}
 function renderSongBar() {
   const el = $('songBar');
   if (!el) return;
@@ -1950,10 +1943,10 @@ function renderSongBar() {
   if (!raw || raw.d) { el.style.display = 'none'; el.innerHTML = ''; return; }
   const s = { id: currentSongId, ...raw };
   el.style.display = 'flex'; el.innerHTML = '';
-  songBarActions(s).forEach(it => {
-    if (it.sep) { el.append(h('div', { class: 'sep' })); return; }
-    el.append(setIconLabel(h('button', { class: (it.on ? 'on ' : '') + (it.danger ? 'danger' : ''), title: it.title || it.label, onclick: it.fn }), it.label));
+  songActionItems(s).filter(it => it.primary).forEach(it => {
+    el.append(setIconLabel(h('button', { class: it.on ? 'on' : '', title: it.title || it.short, onclick: it.fn }), it.short));
   });
+  el.append(setIconLabel(h('button', { title: 'Weitere Song-Aktionen: umbenennen, verschieben, Tags, Setliste, Blätter, Offline, löschen', onclick: () => songMoreMenu(s) }), '⋯ Mehr'));
 }
 
 function renameSong(id) {
@@ -2197,9 +2190,15 @@ function renderSheetTabs() {
   const el = $('sheetTabs');
   const sheets = currentSongId ? songSheets(currentSongId) : [];
   if (!el) return;
-  if (sheets.length < 2) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  if (!currentSongId || !sheets.length || !lib.songs[currentSongId] || lib.songs[currentSongId].d) { el.style.display = 'none'; el.innerHTML = ''; return; }
   el.style.display = 'flex'; el.innerHTML = '';
-  sheets.forEach(f => el.append(h('button', { class: 'tab' + (currentFile && currentFile.id === f.id ? ' on' : ''), text: f.name, onclick: () => { if (!currentFile || currentFile.id !== f.id) openFile(f); } })));
+  const sid = currentSongId;
+  sheets.forEach(f => {
+    const on = !!(currentFile && currentFile.id === f.id);
+    el.append(h('button', { class: 'tab' + (on ? ' on' : ''), text: f.name.replace(/\.(pdf|html|png|jpe?g)$/i, ''), title: f.name, onclick: () => { if (!on) openFile(f); } }));
+    if (on) el.append(h('button', { class: 'tab-edit', text: '✎', title: 'Blatt «' + f.name + '» umbenennen', onclick: () => renameFile(f) }));
+  });
+  el.append(h('button', { class: 'tab-add', text: '＋ Blatt', title: 'Weiteres Blatt (Datei oder Scan) zu diesem Song hinzufügen', onclick: () => manageSheets({ id: sid, ...lib.songs[sid] }) }));
 }
 
 // --- Verdrahtung -------------------------------------------------------------
@@ -2344,7 +2343,8 @@ async function openFile(f, opts = {}) {
   inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
   updateZoomLabel(); updatePageNav(); bindNotes(); applyDisplay();
   // Handy/Tablet ohne Stift: Blatt öffnet zum Lesen (Finger scrollt/blättert); zum Zeichnen Stift/Marker wählen
-  if (fingerMode === 'auto' && !penSeen && matchMedia('(pointer:coarse)').matches && tool !== 'view') setTool('view');
+  // ab v2.16.0 auf allen Geräten: Blätter öffnen immer im Lesemodus (Zeichnen erst nach bewusstem Umschalten)
+  if (tool !== 'view') setTool('view');
   setStatus('Lädt …', 'saving');
   touchOpened(f.id);
 
@@ -2746,7 +2746,7 @@ async function trashFile(f, silent) {
 // ---------------------------------------------------------------
 // Werkzeuge: Stift, Textmarker, Radierer, Text, Symbole, Auswahl – Ebenen – Rückgängig
 // ---------------------------------------------------------------
-let tool = lsGet('gapp_tool') || 'pen';
+let tool = lsGet('gapp_tool') || 'view';
 let color = lsGet('gapp_color') || '#1a1a1a';
 let widthVal = Number(lsGet('gapp_width')) || 3;
 let stampKind = lsGet('gapp_stamp') || 'breath';
@@ -3295,7 +3295,7 @@ objSizeSel.addEventListener('change', () => {
 
 function updateFingerBtn() {
   const b = $('fingerBtn');
-  setIconLabel(b, fingerMode === 'auto' ? (penSeen ? '✋ Auto (Stift)' : '✋ Auto') : fingerMode === 'draw' ? '✋ Zeichnen' : '✋ Scrollen');
+  setIconLabel(b, fingerMode === 'auto' ? (penSeen ? '✋ Finger: Auto (Stift)' : '✋ Finger: Auto') : fingerMode === 'draw' ? '✋ Finger zeichnet' : '✋ Finger scrollt');
   b.classList.toggle('on', fingerMode !== 'auto');
 }
 $('fingerBtn').addEventListener('click', () => {
@@ -3549,14 +3549,14 @@ function pendingCount() { return dirtyIds.size + textDirtyIds.size + (libDirty ?
 function updateSyncState() {
   const el = $('syncState'), n = pendingCount();
   let t, c = '';
-  if (syncing > 0) t = '⟳ Synchronisiere …';
+  if (syncing > 0) t = '⟳ Speichert …';
   else if (!isOnline()) { t = '⚠ Offline' + (n ? ` · ${n} offen` : ''); c = 'warn'; }
   else if (!tokenValid()) { t = '🔒 Nicht angemeldet' + (n ? ` · ${n} offen` : ''); c = 'warn'; }
   else if (textConflicts.size) { t = '⚠ Konflikt – antippen'; c = 'warn'; }
-  else if (n) { t = `● ${n} ausstehend`; c = 'warn'; }
-  else { t = '✓ Synchronisiert'; c = 'ok'; }
+  else if (n) { t = `● ${n} noch nicht in Drive`; c = 'warn'; }
+  else { t = '✓ Gespeichert'; c = 'ok'; }
   el.textContent = t; el.className = c; updateAuthBanner();
-  el.title = 'Alles ist lokal gespeichert. ' + (c === 'ok' ? 'Drive ist auf dem neuesten Stand.' : 'Antippen zum Synchronisieren.');
+  el.title = 'Änderungen werden automatisch gespeichert. ' + (c === 'ok' ? 'Drive ist auf dem neuesten Stand.' : 'Antippen = jetzt mit Drive abgleichen.');
 }
 $('syncState').addEventListener('click', async () => {
   if (!isOnline()) { toast('Offline – alles wird lokal gespeichert und später abgeglichen.'); return; }
@@ -3566,15 +3566,8 @@ $('syncState').addEventListener('click', async () => {
   toast(pendingCount() ? 'Noch nicht alles synchronisiert' : 'Synchronisiert');
 });
 
-$('saveBtn').addEventListener('click', async () => {
-  if (!ready) return;
-  await persistAnnot(); await persistTextLocal();
-  if (!isOnline()) { toast('Lokal gespeichert – wird synchronisiert, sobald du wieder online bist.'); return; }
-  if (!tokenValid()) { toast('Lokal gespeichert – zum Synchronisieren bitte anmelden.'); signIn(); return; }
-  setStatus('Speichert …', 'saving');
-  await flushSave(); await flushTextSave(); await syncAll(true);
-  if (statusEl.className !== 'error') setStatus('Gespeichert', 'ok');
-});
+// Ab v2.16.0 kein «Speichern»-Knopf mehr: Änderungen werden nach 0,3 s lokal gesichert und nach 2 s mit Drive
+// abgeglichen (beim Schliessen sofort lokal); das Status-Symbol oben (antippen = jetzt abgleichen) zeigt den Stand.
 
 // Nach Anmeldung: Ordner suchen, Liste laden, alles abgleichen
 async function afterSignIn() {

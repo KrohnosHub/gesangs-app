@@ -21,6 +21,18 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.16.0 – Stufe 1 der Überarbeitung: Aufräumen (30.09.2026)
+
+Erste von drei Stufen der Bedienungs-Überarbeitung (Analyse: Projektdokument «UI-Analyse-und-Vorschlaege»).
+
+- **Reihenfolge logisch:** oben Song-Leiste, darunter die Blatt-Reiter, darunter die Werkzeuge des Blatts (vorher umgekehrt).
+- **Song-Leiste aufgeräumt:** nur noch die Hauptaktionen (★ Favorit, 🎙 Aufnahmen, 🔗 Verknüpfungen, 📓 Journal, 📤 Teilen) plus «⋯ Mehr» (umbenennen, verschieben, Tags, Setliste, Blätter verwalten, Offline, löschen). Das ⋯-Menü in der Songliste enthält dieselben Einträge mit denselben Beschriftungen (eine gemeinsame Definition, `songActionItems()`).
+- **Blatt-Reiter immer sichtbar** (auch bei nur einem Blatt), der aktive Reiter hat ein ✎ zum Umbenennen des Blatts, am Ende «＋ Blatt». Das ✎ in der Kopfzeile benennt den **Song** um (Tooltip entsprechend).
+- **Kein «Speichern»-Knopf mehr.** Änderungen werden nach 0,3 s lokal gesichert, nach 2 s mit Drive abgeglichen (beim Schliessen/Wechsel sofort lokal). Das Status-Symbol oben zeigt den Stand («✓ Gespeichert», «● n noch nicht in Drive», «🔒 Nicht angemeldet») und gleicht per Tippen sofort ab.
+- **Lesen als Standardwerkzeug auf allen Geräten:** Jedes Blatt öffnet im Lesemodus; zum Zeichnen Stift/Marker/… bewusst wählen.
+- **Auftrittsmodus beschriftet:** «▶ Auftritt» statt unbeschriftetem ⛶ (im Auftrittsmodus heisst der Vollbild-Knopf «⤢ Vollbild»). Auf dem Handy ist der Anmelde-Knopf in der Kopfzeile ausgeblendet (Hinweisbalken und Status-Symbol übernehmen).
+- Klarere Beschriftungen: «Finger: Auto», «Bildschirm an», «Helligkeit».
+
 ### v2.15.1 – Anmeldung: sichtbarer Hinweis + Erneuerung bei jedem Tippen (30.09.2026)
 
 - **Ursache der «plötzlichen» Abmeldungen:** Die App nutzt Googles rein browserbasierte Anmeldung. Das Zugriffstoken gilt bei Google **nur etwa 1 Stunde** und lässt sich ohne Server nicht dauerhaft verlängern (kein Refresh-Token). Danach ist die App bis zur nächsten Anmeldung «abgemeldet» – unabhängig von Deploys. Ein Popup ohne Nutzeraktion blockiert der Browser, deshalb klappte die stille Erneuerung im Hintergrund nicht.
