@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-IPrcyDjp3sGTJTSXIm418ZZPBQQ7sBycGCVT0gQrhdg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ftli5XupSfMDgNOzuwyQ5vb0zp+N26oCWU3+UvpZjKc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-IPrcyDjp3sGTJTSXIm418ZZPBQQ7sBycGCVT0gQrhdg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Ftli5XupSfMDgNOzuwyQ5vb0zp+N26oCWU3+UvpZjKc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -639,7 +639,7 @@
       </div>
     </div>
 
-    <div id="empty" style="display:none;">Wähle links ein Blatt aus oder lade ein neues hoch.</div>
+    <div id="empty" style="display:none;">Wähle links einen Song aus oder lege über «♪ Neuer Song» einen neuen an.</div>
   </div>
 </div>
 
@@ -681,7 +681,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.12.0';
+const APP_VERSION = '2.14.2';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1334,12 +1334,25 @@ const linkKey = (l) => l.type + ':' + l.mediaId;
 function addLink(songId, link) {
   const s0 = lib.songs[songId];
   if (link.auto && s0 && (s0.lxk || []).includes(linkKey(link))) return false;     // früher entfernt → nie wieder automatisch
+  // Automatische Vorschläge (YouTube/Spotify) sind auf höchstens 3 je Bereich (Original/Karaoke)
+  // begrenzt, damit die Liste übersichtlich bleibt; von Hand eingefügte Links (addManual) sind
+  // bewusst unbegrenzt (ab v2.13.0 -- vorher wurden überzählige automatische Vorschläge beim
+  // nächsten Öffnen des Dialogs still entfernt, ohne dass dies erkennbar war). Bereich hier
+  // absichtlich ohne linkGroup() (11_links.js) nachgebildet, um keine Vorwärtsreferenz einzuführen.
+  if (link.auto) {
+    const grp = link.type === 'xm' ? 'xm' : (link.kind === 'karaoke' ? 'karaoke' : 'orig');
+    if (songLinks(songId).filter(l => l.auto && (l.type === 'xm' ? 'xm' : (l.kind === 'karaoke' ? 'karaoke' : 'orig')) === grp).length >= 3) return false;
+  }
+  let added = false;
   sTouch(songId, s => {
     s.links = s.links || [];
     if (!link.auto && s.lxk) s.lxk = s.lxk.filter(k => k !== linkKey(link));      // bewusst von Hand wieder hinzugefügt
-    if (!s.links.some(l => l.url === link.url)) s.links.push(Object.assign({ id: uid('lk'), u: Date.now() }, link));
+    if (!s.links.some(l => l.url === link.url)) { s.links.push(Object.assign({ id: uid('lk'), u: Date.now() }, link)); added = true; }
   });
-  return true;
+  return added;
+}
+function renameLink(songId, linkId, title) {
+  sTouch(songId, s => { const l = (s.links || []).find(x => x.id === linkId); if (l) { l.u0 = l.u0 || l.u; l.title = title; l.u = Date.now(); } });
 }
 function removeLink(songId, linkId) {
   sTouch(songId, s => {
@@ -1975,9 +1988,19 @@ function manageSheets(s) {
 }
 async function removeSheetFromSong(s, f, after) {
   if (!confirm(`«${f.name}» in den Papierkorb verschieben?`)) return;
+  const wasCurrent = currentFile && currentFile.id === f.id;   // vor trashFile() merken, das currentFile sonst schon zurücksetzt
   if (!(await trashFile(f, true))) return;            // ab v2.8.5: erst nach erfolgreichem Löschen in Drive vom Song lösen
   detachSheet(s.id, f.id);
-  if (!songSheets(s.id).length) sTouch(s.id, x => { x.d = 1; });
+  const remaining = songSheets(s.id);
+  if (!remaining.length) { sTouch(s.id, x => { x.d = 1; }); }
+  else if (wasCurrent) {
+    // Ab v2.14.1: Wurde gerade das im Viewer geöffnete Blatt entfernt, landete man bisher im
+    // komplett leeren Startbild ohne Songauswahl (trashFile() räumt den Viewer pauschal, unabhängig
+    // vom Aufrufkontext). Gibt es noch weitere Blätter im selben Song, stattdessen gleich das erste
+    // verbleibende Blatt öffnen, statt den Song-Kontext zu verlieren.
+    currentSongId = s.id;
+    openFile(remaining[0]);
+  }
   if (after) after();
 }
 
@@ -4508,20 +4531,25 @@ function cleanAllLinks() {
 // --- Doppelte/übermässige Verknüpfungen aufräumen (z. B. nach einer Race Condition, bei der
 // autoLinkIfEmpty() nach einem Neuladen erneut lief, bevor die vorherigen Verknüpfungen aus
 // Drive nachgeladen waren) -- läuft beim Öffnen des Dialogs. Entfernt exakte Duplikate (gleiche
-// Quelle + gleiche Video-/Track-ID) und begrenzt automatische Vorschläge auf höchstens 1 pro
-// Quelle (YouTube/Spotify) je Bereich (Original/Karaoke), also max. 2 Vorschläge pro Bereich. ---
+// Quelle + gleiche Video-/Track-ID), begrenzt automatische Vorschläge auf höchstens 1 pro Quelle
+// (YouTube/Spotify) je Bereich (Original/Karaoke) und zusätzlich, als äusserer Sicherheitsnetz,
+// auf höchstens 3 automatische Vorschläge je Bereich insgesamt -- dieselbe Grenze wie in
+// addLink() (02_core.js). Von Hand eingefügte Links zählen nicht mit und werden nie entfernt. ---
 function dedupeLinksInPlace(s) {
   const links = songLinks(s.id);
   if (links.length < 2) return;
-  const seenMedia = new Set(), seenAutoSlot = new Set(), toRemove = [];
-  links.slice().sort((a, b) => (a.u || 0) - (b.u || 0)).forEach(l => {
+  const seenMedia = new Set(), seenAutoSlot = new Set(), autoCount = {}, toRemove = [];
+  links.slice().sort((a, b) => (a.u0 || a.u || 0) - (b.u0 || b.u || 0)).forEach(l => {
     const mkey = l.type + ':' + l.mediaId;
     if (seenMedia.has(mkey)) { toRemove.push(l.id); return; }
     seenMedia.add(mkey);
     if (l.auto) {
-      const slot = l.type + ':' + linkGroup(l);
+      const grp = linkGroup(l);
+      const slot = l.type + ':' + grp;
       if (seenAutoSlot.has(slot)) { toRemove.push(l.id); return; }
       seenAutoSlot.add(slot);
+      autoCount[grp] = (autoCount[grp] || 0) + 1;
+      if (autoCount[grp] > 3) { toRemove.push(l.id); return; }
     }
   });
   toRemove.forEach(id => removeLink(s.id, id));
@@ -4543,6 +4571,7 @@ function manageLinks(s) {
       playableLink(l) ? h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }) : null,
       isLoaded(l) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
       h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); openExternal(l.url); } }),
+      h('button', { class: 'more', text: '✎', title: 'Titel ändern', onclick: (e) => { e.stopPropagation(); renameLinkTitle(l); } }),
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } }));
   }
   function section(title, list) {
@@ -4583,6 +4612,16 @@ function manageLinks(s) {
     draw();
   }
 
+  // Titel nachträglich ändern -- ab v2.13.0: vorher nur beim erstmaligen manuellen Hinzufügen
+  // (per Prompt) setzbar, automatisch gefundene Vorschläge bekamen nie einen eigenen Titel.
+  function renameLinkTitle(l) {
+    const n = (prompt('Titel:', l.title || '') || '').trim();
+    if (!n || n === l.title) return;
+    renameLink(s.id, l.id, n);
+    if (isLoaded(l)) mpSetTitle(n, linkKindLabel(l));
+    draw();
+  }
+
   async function searchSuggestions() {
     const note = h('div', { class: 'empty-note', text: 'Suche läuft …' });
     body.append(note);
@@ -4594,7 +4633,11 @@ function manageLinks(s) {
     if (errs.length) toast(errs[0].error);
     if (!good.length) { if (!errs.length) toast(hidden ? 'Keine passenden Vorschläge gefunden (' + hidden + ' unpassende ausgeblendet).' : 'Keine Vorschläge gefunden.', 3500); return; }
     const sec = h('div', { class: 'link-suggestions' }, h('div', { class: 'sub', style: 'padding:6px;', text: 'Vorschläge – zum Hinzufügen antippen:' + (hidden ? ' (' + hidden + ' unpassende ausgeblendet)' : '') }));
-    good.forEach(sg => sec.append(h('div', { class: 'pick-row', onclick: () => { addLink(s.id, { type: sg.type, mediaId: sg.mediaId, url: sg.url, title: sg.title, kind: sg.kind, auto: 1 }); draw(); } },
+    good.forEach(sg => sec.append(h('div', { class: 'pick-row', onclick: () => {
+      const ok = addLink(s.id, { type: sg.type, mediaId: sg.mediaId, url: sg.url, title: sg.title, kind: sg.kind, auto: 1 });
+      if (!ok) { toast('Max. 3 automatische Vorschläge je Bereich (' + linkKindLabel(sg) + ') erreicht – zum Hinzufügen weiterer bitte den Link unten manuell einfügen.', 4500); return; }
+      draw();
+    } },
       h('span', { class: 'type-icon', text: linkIcon(sg) }),
       h('div', { class: 'mid' }, h('div', { class: 'name', text: sg.title }), h('div', { class: 'sub', text: linkSourceLabel(sg) + ' · ' + linkKindLabel(sg) })),
       h('span', { text: '＋' }))));
@@ -5889,14 +5932,82 @@ function createTextSheetFile(songId, name, html, opts = {}) {
 }
 
 // --- PDF-Export eines Text-Blatts (Formatierung, Abschnitte, Akkorde: siehe 15_textpdf.js) ---
+// Ab v2.14.0 mit Vorschau + einstellbaren Seitenrändern/Skalierung (textPdfExportDialog unten): die
+// Textgrösse im Text-Blatt entspricht direkt PDF-Punkten, ein Verkleinern dort wirkt sich daher kaum
+// auf die Dateigrösse aus (Vektortext ist unabhängig von der Punktgrösse etwa gleich gross) -- Seitenränder
+// und eine Gesamt-Skalierung beim Export wirken sich dagegen über den Seitenumbruch tatsächlich aus.
 async function exportTextSheetPdf() {
   if (!ready || !currentFile) { toast('Erst ein Blatt öffnen.'); return; }
   const f = currentFile, html = serializeTextSheet();
   const songName = sget(currentSongId) ? sget(currentSongId).n : f.name.replace(/\.[^.]+$/, '');
-  exportDialog({
-    build: (o) => buildTextSheetPdf(songName, html, { header: !!o.header }), headerOption: true,
+  textPdfExportDialog(songName, html, {
     downloadName: songName.replace(/[\\/]+/g, '-') + ' – Text.pdf', sheetName: f.name.replace(/\.[^.]+$/, '') + ' (PDF).pdf', srcFile: f
   });
+}
+// Rendert Seite 1 fertiger PDF-Bytes in ein <canvas> (für die Vorschau im Export-Dialog).
+async function renderPdfPreview(bytes, canvas, targetW = 300) {
+  const pj = await getPdfjs();
+  const task = pj.getDocument(Object.assign({ data: bytes }, PDF_OPTS));
+  try {
+    const pdf = await task.promise, page = await pdf.getPage(1);
+    const vp1 = page.getViewport({ scale: 1 }), scale = targetW / vp1.width;
+    const vp = page.getViewport({ scale });
+    canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  } finally { try { task.destroy(); } catch (e) {} }
+}
+// Export-Dialog für Text-Blätter: Live-Vorschau (Seite 1) + Seitenränder/Skalierung per Regler,
+// Änderungen bauen das PDF neu und aktualisieren die Vorschau (entprellt).
+function textPdfExportDialog(songName, html, { downloadName, sheetName, srcFile }) {
+  const sid = currentSongId && sget(currentSongId) ? currentSongId : null;
+  const opts = { header: false, margin: 54, scale: 1 };
+  const canvas = h('canvas', { style: 'max-width:100%; border:1px solid var(--muted); border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,.3);' });
+  const previewWrap = h('div', { style: 'min-height:180px; display:flex; align-items:center; justify-content:center; padding:6px 0;' }, canvas);
+  const status = h('div', { class: 'sub', style: 'text-align:center; margin-top:2px;' });
+  const cbHead = h('input', { type: 'checkbox' });
+  const mLabel = h('span', { text: opts.margin + ' pt', style: 'width:46px; text-align:right;' });
+  const mRange = h('input', { type: 'range', min: 24, max: 90, step: 1, value: String(opts.margin), style: 'flex:1;' });
+  const sLabel = h('span', { text: '100 %', style: 'width:46px; text-align:right;' });
+  const sRange = h('input', { type: 'range', min: 70, max: 130, step: 5, value: '100', style: 'flex:1;' });
+
+  let seq = 0, debTimer = null;
+  async function update() {
+    const mySeq = ++seq;
+    status.textContent = 'Vorschau wird erstellt …';
+    try {
+      const bytes = await buildTextSheetPdf(songName, html, opts);
+      if (mySeq !== seq) return;
+      status.textContent = Math.round(bytes.length / 1024) + ' KB' + (bytes.length > 300000 ? ' – bei Bedarf Seitenränder oder Skalierung verkleinern' : '');
+      await renderPdfPreview(bytes, canvas);
+    } catch (e) { if (mySeq === seq) status.textContent = 'Vorschau fehlgeschlagen: ' + e.message; }
+  }
+  const debouncedUpdate = () => { clearTimeout(debTimer); debTimer = setTimeout(update, 250); };
+
+  cbHead.addEventListener('change', () => { opts.header = cbHead.checked; update(); });
+  mRange.addEventListener('input', () => { opts.margin = parseInt(mRange.value, 10); mLabel.textContent = opts.margin + ' pt'; debouncedUpdate(); });
+  sRange.addEventListener('input', () => { opts.scale = parseInt(sRange.value, 10) / 100; sLabel.textContent = sRange.value + ' %'; debouncedUpdate(); });
+
+  const row = (label, range, val) => h('div', { style: 'display:flex; gap:8px; align-items:center; margin-top:8px; font-size:13px;' }, h('span', { text: label, style: 'width:100px; flex-shrink:0;' }), range, val);
+  const body = h('div', { class: 'text-pdf-export' },
+    previewWrap, status,
+    h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:13px; margin-top:10px;' }, cbHead, h('span', { text: 'Songtitel «' + songName + '» als Überschrift einfügen' })),
+    row('Seitenränder', mRange, mLabel), row('Skalierung', sRange, sLabel),
+    sid ? h('p', { class: 'sub', style: 'font-size:12.5px; color:var(--muted); margin-top:10px;', text: '«Als Blatt hinzufügen» legt das PDF als «' + sheetName + '» direkt hinter dem aktuellen Blatt in «' + sget(sid).n + '» ab (in Drive gespeichert und offline verfügbar).' }) : null);
+
+  const run = async (what) => {
+    try {
+      setStatus('Exportiere …', 'saving');
+      const bytes = await buildTextSheetPdf(songName, html, opts);
+      setStatus('');
+      if (what === 'sheet') await attachExportedPdf(sid, bytes, sheetName, srcFile);
+      else { await deliverFile(new File([bytes], downloadName, { type: 'application/pdf' })); toast('PDF exportiert: ' + downloadName); }
+    } catch (e) { fail('Export fehlgeschlagen', e); }
+  };
+  const buttons = [{ label: 'Abbrechen' }];
+  if (sid) buttons.push({ label: '📄 Als Blatt zum Song hinzufügen', fn: () => { run('sheet'); } });
+  buttons.push({ label: '⤓ Herunterladen', primary: true, fn: () => { run('download'); } });
+  openModal({ title: '⤓ PDF exportieren', wide: true, buttons, body: [body] });
+  update();
 }
 // Export-Dialog (ab v2.6.0; ab v2.7.0 vor dem Erzeugen): herunterladen und/oder direkt als weiteres
 // Blatt im Song ablegen; bei Text-Blättern optional den Songtitel als Überschrift einfügen (Standard: aus).
@@ -5981,7 +6092,10 @@ const symWidthFactor = (k) => SYM_WIDE[k] || (DYN[k] ? 0.5 + 0.45 * k.length : 1
 
 // Schriftgrössen im Text-Blatt entsprechen im PDF Punkten (18 = 18 pt). Songtitel als Überschrift nur
 // auf Wunsch (header:true) – neue Lyrics-Blätter enthalten Titel/Interpret ohnehin als erste Zeilen.
-async function buildTextSheetPdf(songName, html, { header = false } = {}) {
+// margin (Seitenränder in pt) und scale (Gesamtskalierung des Textes) ab v2.14.0 im Export-Dialog
+// einstellbar (siehe textPdfExportDialog() in 14_textedit.js) -- wirkt sich, anders als die
+// Schriftgrösse im Text-Blatt selbst, auf den Seitenumbruch und damit auf die PDF-Grösse aus.
+async function buildTextSheetPdf(songName, html, { header = false, margin = 54, scale = 1 } = {}) {
   const { PDFDocument, StandardFonts, rgb } = await loadPdfLib();
   const parsed = parseLyricsHtml(html);
   const root = document.createElement('div'); root.innerHTML = parsed.html;
@@ -6009,8 +6123,8 @@ async function buildTextSheetPdf(songName, html, { header = false } = {}) {
     drawStamp(c.getContext('2d'), { k, x: c.width / 2, y: 32, z: 40, c: '#8e2c1f' }, 1);
     symImg[k] = await doc.embedPng(new Uint8Array(await (await canvasBlob(c, 'image/png')).arrayBuffer()));
   }
-  const W = 595.28, H = 841.89, M = 54, MAXW = W - 2 * M;
-  const size = clamp(parsed.fontSize, 6, 60);
+  const W = 595.28, H = 841.89, M = clamp(margin, 24, 90), MAXW = W - 2 * M;
+  const size = clamp(parsed.fontSize * clamp(scale, 0.5, 1.5), 6, 60);
   const accent = rgb(0x6b / 255, 0x4f / 255, 0x3b / 255), muted = rgb(0x8a / 255, 0x81 / 255, 0x78 / 255);
   const ink = rgb(0x2a / 255, 0x26 / 255, 0x22 / 255), chordCol = rgb(0x24 / 255, 0x71 / 255, 0xa3 / 255), refBar = rgb(0xc9 / 255, 0xb2 / 255, 0x9b / 255);
   const title = sanitizeForPdf(songName);
