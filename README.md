@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.18.0 – Stufe 3 der Überarbeitung: Handy und Politur (30.09.2026)
+- Handy im Hochformat: Werkzeugleiste **unten** (Daumen-Reichweite), umbrechend statt seitlich scrollend; Blatt-Navigation nur noch über die schwebende Seitenanzeige.
+- Einheitliche Linien-Icons (SVG) statt Emoji in Kopfzeile, Song-Leiste, Werkzeugleiste und Seitenleisten-Knöpfen (gleiches Aussehen auf Android/Windows/iOS). Menüeinträge in Popup-Menüs zeigen noch Emoji.
+- **Kurzanleitung** (6 Schritte): erscheint einmal beim allerersten Start (nicht bei bereits angemeldeten Geräten), danach über «⋯ Mehr → ❓ Kurzanleitung».
+- Nicht umgesetzt: automatisches Ausblenden von Kopfzeile/Song-Leiste im Lesemodus (Canvas-Grössenanpassung nicht geprüft).
+
 ### v2.17.0 – Stufe 2 der Überarbeitung: Struktur (30.09.2026)
 - Seitenleiste: drei Reiter **Songs | Setlisten | Üben**; «Üben» enthält Aufwärmen, Metronom, Aufgaben, Stimmumfang mit Kurzbeschreibung.
 - Oben «♪ Neuer Song» + «＋ ▾» (Blatt scannen, Neuer Ordner); unten «⚙ Einstellungen» + «⋯ Mehr» (Backup, Alle offline speichern).

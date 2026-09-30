@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wqbahPNbRsCFKV6mD9ivTbm/pvDtfrUIHtJGHPjdF1U=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-bODkUh807MKK3nZsgOpyhb/NgWVDpP9WDTdEDyXRKcw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wqbahPNbRsCFKV6mD9ivTbm/pvDtfrUIHtJGHPjdF1U=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-bODkUh807MKK3nZsgOpyhb/NgWVDpP9WDTdEDyXRKcw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -247,6 +247,17 @@
     #syncState{font-size:11px; padding:2px 7px;}
     #notesPanel{max-height:22vh;}
     #canvasWrap{padding-bottom:48px;}
+  }
+  svg.ic{width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.2em; flex:none;}
+  #sidebar .lbl-t, #sbPracticePane .lbl-t{display:inline !important;}
+  @media (max-width: 600px) and (orientation: portrait){
+    #mainViewer > #songBar{order:0;} #mainViewer > #sheetTabs{order:1;} #mainViewer > #canvasArea{order:2;}
+    #mainViewer > #notesPanel{order:3;} #mainViewer > #stampBar, #mainViewer > #txtSymBar{order:4;}
+    #mainViewer > #toolbar{order:5; border-top:1px solid var(--border); border-bottom:0; padding-bottom:max(6px, env(safe-area-inset-bottom)); flex-wrap:wrap; overflow:visible;}
+    #toolbar #pageNav{display:none;}
+    #toolbar .spacer-flex{display:none;}
+    #canvasWrap{padding-bottom:16px;}
+    #pageFloat{bottom:10px;}
   }
   #sidebarToggle{display:none;}
   @media (max-width: 800px){
@@ -717,7 +728,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.17.0';
+const APP_VERSION = '2.18.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -796,11 +807,51 @@ function openModal({ title, body, buttons = [], wide = false }) {
 }
 // Knopf mit Symbol + Beschriftung: auf dem Handy (schmaler Bildschirm) nur das Symbol (ab v2.7.0,
 // Beschriftung bleibt als Tooltip/Titel erhalten). Erkennt «<Symbol> <Text>»; reiner Text bleibt unverändert.
+// Einheitliche Linien-Icons statt Emoji (Emoji sehen auf Android/Windows/iOS verschieden aus)
+const SVG_ICONS = {
+  '📖': '<path d="M3 5.5C5 4.5 8 4.5 12 6c4-1.5 7-1.5 9-.5v13c-2-1-5-1-9 .5-4-1.5-7-1.5-9-.5z"/><path d="M12 6v13"/>',
+  '✏': '<path d="M4 20l1-4L16.5 4.5a2 2 0 013 3L8 19z"/><path d="M14.5 6.5l3 3"/>',
+  '✎': '<path d="M4 20l1-4L16.5 4.5a2 2 0 013 3L8 19z"/><path d="M14.5 6.5l3 3"/>',
+  '▬': '<path d="M5 15l8-9 5 4-7 9H5z"/><path d="M4 21h16"/>',
+  '⌫': '<path d="M9 5h11v14H9L3 12z"/><path d="M12 9l5 6M17 9l-5 6"/>',
+  '♪': '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  '➤': '<path d="M5 3l14 8-6 2 4 7-3 1-4-7-5 4z"/>',
+  '⋯': '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  '⤓': '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+  '☆': '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  '★': '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  '🎙': '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',
+  '🔗': '<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/>',
+  '📓': '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h7M9 12h7M3 7h3M3 12h3M3 17h3"/>',
+  '📤': '<path d="M12 15V4M7 8l5-5 5 5M5 14v6h14v-6"/>',
+  '▶': '<path d="M7 4l13 8-13 8z"/>',
+  '❚❚': '<path d="M8 4v16M16 4v16"/>',
+  '✋': '<path d="M8 12V5a1.5 1.5 0 013 0v6m0-7a1.5 1.5 0 013 0v7m0-5a1.5 1.5 0 013 0v8a7 7 0 01-7 7h-1a6 6 0 01-5-3l-2-4a1.5 1.5 0 012.4-1.6L8 15"/>',
+  '☼': '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+  '☀': '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+  '⚙': '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>',
+  '🎸': '<path d="M14 10l6-6M17 3l4 4M12 12a4 4 0 11-5.7 5.7A4 4 0 0112 12z"/>',
+  '＋': '<path d="M12 5v14M5 12h14"/>',
+  '▤': '<path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/>',
+  '🗑': '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  '📷': '<path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  '📁': '<path d="M3 6h7l2 2h9v11H3z"/>',
+  '💾': '<path d="M4 4h13l3 3v13H4z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/>',
+  '↶': '<path d="M9 7L4 12l5 5M4 12h10a6 6 0 010 8h-3"/>'
+};
+function svgIcon(g) {
+  const d = SVG_ICONS[g];
+  if (!d) return null;
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'ic'); s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = d;
+  return s;
+}
 function setIconLabel(btn, text) {
   const m = String(text || '').match(/^([^\p{L}\p{N}\s][^\s]*)\s+(.+)$/u);
   if (!m) { btn.textContent = text; return btn; }
   btn.textContent = '';
-  btn.append(document.createTextNode(m[1]), h('span', { class: 'lbl-t', text: ' ' + m[2] }));
+  btn.append(svgIcon(m[1]) || document.createTextNode(m[1]), h('span', { class: 'lbl-t', text: ' ' + m[2] }));
   if (!btn.getAttribute('title')) btn.setAttribute('title', m[2]);
   return btn;
 }
@@ -5425,8 +5476,43 @@ $('newMenuBtn').addEventListener('click', () => menuSheet('Neu', [
 ]));
 $('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
   { label: '💾 Backup & Wiederherstellen …', fn: () => $('backupBtn').click() },
-  { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() }
+  { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() },
+  { label: '❓ Kurzanleitung', fn: () => showTour() }
 ]));
+
+
+// ---------------------------------------------------------------
+// Kurzanleitung (ab v2.18.0): erscheint einmal beim allerersten Start (nicht, wenn schon angemeldet
+// gewesen), danach jederzeit über «⋯ Mehr → Kurzanleitung». Dient auch als Einstieg für neue Nutzer.
+// ---------------------------------------------------------------
+function showTour() {
+  const steps = [
+    ['Anmelden', 'Tippe oben auf «Anmelden» und wähle dein Google-Konto. Alles wird in DEINEM eigenen Google Drive gespeichert – andere sehen nichts, solange du nichts teilst. Nach ca. 1 Stunde läuft die Anmeldung ab: ein gelber Balken zeigt das an, ein Tipp auf «Anmelden» genügt.'],
+    ['Song anlegen', 'Links (auf dem Handy über ☰) auf «♪ Neuer Song». Dem Song fügst du Blätter hinzu: PDF/Bild hochladen, scannen oder ein Text-Blatt schreiben. Mehrere Blätter pro Song sind möglich (Reiter über dem Blatt).'],
+    ['Lesen und Zeichnen', 'Standard ist «Lesen»: scrollen und blättern, nichts wird versehentlich gezeichnet. Mit «✏ Zeichnen» erscheinen Stift, Marker, Text und Symbole. Notizen liegen auf Ebenen (unter «⋯ Mehr»).'],
+    ['Üben', 'Im Reiter «Üben» findest du Aufwärmen, Metronom, Aufgaben und Stimmumfang. Pro Song: «🎙 Aufnahmen» (eigene Aufnahmen, Backing-Tracks, Melodie), «🔗 Verknüpfungen» (YouTube/Spotify) und «📓 Journal».'],
+    ['Auftritt', '«▶ Auftritt» blendet alle Bedienelemente aus: grosse Ansicht, Umblättern per Tipp an den Rand.'],
+    ['Teilen und Sicherheit', 'Mit «📤 Teilen» gibst du Blätter an deine Gesangslehrerin bzw. Schüler frei. Unter «⋯ Mehr» gibt es Backup und «Alle Blätter offline speichern» (für Proben ohne Internet).']
+  ];
+  let i = 0;
+  const body = h('div', {});
+  const api = openModal({ title: 'Kurzanleitung', body, buttons: [] });
+  function draw() {
+    body.textContent = '';
+    body.append(h('div', { style: 'font-size:12px;color:var(--muted);margin-bottom:6px;', text: 'Schritt ' + (i + 1) + ' von ' + steps.length }),
+      h('h4', { style: 'margin:0 0 6px;', text: steps[i][0] }),
+      h('p', { style: 'margin:0 0 12px;font-size:14px;line-height:1.5;', text: steps[i][1] }));
+    const row = h('div', { style: 'display:flex;gap:8px;justify-content:space-between;' });
+    row.append(h('button', { text: 'Zurück', disabled: i === 0, onclick: () => { i--; draw(); } }),
+      h('button', { class: 'primary', text: i === steps.length - 1 ? 'Fertig' : 'Weiter', onclick: () => { if (i === steps.length - 1) api.close(); else { i++; draw(); } } }));
+    body.append(row);
+  }
+  draw();
+  try { localStorage.setItem('gapp_tour', '1'); } catch (e) {}
+}
+setTimeout(() => {
+  try { if (!localStorage.getItem('gapp_tour') && !localStorage.getItem('gapp_hadlogin') && !localStorage.getItem('gapp_folderId')) showTour(); } catch (e) {}
+}, 1800);
 
 
 // ---------------------------------------------------------------
@@ -6965,6 +7051,8 @@ $('backupBtn').addEventListener('click', backupDialog);
 // ---------------------------------------------------------------
 iconizeButtons($('toolbar'));
 iconizeButtons($('perfBar'));
+(function () { const pb = $('perfBtn'); const sp = pb && pb.firstElementChild; if (sp && sp.tagName === 'SPAN') sp.replaceWith(svgIcon('▶')); const rb = $('renameBtn'); if (rb && rb.textContent.trim() === '✎') rb.replaceChildren(svgIcon('✎')); })();
+['newSongBtn','settingsBtn','moreMenuBtn'].forEach(id => { const b = $(id); if (b) setIconLabel(b, b.textContent.trim()); });
 (function () { const b = document.querySelector('#toolbar [data-tool="text"]'); if (b) { b.textContent = ''; b.append('T', h('span', { class: 'lbl-t', text: ' Text' })); } })();
 
 
