@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-rH6WRF/4/FPFqvEOiF0jqOQl3kFZAj0aLRPjYpEUYtY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wqbahPNbRsCFKV6mD9ivTbm/pvDtfrUIHtJGHPjdF1U=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-rH6WRF/4/FPFqvEOiF0jqOQl3kFZAj0aLRPjYpEUYtY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-wqbahPNbRsCFKV6mD9ivTbm/pvDtfrUIHtJGHPjdF1U=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -105,7 +105,13 @@
   .sb-pane{flex:1; display:flex; flex-direction:column; min-height:0;}
   #sbActions{display:flex; flex-wrap:wrap; gap:6px; padding:8px;}
   #sbActions button{flex:1; padding:8px 6px; font-size:13px;}
-  #newSongBtn{flex-basis:100%;}
+  #newSongBtn{flex:1 1 auto;}
+  #newMenuBtn{flex:0 0 auto !important; padding:8px 14px !important;}
+  .sb-hint{margin:6px 14px; font-size:12px; color:var(--muted);}
+  #sbPracticePane #sbPractice{display:flex; flex-direction:column; gap:8px; padding:12px;}
+  #sbPracticePane #sbPractice button{display:block; width:100%; text-align:left; padding:12px 14px; font-size:15px; white-space:normal;}
+  #sbPracticePane #sbPractice button::after{content:attr(data-desc); display:block; font-size:12px; color:var(--muted); margin-top:2px;}
+  #sbPracticePane .lbl-t{display:inline !important;}
   #sbSearch{padding:0 8px 6px; display:flex; flex-direction:column; gap:6px;}
   #sbSearch input{width:100%;}
   #sbSearch .row{display:flex; gap:6px;}
@@ -130,7 +136,7 @@
   .folder-item .type-icon{font-size:16px;}
   .empty-note{padding:16px; color:var(--muted); font-size:13px;}
   #sbFooter{padding:8px; border-top:1px solid var(--border); display:flex; gap:6px; align-items:center; font-size:12px; color:var(--muted);}
-  #sbFooter button{flex:1; padding:7px; font-size:12px;}
+  #sbFooter button{flex:1; padding:8px; font-size:13px;}
   #setHead{display:flex; align-items:center; gap:6px; padding:8px; border-bottom:1px solid var(--border);}
   #setHead .t{flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .set-item .idx{width:20px; text-align:center; color:var(--muted); font-size:12px;}
@@ -142,6 +148,9 @@
     border-bottom:1px solid var(--border); flex-wrap:wrap; flex-shrink:0;
   }
   #toolbar .sep{width:1px; height:24px; background:var(--border); margin:0 3px;}
+  .legacy-tool{display:none !important;}
+  body:not(.draw-mode) .draw-only{display:none !important;}
+  body.mode-text #toolMoreBtn{display:none !important;}
   #toolbar button.tool{padding:7px 9px; font-size:13px;}
   .swatch{width:24px; height:24px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0;}
   .swatch.active{border-color:var(--text);}
@@ -195,7 +204,11 @@
   }
   .popover.show{display:block;}
   .popover h4{margin:0 0 8px; font-size:13px;}
+  .seg-tabs{display:flex; gap:6px; margin:0 0 10px;}
+  .seg-tabs button{flex:1; padding:8px 6px; font-size:13px;}
+  .seg-tabs button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
   .popover .rowp{display:flex; align-items:center; gap:8px; margin:6px 0; font-size:13px;}
+  #txtFmtPop select{flex:1; min-width:0;}
   .popover input[type=range]{flex:1;}
   .popover .layer-row{display:flex; align-items:center; gap:8px; padding:4px 0; font-size:13px;}
   .popover .layer-row .ln{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -472,19 +485,13 @@
     <div id="sbTabs">
       <button data-tab="sheets" class="active">Songs</button>
       <button data-tab="sets">Setlisten</button>
+      <button data-tab="practice">Üben</button>
     </div>
 
     <div id="sbSheets" class="sb-pane">
       <div id="sbActions">
         <button id="newSongBtn" class="primary">♪ Neuer Song</button>
-        <button id="scanBtn">📷 Scan</button>
-        <button id="newFolderBtn" title="Neuer Ordner">📁＋</button>
-      </div>
-      <div id="sbPractice">
-        <button id="warmupBtn" title="Einsingen: Tonleitern und Intervalle nachsingen, mit Treffer-Anzeige">🎵 Einsingen</button>
-        <button id="metroBtn" title="Metronom">⏱ Metronom</button>
-        <button id="tasksBtn" title="Alle offenen Lehrer-Aufgaben">📓 Aufgaben</button>
-        <button id="voiceRangeBtn" title="Stimmumfang über die Zeit verfolgen, Transpositionsvorschläge für Songs">📏 Umfang</button>
+        <button id="newMenuBtn" title="Weitere: Blatt scannen, neuer Ordner">＋ ▾</button>
       </div>
       <div id="sbSearch">
         <input id="searchInput" type="search" placeholder="Suchen (Name, Tag) …">
@@ -501,10 +508,25 @@
       <div id="crumbs"></div>
       <div id="fileList"></div>
       <div id="sbFooter">
+        <button id="settingsBtn" title="Einstellungen (u. a. Spotify-Zugang)">⚙ Einstellungen</button>
+        <button id="moreMenuBtn" title="Backup, Offline-Speicher, Kurzanleitung">⋯ Mehr</button>
+      </div>
+      <div id="sbLegacy" style="display:none;">
+        <button id="scanBtn">📷 Scan</button>
+        <button id="newFolderBtn" title="Neuer Ordner">📁＋</button>
         <button id="offlineAllBtn">⇩ Alle offline speichern</button>
         <button id="backupBtn" title="Ganze Bibliothek als ZIP sichern">💾 Backup</button>
-        <button id="settingsBtn" title="Einstellungen (u. a. Spotify-Zugang)">⚙ Einstellungen</button>
       </div>
+    </div>
+
+    <div id="sbPracticePane" class="sb-pane" style="display:none;">
+      <div id="sbPractice">
+        <button id="warmupBtn" data-desc="Tonleitern und Intervalle nachsingen, mit Treffer-Anzeige" title="Einsingen">🎵 Einsingen</button>
+        <button id="metroBtn" data-desc="Tempo vorgeben, mit Takt und Zählzeiten" title="Metronom">⏱ Metronom</button>
+        <button id="tasksBtn" data-desc="Alle offenen Lehrer-Aufgaben über alle Songs" title="Aufgaben">📓 Aufgaben</button>
+        <button id="voiceRangeBtn" data-desc="Stimmumfang über die Zeit, Transpositionsvorschläge" title="Stimmumfang">📏 Umfang</button>
+      </div>
+      <p class="sb-hint">Übungen zu einem einzelnen Song (Aufnahmen, Backing-Tracks, Melodie, Journal) stehen oben in der Song-Leiste des geöffneten Songs.</p>
     </div>
 
     <div id="sbSets" class="sb-pane" style="display:none;">
@@ -528,36 +550,7 @@
       <div id="songBar" style="display:none;"></div>
       <div id="sheetTabs" style="display:none;"></div>
       <div id="toolbar">
-        <select id="txtFont" class="txt-tool" title="Schrift der markierten Zeilen/Absätze">
-          <option value="sans">Schrift: Standard</option>
-          <option value="serif">Schrift: Serif</option>
-          <option value="mono">Schrift: Schreibmaschine</option>
-        </select>
-        <select id="txtFontSize" class="txt-tool" title="Schriftgrösse der markierten Zeilen/Absätze">
-          <option value="12">Grösse 12</option>
-          <option value="14">Grösse 14</option>
-          <option value="16">Grösse 16</option>
-          <option value="18">Grösse 18</option>
-          <option value="20" selected>Grösse 20</option>
-          <option value="24">Grösse 24</option>
-          <option value="28">Grösse 28</option>
-          <option value="34">Grösse 34</option>
-          <option value="40">Grösse 40</option>
-          <option value="48">Grösse 48</option>
-        </select>
-        <select id="txtLineHeight" class="txt-tool" title="Zeilenabstand der markierten Zeilen/Absätze">
-          <option value="1">Zeilenabstand 1,0</option>
-          <option value="1.3">Zeilenabstand 1,3</option>
-          <option value="1.6">Zeilenabstand 1,6</option>
-          <option value="1.9" selected>Zeilenabstand 1,9</option>
-          <option value="2.3">Zeilenabstand 2,3</option>
-          <option value="2.8">Zeilenabstand 2,8</option>
-        </select>
-        <select id="txtAlign" class="txt-tool" title="Ausrichtung der markierten Zeilen/Absätze">
-          <option value="left">Links</option>
-          <option value="center">Zentriert</option>
-          <option value="right">Rechts</option>
-        </select>
+        <button id="txtFmtBtn" class="tool txt-tool" title="Schrift, Grösse, Zeilenabstand, Ausrichtung">Aa Format ▾</button>
         <button id="txtBold" class="tool txt-tool" title="Fett (Strg+B)"><b>F</b></button>
         <button id="txtItalic" class="tool txt-tool" title="Kursiv (Strg+I)"><i>K</i></button>
         <button id="txtUnderline" class="tool txt-tool" title="Unterstrichen (Strg+U)"><u>U</u></button>
@@ -572,27 +565,24 @@
         <button id="txtTrDown" class="tool txt-tool" title="Alle Akkorde einen Halbton tiefer">♭ −½</button>
         <button id="txtTrUp" class="tool txt-tool" title="Alle Akkorde einen Halbton höher">♯ +½</button>
         <button class="tool" data-tool="view" title="Lesen: mit dem Finger/der Maus scrollen und blättern (zeichnet nicht)">📖 Lesen</button>
-        <button class="tool" data-tool="pen" title="Stift">✎ Stift</button>
-        <button class="tool" data-tool="hl" title="Textmarker">▬ Marker</button>
-        <button class="tool" data-tool="eraser" title="Radiergummi (löscht ganze Objekte)">⌫ Radierer</button>
-        <button class="tool" data-tool="text" title="Textfeld: leere Stelle antippen = neuer Text, vorhandenen Text antippen = bearbeiten, ziehen = verschieben">T Text</button>
-        <button class="tool" data-tool="stamp" title="Symbole (Atem, Crescendo, Fermate …)">♪ Symbole</button>
-        <button class="tool" data-tool="select" title="Auswählen / verschieben">➤ Auswahl</button>
-        <div class="sep"></div>
-        <div class="swatch active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
-        <div class="swatch" data-color="#c0392b" style="background:#c0392b"></div>
-        <div class="swatch" data-color="#2471a3" style="background:#2471a3"></div>
-        <div class="swatch" data-color="#27633f" style="background:#27633f"></div>
-        <div class="swatch" data-color="#8e44ad" style="background:#8e44ad"></div>
-        <div class="swatch" data-color="#f1c40f" style="background:#f1c40f"></div>
-        <div class="swatch" data-color="#e67e22" style="background:#e67e22"></div>
-        <input type="range" id="widthRange" min="1" max="10" value="3" title="Strichstärke / Grösse">
-        <div class="sep"></div>
-        <button id="undoBtn" class="icon" title="Rückgängig (Strg+Z)">↶</button>
-        <button id="clearBtn" class="icon" title="Seite leeren">🗑</button>
-        <div class="sep"></div>
-        <button id="layerBtn" class="tool" title="Ebenen">▤ Ebenen</button>
-        <button id="dispBtn" class="tool" title="Helligkeit / Kontrast des Blatts">☀ Helligkeit</button>
+        <button id="modeDraw" class="tool" title="Zeichnen und Notizen: Stift, Marker, Radierer, Text, Symbole">✏ Zeichnen</button>
+        <div class="sep draw-only"></div>
+        <button class="tool draw-only" data-tool="pen" title="Stift">✎ Stift</button>
+        <button class="tool draw-only" data-tool="hl" title="Textmarker">▬ Marker</button>
+        <button class="tool draw-only" data-tool="eraser" title="Radiergummi (löscht ganze Objekte)">⌫ Radierer</button>
+        <button class="tool draw-only" data-tool="text" title="Textfeld: leere Stelle antippen = neuer Text, vorhandenen Text antippen = bearbeiten, ziehen = verschieben">T Text</button>
+        <button class="tool draw-only" data-tool="stamp" title="Symbole (Atem, Crescendo, Fermate …)">♪ Symbole</button>
+        <button class="tool draw-only" data-tool="select" title="Auswählen / verschieben">➤ Auswahl</button>
+        <div class="sep draw-only"></div>
+        <div class="swatch draw-only active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+        <div class="swatch draw-only" data-color="#c0392b" style="background:#c0392b"></div>
+        <div class="swatch draw-only" data-color="#2471a3" style="background:#2471a3"></div>
+        <div class="swatch draw-only" data-color="#27633f" style="background:#27633f"></div>
+        <div class="swatch draw-only" data-color="#8e44ad" style="background:#8e44ad"></div>
+        <div class="swatch draw-only" data-color="#f1c40f" style="background:#f1c40f"></div>
+        <div class="swatch draw-only" data-color="#e67e22" style="background:#e67e22"></div>
+        <input type="range" id="widthRange" class="draw-only" min="1" max="10" value="3" title="Strichstärke / Grösse">
+        <button id="undoBtn" class="icon draw-only" title="Rückgängig (Strg+Z)">↶</button>
         <div class="sep"></div>
         <div id="zoomNav">
           <button id="zoomOut" class="icon" title="Verkleinern">−</button>
@@ -600,16 +590,19 @@
           <button id="zoomIn" class="icon" title="Vergrössern">+</button>
           <button id="zoomFit" class="icon" title="Auf Breite einpassen">⤢</button>
         </div>
-        <button id="fingerBtn" class="tool" title="Finger: Auto = Finger zeichnet nur, solange noch kein Stift erkannt wurde">✋ Finger: Auto</button>
-        <button id="wakeBtn" class="tool" title="Display eingeschaltet lassen">☼ Bildschirm an</button>
-        <div class="sep"></div>
         <div id="pageNav">
           <button id="prevPage" class="icon">‹</button>
           <span id="pageLabel">1 / 1</span>
           <button id="nextPage" class="icon">›</button>
         </div>
         <div style="flex:1"></div>
+        <button id="toolMoreBtn" class="tool" title="Ebenen, Helligkeit, Finger-Modus, Bildschirm an, Seite leeren">⋯ Mehr</button>
         <button id="exportBtn" title="Als PDF mit Annotationen exportieren">⤓ PDF</button>
+        <button id="clearBtn" class="icon legacy-tool" title="Seite leeren">🗑</button>
+        <button id="layerBtn" class="tool legacy-tool" title="Ebenen">▤ Ebenen</button>
+        <button id="dispBtn" class="tool legacy-tool" title="Helligkeit / Kontrast des Blatts">☀ Helligkeit</button>
+        <button id="fingerBtn" class="tool legacy-tool" title="Finger: Auto = Finger zeichnet nur, solange noch kein Stift erkannt wurde">✋ Finger: Auto</button>
+        <button id="wakeBtn" class="tool legacy-tool" title="Display eingeschaltet lassen">☼ Bildschirm an</button>
       </div>
       <div id="stampBar"></div>
       <div id="txtSymBar"></div>
@@ -628,6 +621,39 @@
           <div id="textSheet" spellcheck="false"></div>
         </div>
         <div id="selBar"></div>
+        <div id="txtFmtPop" class="popover" style="top:8px; left:8px;">
+          <h4>Text formatieren</h4>
+          <div class="rowp"><span style="width:92px;">Schrift</span><select id="txtFont" class="txt-tool" title="Schrift der markierten Zeilen/Absätze">
+          <option value="sans">Schrift: Standard</option>
+          <option value="serif">Schrift: Serif</option>
+          <option value="mono">Schrift: Schreibmaschine</option>
+        </select></div>
+          <div class="rowp"><span style="width:92px;">Grösse</span><select id="txtFontSize" class="txt-tool" title="Schriftgrösse der markierten Zeilen/Absätze">
+          <option value="12">Grösse 12</option>
+          <option value="14">Grösse 14</option>
+          <option value="16">Grösse 16</option>
+          <option value="18">Grösse 18</option>
+          <option value="20" selected>Grösse 20</option>
+          <option value="24">Grösse 24</option>
+          <option value="28">Grösse 28</option>
+          <option value="34">Grösse 34</option>
+          <option value="40">Grösse 40</option>
+          <option value="48">Grösse 48</option>
+        </select></div>
+          <div class="rowp"><span style="width:92px;">Zeilenabstand</span><select id="txtLineHeight" class="txt-tool" title="Zeilenabstand der markierten Zeilen/Absätze">
+          <option value="1">Zeilenabstand 1,0</option>
+          <option value="1.3">Zeilenabstand 1,3</option>
+          <option value="1.6">Zeilenabstand 1,6</option>
+          <option value="1.9" selected>Zeilenabstand 1,9</option>
+          <option value="2.3">Zeilenabstand 2,3</option>
+          <option value="2.8">Zeilenabstand 2,8</option>
+        </select></div>
+          <div class="rowp"><span style="width:92px;">Ausrichtung</span><select id="txtAlign" class="txt-tool" title="Ausrichtung der markierten Zeilen/Absätze">
+          <option value="left">Links</option>
+          <option value="center">Zentriert</option>
+          <option value="right">Rechts</option>
+        </select></div>
+        </div>
         <div id="layerPop" class="popover" style="top:8px; right:8px;"></div>
         <div id="dispPop" class="popover" style="top:8px; right:8px;">
           <h4>Anzeige dieses Blatts</h4>
@@ -691,7 +717,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.16.0';
+const APP_VERSION = '2.17.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1813,7 +1839,8 @@ function renderSidebar() {
   document.querySelectorAll('#sbTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === sbTab));
   $('sbSheets').style.display = sbTab === 'sheets' ? 'flex' : 'none';
   $('sbSets').style.display = sbTab === 'sets' ? 'flex' : 'none';
-  if (sbTab === 'sheets') renderSheets(); else renderSets();
+  $('sbPracticePane').style.display = sbTab === 'practice' ? 'flex' : 'none';
+  if (sbTab === 'sheets') renderSheets(); else if (sbTab === 'sets') renderSets();
   renderSheetTabs();
   renderSongBar();
 }
@@ -2747,6 +2774,7 @@ async function trashFile(f, silent) {
 // Werkzeuge: Stift, Textmarker, Radierer, Text, Symbole, Auswahl – Ebenen – Rückgängig
 // ---------------------------------------------------------------
 let tool = lsGet('gapp_tool') || 'view';
+let lastDrawTool = lsGet('gapp_drawtool') || 'pen';
 let color = lsGet('gapp_color') || '#1a1a1a';
 let widthVal = Number(lsGet('gapp_width')) || 3;
 let stampKind = lsGet('gapp_stamp') || 'breath';
@@ -3256,6 +3284,9 @@ stack.addEventListener('pointercancel', (e) => endPointer(e, true));
 // ---------------------------------------------------------------
 function setTool(t) {
   tool = t; lsSet('gapp_tool', t);
+  document.body.classList.toggle('draw-mode', t !== 'view');
+  if (t !== 'view') { lastDrawTool = t; lsSet('gapp_drawtool', t); }
+  $('modeDraw').classList.toggle('on', t !== 'view');
   if (t !== 'select') selId = null;
   document.querySelectorAll('#toolbar .tool[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
   $('stampBar').classList.toggle('show', t === 'stamp' || t === 'text');
@@ -3265,6 +3296,17 @@ function setTool(t) {
   updateSelBar(); requestInk();
 }
 document.querySelectorAll('#toolbar .tool[data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+$('modeDraw').addEventListener('click', () => setTool(tool === 'view' ? (lastDrawTool && lastDrawTool !== 'view' ? lastDrawTool : 'pen') : 'view'));
+// Ab v2.17.0: seltener gebrauchte Ansichts-/Geräteoptionen in einem Menü; die Originalknöpfe bleiben unsichtbar erhalten.
+$('txtFmtBtn').addEventListener('click', (e) => { e.stopPropagation(); $('txtFmtPop').classList.toggle('show'); });
+document.addEventListener('pointerdown', (e) => { const pop = $('txtFmtPop'); if (pop.classList.contains('show') && !pop.contains(e.target) && e.target !== $('txtFmtBtn')) pop.classList.remove('show'); }, true);
+$('toolMoreBtn').addEventListener('click', () => menuSheet('Ansicht & Optionen', [
+  { label: '▤ Ebenen …' + (hiddenLayers.size ? ' (' + hiddenLayers.size + ' ausgeblendet)' : ''), fn: () => $('layerBtn').click() },
+  { label: '☀ Helligkeit & Kontrast …', fn: () => $('dispBtn').click() },
+  { label: $('fingerBtn').textContent.trim() + ' – antippen zum Wechseln', fn: () => $('fingerBtn').click() },
+  { label: '☼ Bildschirm an halten: ' + (wakeWanted ? 'ein' : 'aus') + ' – antippen zum Wechseln', fn: () => $('wakeBtn').click() },
+  { label: '🗑 Seite leeren …', danger: true, fn: () => $('clearBtn').click() }
+]));
 
 function setColor(c) {
   color = c; lsSet('gapp_color', c);
@@ -5098,6 +5140,7 @@ function openRecorder(song) {
 // je Aufnahme (📈) inkl. Fortschritt, Referenzmelodie aus MIDI/MusicXML (siehe 22_reference.js).
 function manageAudio(s) {
   const body = h('div', { class: 'audio-manage' });
+  let section = 'takes';      // ab v2.17.0 Reiter: takes | backing | ref
   // Wiedergabe über den gemeinsamen Mini-Player (Pause/Fortsetzen, Zeitanzeige, läuft nach Schliessen weiter)
   const isLoaded = (item) => mp.kind === 'audio' && mp.audioItem && mp.audioItem.id === item.id;
   const isPlaying = (item) => { if (!isLoaded(item)) return false; const st = mpState(); return !!(st && st.playing); };
@@ -5126,6 +5169,12 @@ function manageAudio(s) {
     const takes = songAudio(s.id, 'take').slice().sort((a, b) => (b.u0 || b.u || 0) - (a.u0 || a.u || 0));
     const backing = songAudio(s.id, 'backing');
     bestId = takes.length > 1 ? bestTakeId(s.id) : null;    // nur ab zwei Aufnahmen sinnvoll
+    const segBtn = (k, label) => h('button', { class: section === k ? 'on' : '', text: label, onclick: () => { section = k; draw(); } });
+    body.append(h('div', { class: 'seg-tabs' },
+      segBtn('takes', '🎤 Aufnahmen (' + takes.length + ')'),
+      segBtn('backing', '🎵 Backing (' + backing.length + ')'),
+      segBtn('ref', '🎼 Melodie' + ((lib.songs[s.id] || {}).ref ? ' ✓' : ''))));
+    if (section === 'takes') {
     body.append(h('div', { class: 'sub', style: 'padding:6px 6px 2px; font-weight:600;', text: '🎤 Eigene Aufnahmen' }));
     if (!takes.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Aufnahme.' }));
     takes.forEach(t => body.append(audioRow(t)));
@@ -5134,7 +5183,8 @@ function manageAudio(s) {
     if (takes.length) body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => openProgress(s.id) },
       h('span', { text: '📈' }), h('span', { text: 'Fortschritt über alle Aufnahmen …' })));
 
-    body.append(h('div', { class: 'sub', style: 'padding:12px 6px 2px; font-weight:600;', text: '🎵 Backing-Tracks' }));
+    } else if (section === 'backing') {
+    body.append(h('div', { class: 'sub', style: 'padding:6px 6px 2px; font-weight:600;', text: '🎵 Backing-Tracks' }));
     if (!backing.length) body.append(h('div', { class: 'empty-note', text: 'Kein Backing-Track hinterlegt.' }));
     else backing.forEach(b => body.append(audioRow(b)));
     const inp = h('input', { type: 'file', accept: 'audio/*', style: 'display:none;' });
@@ -5145,7 +5195,9 @@ function manageAudio(s) {
     body.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => xmOpenSearch(s.id) },
       h('span', { text: '🔎' }), h('span', { text: 'Auf x-minus.pro suchen (Karaoke in allen Tonarten) …' })));
 
+    } else {
     body.append(refSection(s.id, draw));
+    }
   }
   function renameAudio(item) {
     const n = (prompt('Neuer Name:', item.name) || '').trim();
@@ -5163,7 +5215,7 @@ function manageAudio(s) {
   }
   draw();
   mp.listeners.add(draw);
-  const api = openModal({ title: '🎙 Aufnahmen & Backing-Tracks – «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
+  const api = openModal({ title: '🎙 Aufnahmen, Backing & Melodie – «' + s.n + '»', body, wide: true, buttons: [{ label: 'Fertig' }] });
   api.onClose = () => mp.listeners.delete(draw);
 }
 
@@ -5364,6 +5416,17 @@ function newSongFlow() {
   setTimeout(() => titleInput.focus(), 0);
 }
 $('newSongBtn').addEventListener('click', newSongFlow);
+// Ab v2.17.0: «＋ ▾» (Scannen, Ordner) und «⋯ Mehr» (Backup, Offline) als Menüs; die ursprünglichen Knöpfe bleiben
+// unsichtbar erhalten, damit alle bisherigen Abläufe unverändert dieselben Funktionen auslösen.
+$('newMenuBtn').addEventListener('click', () => menuSheet('Neu', [
+  { label: '♪ Neuer Song …', fn: () => $('newSongBtn').click() },
+  { label: '📷 Blatt scannen …', fn: () => $('scanBtn').click() },
+  { label: '📁 Neuer Ordner …', fn: () => $('newFolderBtn').click() }
+]));
+$('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
+  { label: '💾 Backup & Wiederherstellen …', fn: () => $('backupBtn').click() },
+  { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() }
+]));
 
 
 // ---------------------------------------------------------------

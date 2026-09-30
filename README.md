@@ -21,6 +21,13 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.17.0 – Stufe 2 der Überarbeitung: Struktur (30.09.2026)
+- Seitenleiste: drei Reiter **Songs | Setlisten | Üben**; «Üben» enthält Aufwärmen, Metronom, Aufgaben, Stimmumfang mit Kurzbeschreibung.
+- Oben «♪ Neuer Song» + «＋ ▾» (Blatt scannen, Neuer Ordner); unten «⚙ Einstellungen» + «⋯ Mehr» (Backup, Alle offline speichern).
+- Werkzeugleiste: **📖 Lesen | ✏ Zeichnen**. Zeichenwerkzeuge (Stift, Marker, Radierer, Text, Symbole, Auswahl, Farben, Breite, Undo) erscheinen nur im Zeichnen-Modus. Selten Gebrauchtes (Ebenen, Helligkeit, Finger-Modus, Bildschirm an, Seite leeren) im «⋯ Mehr»-Menü.
+- Text-Blatt: Schrift, Grösse, Zeilenabstand, Ausrichtung im Popover «Aa Format ▾».
+- Audio-Dialog mit Reitern Aufnahmen | Backing | Melodie.
+
 ### v2.16.0 – Stufe 1 der Überarbeitung: Aufräumen (30.09.2026)
 
 Erste von drei Stufen der Bedienungs-Überarbeitung (Analyse: Projektdokument «UI-Analyse-und-Vorschlaege»).
