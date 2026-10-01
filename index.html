@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-bODkUh807MKK3nZsgOpyhb/NgWVDpP9WDTdEDyXRKcw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-sogoj4tiBUNfVQaqg1BuLhmKv8S10J/dQpGLFdrAy4I=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-bODkUh807MKK3nZsgOpyhb/NgWVDpP9WDTdEDyXRKcw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-sogoj4tiBUNfVQaqg1BuLhmKv8S10J/dQpGLFdrAy4I=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -70,6 +70,7 @@
     display:flex; align-items:center; gap:10px; padding:8px 12px; padding-top:max(8px, env(safe-area-inset-top));
     background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0; z-index:20;
   }
+  header h1 small.hdr-artist{display:block; font-size:11px; font-weight:400; color:var(--muted); line-height:1.1; overflow:hidden; text-overflow:ellipsis;}
   header h1{font-size:16px; margin:0; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
   button, select, textarea, input[type=search], input[type=text]{
     font:inherit; border:1px solid var(--border); background:var(--panel); color:var(--text);
@@ -114,8 +115,8 @@
   #sbPracticePane .lbl-t{display:inline !important;}
   #sbSearch{padding:0 8px 6px; display:flex; flex-direction:column; gap:6px;}
   #sbSearch input{width:100%;}
-  #sbSearch .row{display:flex; gap:6px;}
-  #sbSearch select{flex:1; min-width:0; padding:7px 6px; font-size:13px;}
+  #sbSearch .row{display:flex; gap:6px; flex-wrap:wrap;}
+  #sbSearch select{flex:1 1 40%; min-width:0; padding:7px 6px; font-size:13px;}
   #sbSearch button{padding:7px 10px;}
   #crumbs{padding:2px 10px 6px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:2px 4px; align-items:center;}
   #crumbs a{cursor:pointer; color:var(--accent); text-decoration:none; padding:2px 3px; border-radius:4px;}
@@ -128,6 +129,7 @@
   .file-item .fav.on{color:#d49a06;}
   .file-item .mid{flex:1; min-width:0;}
   .file-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-item .artist{font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:-1px;}
   .file-item .sub{font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .file-item .sub > span:not(.tagchip){margin-right:7px;}
   .file-item .type-icon{width:22px; text-align:center; color:var(--muted); font-size:11px; flex-shrink:0;}
@@ -505,14 +507,16 @@
         <button id="newMenuBtn" title="Weitere: Blatt scannen, neuer Ordner">＋ ▾</button>
       </div>
       <div id="sbSearch">
-        <input id="searchInput" type="search" placeholder="Suchen (Name, Tag) …">
+        <input id="searchInput" type="search" placeholder="Suchen (Titel, Interpret, Tag) …">
         <div class="row">
           <select id="sortSel" title="Sortierung">
-            <option value="name">Name A–Z</option>
+            <option value="name">Titel A–Z</option>
+            <option value="artist">Interpret A–Z</option>
             <option value="opened">Zuletzt geöffnet</option>
             <option value="added">Zuletzt hinzugefügt</option>
           </select>
           <select id="tagFilter" title="Nach Tag filtern"><option value="">Alle Tags</option></select>
+          <select id="artistFilter" title="Nach Interpret filtern"><option value="">Alle Interpreten</option></select>
           <button id="favFilter" title="Nur Favoriten">★</button>
         </div>
       </div>
@@ -728,7 +732,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.18.0';
+const APP_VERSION = '2.19.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1379,9 +1383,15 @@ function mergeLib(a, b) {
 // auf die einzelne Datei; lib.files[id] verwaltet nur noch sg (zugehöriger Song),
 // bri/con (Anzeige) und lo (zuletzt geöffnet, pro Blatt).
 // ---------------------------------------------------------------
-const newSong = (n) => ({ n, f: null, tg: [], fv: 0, lo: 0, u: Date.now(), sheets: [], links: [], audio: [] });
+const newSong = (n, ar = '') => ({ n, ar, f: null, tg: [], fv: 0, lo: 0, u: Date.now(), sheets: [], links: [], audio: [] });
 const songAlive = (id) => !!(id && lib.songs[id] && !lib.songs[id].d);
 const sget = (id) => lib.songs[id] || null;
+// Ab v2.19.0: n = Songtitel, ar = Interpret. songFull() = «Interpret – Titel» für Suchen, Dateinamen und Exporte.
+const songFull = (s) => (s && s.ar ? s.ar + ' – ' + s.n : (s ? s.n : ''));
+function splitLegacyName(n) {
+  const m = String(n || '').match(/^\s*(.+?)\s+[-–—]\s+(.+?)\s*$/);
+  return m ? { ar: m[1], n: m[2] } : null;
+}
 function sTouch(id, fn) { const s = lib.songs[id]; if (!s) return; fn(s); s.u = Date.now(); libChanged(); }
 function songForFile(fileId) {
   const m = lib.files[fileId];
@@ -1472,9 +1482,9 @@ function detachSheet(songId, fileId) {
   s.u = Date.now();
   libChanged();
 }
-function createSongRaw(name, { folder = null, sheetFileId = null } = {}) {
+function createSongRaw(name, { folder = null, sheetFileId = null, artist = '' } = {}) {
   const id = uid('sg');
-  lib.songs[id] = newSong(name.replace(/[\\/]+/g, '-'));
+  lib.songs[id] = newSong(name.replace(/[\\/]+/g, '-'), artist);
   lib.songs[id].f = folder;
   if (sheetFileId) attachSheet(id, sheetFileId); else libChanged();
   return id;
@@ -1542,6 +1552,14 @@ function migrateSongs() {
     const mapped = s.it.map(x => lib.songs[x] ? x : (songForFile(x) || ('sg_' + x)));
     if (mapped.some((x, i) => x !== s.it[i])) { s.it = mapped; s.u = Date.now(); changed = true; }
   }
+  // Ab v2.19.0: «Interpret – Titel» im Namen auftrennen. Nur Songs ohne Feld `ar`; der alte Name bleibt als `n0` erhalten.
+  for (const x of Object.values(lib.songs)) {
+    if (x.d || x.ar !== undefined) continue;
+    const sp = splitLegacyName(x.n);
+    x.n0 = x.n;
+    if (sp) { x.ar = sp.ar; x.n = sp.n; } else x.ar = '';
+    x.u = Date.now(); changed = true;
+  }
   if (cleanAllLinks()) changed = true;          // ab v2.8.1: unpassende automatische Verknüpfungen entfernen
   if (changed) libChanged();
 }
@@ -1595,6 +1613,10 @@ const signedOutEl = $('signedOut');
 const mainViewerEl = $('mainViewer');
 const emptyEl = $('empty');
 const currentTitleEl = $('currentTitle');
+function setHeaderTitle(song, fallback) {
+  currentTitleEl.textContent = song ? song.n : (fallback || '');
+  if (song && song.ar) currentTitleEl.append(h('small', { class: 'hdr-artist', text: song.ar }));
+}
 const canvasWrap = $('canvasWrap');
 const stack = $('canvasStack');
 const baseCanvas = $('baseCanvas'), inkCanvas = $('inkCanvas');
@@ -1864,7 +1886,7 @@ async function loadLocalState() {
 // ---------------------------------------------------------------
 // Seitenleiste: Songs (Ordner, Suche, Tags, Favoriten, Sortierung)
 // ---------------------------------------------------------------
-let sbTab = 'sheets', currentFolder = null, searchQ = '', tagSel = '', favOnly = false, setView = null;
+let sbTab = 'sheets', currentFolder = null, searchQ = '', tagSel = '', artistSel = '', favOnly = false, setView = null;
 let sortMode = lsGet('gapp_sort') || 'name';
 $('sortSel').value = sortMode;
 
@@ -1874,7 +1896,9 @@ function songAdded(s, idx) {                    // frühestes Erstellungsdatum u
 }
 function sortSongs(arr, idx) {
   const byName = (a, b) => a.n.localeCompare(b.n, 'de', { numeric: true });
+  const byArtist = (a, b) => (a.ar || '\uffff').localeCompare(b.ar || '\uffff', 'de', { numeric: true }) || byName(a, b);
   return arr.sort((a, b) => {
+    if (sortMode === 'artist') return byArtist(a, b);
     if (sortMode === 'opened') return ((b.lo || 0) - (a.lo || 0)) || byName(a, b);
     if (sortMode === 'added') return songAdded(b, idx).localeCompare(songAdded(a, idx)) || byName(a, b);
     return byName(a, b);
@@ -1905,11 +1929,19 @@ function renderSheets() {
     if (tagSel && !tags.includes(tagSel)) tagSel = '';
     tf.value = tagSel; tf.dataset.sig = tags.join('|') + '||' + tagSel;
   }
+  const artists = [...new Set(aliveSongs().map(s => s.ar).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de')), af = $('artistFilter'), asig = artists.join('|') + '||' + artistSel;
+  if (af.dataset.sig !== asig) {
+    af.innerHTML = '';
+    af.append(h('option', { value: '', text: 'Alle Interpreten' }), ...artists.map(t => h('option', { value: t, text: t })));
+    if (artistSel && !artists.includes(artistSel)) artistSel = '';
+    af.value = artistSel; af.dataset.sig = artists.join('|') + '||' + artistSel;
+  }
+  af.style.display = artists.length ? '' : 'none';
   $('favFilter').classList.toggle('on', favOnly);
   if (currentFolder && !folderAlive(currentFolder)) currentFolder = null;
 
   const q = searchQ.trim().toLowerCase();
-  const global = !!(q || favOnly || tagSel);
+  const global = !!(q || favOnly || tagSel || artistSel);
 
   // Pfad-Anzeige
   const cr = $('crumbs'); cr.innerHTML = '';
@@ -1927,9 +1959,10 @@ function renderSheets() {
   const filesIdx = new Map(files.map(f => [f.id, f]));
   let arr = aliveSongs();
   if (global) {
-    if (q) arr = arr.filter(s => s.n.toLowerCase().includes(q) || (s.tg || []).some(t => t.toLowerCase().includes(q)) || songPathLabel(s.id).toLowerCase().includes(q));
+    if (q) arr = arr.filter(s => s.n.toLowerCase().includes(q) || (s.ar || '').toLowerCase().includes(q) || (s.tg || []).some(t => t.toLowerCase().includes(q)) || songPathLabel(s.id).toLowerCase().includes(q));
     if (favOnly) arr = arr.filter(s => s.fv);
     if (tagSel) arr = arr.filter(s => (s.tg || []).includes(tagSel));
+    if (artistSel) arr = arr.filter(s => s.ar === artistSel);
   } else {
     arr = arr.filter(s => effSongFolder(s.id) === currentFolder);
     childFolders(currentFolder).forEach(fo => list.append(folderItem(fo)));
@@ -1946,7 +1979,7 @@ function renderSheets() {
   updateTasksBtn();
 }
 function resetFilters() {
-  searchQ = ''; tagSel = ''; favOnly = false; $('searchInput').value = '';
+  searchQ = ''; tagSel = ''; artistSel = ''; favOnly = false; $('searchInput').value = '';
   renderSidebar();
 }
 
@@ -1973,7 +2006,7 @@ function songItem(s, global, idx) {
   return h('div', { class: 'file-item' + (currentSongId === s.id ? ' active' : ''), onclick: () => openSong(s) },
     h('button', { class: 'fav' + (s.fv ? ' on' : ''), text: s.fv ? '★' : '☆', title: 'Favorit', onclick: (e) => { e.stopPropagation(); sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }); } }),
     h('span', { class: 'type-icon', text: '♪' }),
-    h('div', { class: 'mid' }, h('div', { class: 'name', text: s.n }), hasSub ? sub : null),
+    h('div', { class: 'mid' }, h('div', { class: 'name', text: s.n }), s.ar ? h('div', { class: 'artist', text: s.ar }) : null, hasSub ? sub : null),
     offline ? h('span', { class: 'off', title: 'offline verfügbar', text: '●' }) : null,
     h('button', { class: 'more', text: '⋯', title: 'Menü', onclick: (e) => { e.stopPropagation(); songMenu(s); } }));
 }
@@ -2029,10 +2062,22 @@ function renderSongBar() {
 
 function renameSong(id) {
   const s = lib.songs[id];
-  const n = (prompt('Neuer Name des Songs:', s.n) || '').trim().replace(/[\\/]+/g, '-');
-  if (!n || n === s.n) return;
-  sTouch(id, x => { x.n = n; });
-  if (currentSongId === id) currentTitleEl.textContent = n;
+  const tIn = h('input', { type: 'text', value: s.n, style: 'width:100%;' });
+  const aIn = h('input', { type: 'text', value: s.ar || '', placeholder: '(optional)', style: 'width:100%;' });
+  const lab = (t, m) => h('label', { text: t, style: 'display:block; font-size:12px; color:var(--muted); margin:' + m + ' 0 4px;' });
+  const clean = (v) => v.trim().replace(/[\\/]+/g, '-');
+  function save() {
+    const n = clean(tIn.value), ar = clean(aIn.value);
+    if (!n) { toast('Bitte einen Songtitel eingeben.'); return false; }
+    if (n === s.n && ar === (s.ar || '')) return;
+    sTouch(id, x => { x.n = n; x.ar = ar; });
+    if (currentSongId === id) setHeaderTitle(lib.songs[id]);
+  }
+  const onEnter = (e) => { if (e.key === 'Enter') { e.preventDefault(); api.btns.querySelector('.primary').click(); } };
+  tIn.addEventListener('keydown', onEnter); aIn.addEventListener('keydown', onEnter);
+  const api = openModal({ title: 'Song umbenennen', body: h('div', {}, lab('Songtitel', '2px'), tIn, lab('Interpret', '12px'), aIn),
+    buttons: [{ label: 'Abbrechen' }, { label: 'Speichern', primary: true, fn: save }] });
+  setTimeout(() => tIn.focus(), 0);
 }
 
 async function moveSong(s) {
@@ -2236,7 +2281,7 @@ function renderSets() {
     const f = song ? primarySheet(sid) : null;
     list.append(h('div', { class: 'file-item set-item', onclick: () => { if (f) openFromSet(setView, i); } },
       h('span', { class: 'idx', text: String(i + 1) }),
-      h('div', { class: 'mid' }, h('div', { class: 'name', text: song ? song.n : '(Song nicht mehr vorhanden)' })),
+      h('div', { class: 'mid' }, h('div', { class: 'name', text: song ? song.n : '(Song nicht mehr vorhanden)' }), song && song.ar ? h('div', { class: 'artist', text: song.ar }) : null),
       f && cachedIds.has(f.id) ? h('span', { class: 'off', text: '●', title: 'offline verfügbar' }) : null,
       h('button', { class: 'more', text: '▲', title: 'Nach oben', disabled: i === 0 ? true : null, onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { [x.it[i - 1], x.it[i]] = [x.it[i], x.it[i - 1]]; }); } }),
       h('button', { class: 'more', text: '▼', title: 'Nach unten', disabled: i === s.it.length - 1 ? true : null, onclick: (e) => { e.stopPropagation(); setTouch(setView, x => { [x.it[i + 1], x.it[i]] = [x.it[i], x.it[i + 1]]; }); } }),
@@ -2290,6 +2335,7 @@ $('searchInput').addEventListener('input', (e) => {
   clearTimeout(searchDebounceT);
   searchDebounceT = setTimeout(() => { searchQ = v; renderSidebar(); }, 100);
 });
+$('artistFilter').addEventListener('change', (e) => { artistSel = e.target.value; renderSidebar(); });
 $('sortSel').addEventListener('change', (e) => { sortMode = e.target.value; lsSet('gapp_sort', sortMode); renderSidebar(); });
 $('tagFilter').addEventListener('change', (e) => { tagSel = e.target.value; renderSidebar(); });
 $('favFilter').addEventListener('click', () => { favOnly = !favOnly; renderSidebar(); });
@@ -2410,7 +2456,7 @@ async function openFile(f, opts = {}) {
   closeCurrent();
   currentFile = f;
   currentSongId = songForFile(f.id);
-  currentTitleEl.textContent = sget(currentSongId) ? sget(currentSongId).n : f.name;
+  setHeaderTitle(sget(currentSongId), f.name);
   $('renameBtn').style.display = ''; $('perfBtn').style.display = '';
   emptyEl.style.display = 'none'; signedOutEl.style.display = 'none';
   mainViewerEl.style.display = 'flex';
@@ -4637,7 +4683,7 @@ function cleanAllLinks() {
   let changed = false;
   for (const s of Object.values(lib.songs)) {
     if (s.d || !s.links || !s.links.length) continue;
-    const bad = s.links.filter(l => l.auto && playableLink(l) && !looksRelevant(s.n, l.title));
+    const bad = s.links.filter(l => l.auto && playableLink(l) && !looksRelevant(songFull(s), l.title));
     if (!bad.length) continue;
     const now = Date.now();
     s.gone = s.gone || {};
@@ -4728,8 +4774,8 @@ function manageLinks(s) {
   function addManual(raw) {
     const p = parseMediaUrl(raw);
     if (!p) { toast('Das sieht nicht nach einem YouTube-, Spotify- oder x-minus.pro-Link aus.'); return; }
-    const title = (prompt('Titel (optional):', p.type === 'xm' ? s.n : '') || '').trim();
-    addLink(s.id, Object.assign(p, { kind: p.type === 'xm' ? 'karaoke' : manualKind, title: title || (p.type === 'yt' ? 'YouTube-Link' : p.type === 'xm' ? s.n : 'Spotify-Link') }));
+    const title = (prompt('Titel (optional):', p.type === 'xm' ? songFull(s) : '') || '').trim();
+    addLink(s.id, Object.assign(p, { kind: p.type === 'xm' ? 'karaoke' : manualKind, title: title || (p.type === 'yt' ? 'YouTube-Link' : p.type === 'xm' ? songFull(s) : 'Spotify-Link') }));
     draw();
   }
 
@@ -4747,10 +4793,10 @@ function manageLinks(s) {
     const note = h('div', { class: 'empty-note', text: 'Suche läuft …' });
     body.append(note);
     let res;
-    try { res = await suggestLinksFor(s.n); } catch (e) { draw(); toast('Suche fehlgeschlagen: ' + e.message); return; }
+    try { res = await suggestLinksFor(songFull(s)); } catch (e) { draw(); toast('Suche fehlgeschlagen: ' + e.message); return; }
     draw();
     const all = res.filter(x => !x.error), errs = res.filter(x => x.error);
-    const good = all.filter(x => looksRelevant(s.n, x.title)), hidden = all.length - good.length;   // ab v2.8.1: unpassende nie anbieten
+    const good = all.filter(x => looksRelevant(songFull(s), x.title)), hidden = all.length - good.length;   // ab v2.8.1: unpassende nie anbieten
     if (errs.length) toast(errs[0].error);
     if (!good.length) { if (!errs.length) toast(hidden ? 'Keine passenden Vorschläge gefunden (' + hidden + ' unpassende ausgeblendet).' : 'Keine Vorschläge gefunden.', 3500); return; }
     const sec = h('div', { class: 'link-suggestions' }, h('div', { class: 'sub', style: 'padding:6px;', text: 'Vorschläge – zum Hinzufügen antippen:' + (hidden ? ' (' + hidden + ' unpassende ausgeblendet)' : '') }));
@@ -4778,9 +4824,9 @@ function manageLinks(s) {
     const note = h('div', { class: 'empty-note', text: 'Suche automatisch nach Original & Karaoke …' });
     body.append(note);
     let res = [];
-    try { res = await suggestLinksFor(s.n); } catch (e) { /* still let user use the manual search button */ }
+    try { res = await suggestLinksFor(songFull(s)); } catch (e) { /* still let user use the manual search button */ }
     const seen = new Set();
-    res.filter(x => !x.error && looksRelevant(s.n, x.title)).forEach(sg => {
+    res.filter(x => !x.error && looksRelevant(songFull(s), x.title)).forEach(sg => {
       const key = sg.type + ':' + sg.kind;
       if (seen.has(key)) return;
       seen.add(key);
@@ -5163,7 +5209,7 @@ function openRecorder(song) {
     if (!(await requireOnline('Aufnahme speichern'))) return;
     const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
     const label = 'Aufnahme ' + new Date().toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const fname = (song.n.replace(/[\\/]+/g, '-') + ' – ' + label + '.' + ext);
+    const fname = (songFull(song).replace(/[\\/]+/g, '-') + ' – ' + label + '.' + ext);
     const file = new File([blob], fname, { type: blob.type });
     setStatus('Aufnahme wird hochgeladen …', 'saving');
     try {
@@ -5382,7 +5428,8 @@ function safeDrawText(page, text, opts) {
 async function saveLyricsSheet(s, lyricsText, meta) {
   if (!(await requireOnline('Text-Blatt speichern'))) return false;
   // Kopf: Titel/Interpret wie beim Anlegen eingegeben (Interpret notfalls aus dem Fund), Lyrics 18 pt zentriert
-  const hdr = { title: (s.title || (meta && meta.title) || splitArtistTitle(s.n).title || s.n), artist: s.artist || (meta && meta.artist) || splitArtistTitle(s.n).artist || '' };
+  const sp = s.ar !== undefined ? { title: s.n, artist: s.ar } : splitArtistTitle(s.n);
+  const hdr = { title: (s.title || (meta && meta.title) || sp.title || s.n), artist: s.artist || (meta && meta.artist) || sp.artist || '' };
   const html = plainTextToLyricsHtml(lyricsText, LYRICS_FONT_SIZE, LYRICS_LINE_HEIGHT, { lrc: meta && meta.lrc, align: LYRICS_ALIGN, header: hdr });
   const file = new File([html], 'Text.html', { type: TXT_MIME });
   uploadTargetSong = s.id;
@@ -5395,11 +5442,11 @@ async function saveLyricsSheet(s, lyricsText, meta) {
 
 // --- Dialog: Lyrics-Suche + Vorschau/Bearbeitung + Speichern -------------------------
 function lyricsFlow(s) {
-  const status = h('div', { class: 'sub', text: '🔎 Suche Lyrics für «' + s.n + '» …' });
+  const status = h('div', { class: 'sub', text: '🔎 Suche Lyrics für «' + songFull(s) + '» …' });
   const note = h('div', { class: 'empty-note', style: 'padding:6px 0;' });
   const ta = h('textarea', { rows: 14, style: 'width:100%; margin-top:6px; font:13px/1.5 ui-monospace,Consolas,monospace; resize:vertical;', placeholder: 'Lyrics hier einfügen (z. B. aus dem Browser kopieren) …' });
   const openSearchBtn = h('button', { text: '🔍 Im Browser nach Lyrics suchen', style: 'display:none; margin-top:8px;',
-    onclick: () => window.open('https://www.google.com/search?q=' + encodeURIComponent(s.n + ' lyrics songtext'), '_blank', 'noopener') });
+    onclick: () => window.open('https://www.google.com/search?q=' + encodeURIComponent(songFull(s) + ' lyrics songtext'), '_blank', 'noopener') });
   let foundMeta = null;
   const saveBtn = h('button', { class: 'primary', text: '📄 Als Text-Blatt speichern', style: 'margin-top:12px; width:100%;' });
   saveBtn.addEventListener('click', async () => {
@@ -5414,11 +5461,11 @@ function lyricsFlow(s) {
     } catch (e) { fail('Text-Blatt konnte nicht gespeichert werden', e); saveBtn.disabled = false; saveBtn.textContent = prevLabel; }
   });
   const body = h('div', { class: 'lyrics-flow' }, status, note, ta, openSearchBtn, saveBtn);
-  const api = openModal({ title: 'Lyrics für «' + s.n + '»', body, wide: true, buttons: [{ label: 'Später / ohne Text-Blatt fortfahren' }] });
+  const api = openModal({ title: 'Lyrics für «' + songFull(s) + '»', body, wide: true, buttons: [{ label: 'Später / ohne Text-Blatt fortfahren' }] });
 
   (async () => {
     try {
-      const r = await searchLyrics(s.n);
+      const r = await searchLyrics(songFull(s));
       foundMeta = { artist: r.artist, title: r.title, lrc: r.lrc || null };
       ta.value = r.lyrics;
       status.textContent = '✓ Gefunden: ' + (r.artist ? r.artist + ' – ' : '') + r.title;
@@ -5447,11 +5494,11 @@ function newSongFlow() {
     const title = titleInput.value.trim();
     if (!title) { err.textContent = 'Bitte einen Songtitel eingeben.'; err.style.display = ''; titleInput.focus(); return false; }
     const artist = artistInput.value.trim();
-    const name = (artist ? artist + ' – ' + title : title).replace(/[\\/]+/g, '-');
-    const id = createSongRaw(name, { folder: currentFolder });
+    const name = title.replace(/[\\/]+/g, '-');
+    const id = createSongRaw(name, { folder: currentFolder, artist: artist.replace(/[\\/]+/g, '-') });
     currentSongId = id;
     renderSidebar();
-    const flowApi = lyricsFlow({ id, n: name, title, artist });
+    const flowApi = lyricsFlow({ id, n: name, ar: artist, title, artist });
     flowApi.onClose = () => { const cur = sget(id); if (cur) manageSheets({ id, ...cur }); };
   }
   const onEnter = (e) => { if (e.key === 'Enter') { e.preventDefault(); api.btns.querySelector('.primary').click(); } };
@@ -6625,7 +6672,7 @@ function asEnsureSyncReady() {
   return true;
 }
 function asOfferLrcSearch() {
-  const song = sget(currentSongId), name = song ? song.n : (currentFile ? currentFile.name.replace(/\.[^.]+$/, '') : '');
+  const song = sget(currentSongId), name = song ? songFull(song) : (currentFile ? currentFile.name.replace(/\.[^.]+$/, '') : '');
   openModal({
     title: '♫ Keine Zeitstempel', body: [h('p', { text: 'Für dieses Text-Blatt sind noch keine Zeitstempel hinterlegt. Jetzt bei LRCLIB nach «' + name + '» suchen? (Der Text selbst bleibt unverändert.)' })],
     buttons: [{ label: 'Abbrechen' }, { label: 'Suchen', primary: true, fn: () => {
@@ -6740,7 +6787,7 @@ async function sheetPdfBytes(f, songName, withAnnot) {
   return buildAnnotatedPdfBytes(f, blob, annot, { visible: () => true });
 }
 async function songInfoText(songId, withNotes) {
-  const s = lib.songs[songId], out = [s.n, '='.repeat(Math.min(60, s.n.length)), ''];
+  const s = lib.songs[songId], out = [songFull(s), '='.repeat(Math.min(60, songFull(s).length)), ''];
   const links = songLinks(songId);
   if (links.length) {
     out.push('Verknüpfungen:');
@@ -6776,8 +6823,8 @@ async function runShare(target, opts, progress) {
   for (const j of jobs) {
     progress(`Erzeuge PDF ${++n}/${jobs.length} …`);
     const song = lib.songs[j.sid];
-    const bytes = await sheetPdfBytes(j.f, song.n, opts.annot);
-    const name = prefix(j.i) + safeFileName(song.n) + (j.multi ? ' – ' + safeFileName(j.f.name.replace(/\.[^.]+$/, '')) : '') + '.pdf';
+    const bytes = await sheetPdfBytes(j.f, songFull(song), opts.annot);
+    const name = prefix(j.i) + safeFileName(songFull(song)) + (j.multi ? ' – ' + safeFileName(j.f.name.replace(/\.[^.]+$/, '')) : '') + '.pdf';
     await uploadMultipart(new File([bytes], name, { type: 'application/pdf' }), { name, parents: [fid] });
   }
   for (let i = 0; i < songs.length; i++) {
@@ -6803,7 +6850,7 @@ async function runShare(target, opts, progress) {
 function shareTarget(kind, id) {
   if (kind === 'set') { const s = lib.setlists[id]; return { kind, id, obj: s, name: 'Setliste ' + s.n, songs: s.it.slice() }; }
   const s = lib.songs[id];
-  return { kind: 'song', id, obj: s, name: s.n, songs: [id] };
+  return { kind: 'song', id, obj: s, name: songFull(s), songs: [id] };
 }
 function shareDialog(kind, id) {
   const t = shareTarget(kind, id), sh = t.obj.sh || null;
@@ -6957,7 +7004,7 @@ async function buildBackup(opts, progress) {
     entries.push({ name: p, data: norm, size, crc });
     return p;
   };
-  const songDir = (sid) => folderPath(effSongFolder(sid)).map(x => safeFileName(x.n)).concat(safeFileName(lib.songs[sid].n)).join('/');
+  const songDir = (sid) => folderPath(effSongFolder(sid)).map(x => safeFileName(x.n)).concat(safeFileName(songFull(lib.songs[sid]))).join('/');
   const songs = aliveSongs().sort((a, b) => songDir(a.id).localeCompare(songDir(b.id), 'de', { numeric: true }));
   const total = songs.reduce((a, s) => a + songSheets(s.id).length + songAudio(s.id).filter(x => opts.audio || x.kind === 'ref').length, 0);
   let n = 0;
@@ -6968,7 +7015,7 @@ async function buildBackup(opts, progress) {
       try {
         if (f.mimeType === TXT_MIME) {
           const html = await textHtmlForSheet(f);
-          const path = await add(dir + safeFileName(f.name.replace(/\.[^.]+$/, '')) + '.html', standaloneTextHtml(s.n, cleanTextDocHtml(html)));
+          const path = await add(dir + safeFileName(f.name.replace(/\.[^.]+$/, '')) + '.html', standaloneTextHtml(songFull(s), cleanTextDocHtml(html)));
           index.push({ id: f.id, name: f.name, mimeType: f.mimeType, song: s.id, path });
           const a = await annotForSheet(f);                      // Anmerkungen auf Text-Blättern (ab v2.7.0)
           if (hasContent(a)) await add('_Daten/Anmerkungen/' + f.id + '.annotations.json', JSON.stringify(a));
@@ -8619,7 +8666,7 @@ function detectSemitones(fileName) {
 }
 function xmOpenSearch(songId) {
   const s = sget(songId); if (!s) return;
-  const q = s.n.replace(/\s*[-–—]\s*/, ' ');
+  const q = songFull(s).replace(/\s*[-–—]\s*/, ' ');
   try { navigator.clipboard && navigator.clipboard.writeText(q).catch(() => {}); } catch (e) {}
   window.open(XM_SEARCH + encodeURIComponent(q), '_blank', 'noopener');
   toast('x-minus.pro geöffnet – «' + q + '» ist in der Zwischenablage (falls die Suche leer ist: einfügen).', 4500);
@@ -8658,10 +8705,10 @@ async function importBackingDialog(songId, file, onDone) {
   for (let i = -12; i <= 12; i++) semiSel.append(h('option', { value: String(i), text: i ? (i > 0 ? '+' : '') + i + ' Halbtöne' : 'Originaltonart' }));
   const det = detectSemitones(file.name);
   semiSel.value = String(det);
-  const nameIn = h('input', { type: 'text', style: 'width:100%;', value: stdTrackName(s.n, det) });
+  const nameIn = h('input', { type: 'text', style: 'width:100%;', value: stdTrackName(songFull(s), det) });
   let touched = false;
   nameIn.addEventListener('input', () => { touched = true; });
-  semiSel.addEventListener('change', () => { if (!touched) nameIn.value = stdTrackName(s.n, parseInt(semiSel.value, 10)); });
+  semiSel.addEventListener('change', () => { if (!touched) nameIn.value = stdTrackName(songFull(s), parseInt(semiSel.value, 10)); });
   let dir = fsaSupported() ? await btDir() : null;
   const cb = h('input', { type: 'checkbox', checked: fsaSupported() || null, disabled: fsaSupported() ? null : true });
   const dirLbl = h('span', { class: 'sub' });
@@ -8681,7 +8728,7 @@ async function importBackingDialog(songId, file, onDone) {
   openModal({
     title: '🎵 Backing-Track importieren – «' + s.n + '»', body, wide: true,
     buttons: [{ label: 'Abbrechen' }, { label: 'Importieren', primary: true, fn: () => {
-      const name = safeName(nameIn.value) || stdTrackName(s.n, 0), semi = parseInt(semiSel.value, 10) || 0;
+      const name = safeName(nameIn.value) || stdTrackName(songFull(s), 0), semi = parseInt(semiSel.value, 10) || 0;
       // Ordner-Berechtigung muss direkt im Klick angefragt werden (danach folgt der Upload)
       const wantCopy = cb.checked && fsaSupported();
       const perm = wantCopy ? (dir ? btDirPermission(dir, true) : btChooseDir().then(d => { dir = d; return !!d; })) : Promise.resolve(false);

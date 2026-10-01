@@ -21,6 +21,13 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.19.0 – Songtitel und Interpret getrennt (01.10.2026)
+- Neues Song-Feld `ar` (Interpret); `n` ist jetzt nur noch der Songtitel. Liste, Kopfzeile und Setlisten zeigen den Titel gross und den Interpreten klein darunter.
+- Sortierung: «Titel A–Z» und «Interpret A–Z» (Songs ohne Interpret am Ende); neuer Filter «Alle Interpreten»; die Suche findet Titel, Interpret, Tags und Ordner.
+- **Migration:** Beim ersten Laden werden bestehende Namen «Interpret – Titel» (Trennzeichen -, – oder — mit Leerzeichen, erster Treffer) automatisch getrennt. Der ursprüngliche Name bleibt pro Song im Feld `n0` erhalten. Namen ohne Trenner bleiben Titel ohne Interpret.
+- «Song umbenennen» fragt Titel und Interpret getrennt. Lyrics-/Link-Suche, Dateinamen, Exporte und Backup nutzen weiterhin «Interpret – Titel».
+- Hinweis: Ein Gerät mit älterer App-Version zeigt nach der Migration nur den Titel; bitte alle Geräte aktualisieren.
+
 ### v2.18.0 – Stufe 3 der Überarbeitung: Handy und Politur (30.09.2026)
 - Handy im Hochformat: Werkzeugleiste **unten** (Daumen-Reichweite), umbrechend statt seitlich scrollend; Blatt-Navigation nur noch über die schwebende Seitenanzeige.
 - Einheitliche Linien-Icons (SVG) statt Emoji in Kopfzeile, Song-Leiste, Werkzeugleiste und Seitenleisten-Knöpfen (gleiches Aussehen auf Android/Windows/iOS). Menüeinträge in Popup-Menüs zeigen noch Emoji.
