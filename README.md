@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.20.0 – Natürlichere Klänge im Üben-Bereich (01.10.2026)
+- **Einsingen / Referenzmelodie:** Töne jetzt wahlweise als Klavier (Standard), Gitarre (gezupfte Saite), E-Piano, Orgel oder «Sanft» (alter Synthesizer). Auswahl «Instrument» im Einsingen-Dialog, gilt auch fürs Abspielen der Referenzmelodie. Die Klänge sind synthetisch erzeugt (keine Sample-Dateien), klingen also angenähert, nicht wie Aufnahmen echter Instrumente.
+- **Neuer Ablauf «Einfach mitsingen (ohne Messung, kein Mikrofon)»:** Töne und Einzähler laufen, es wird nichts aufgenommen oder ausgewertet.
+- **Metronom:** Standardklang jetzt «klassisch» (Holz-Tick/Tock, erster Schlag höher), alternativ «Klick». Auswahl im Metronom-Dialog; gilt auch für den Einzähler im Einsingen.
+
 ### v2.19.0 – Songtitel und Interpret getrennt (01.10.2026)
 - Neues Song-Feld `ar` (Interpret); `n` ist jetzt nur noch der Songtitel. Liste, Kopfzeile und Setlisten zeigen den Titel gross und den Interpreten klein darunter.
 - Sortierung: «Titel A–Z» und «Interpret A–Z» (Songs ohne Interpret am Ende); neuer Filter «Alle Interpreten»; die Suche findet Titel, Interpret, Tags und Ordner.
