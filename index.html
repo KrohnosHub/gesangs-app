@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-/cvr18Mg7+SE/F0hnuCqGHbElwbwbeXVvceY+zYPXLA=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-dgyO+2O62syJzxz8Wz0scA0pf7Epk1t9Ecweifyqjic=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-/cvr18Mg7+SE/F0hnuCqGHbElwbwbeXVvceY+zYPXLA=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-dgyO+2O62syJzxz8Wz0scA0pf7Epk1t9Ecweifyqjic=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -732,7 +732,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.20.0';
+const APP_VERSION = '2.20.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -7876,6 +7876,17 @@ function ksSamples(midi, sr) {                  // Karplus-Strong: gezupfte Sait
   if (_ks.size > 80) _ks.clear();
   _ks.set(key, out); return out;
 }
+const _buses = new WeakMap();
+function pianoBus(ctx, out) {                    // gemeinsamer Ausgang je Ziel: trocken + kurzer Raumhall
+  let m = _buses.get(ctx); if (!m) { m = new Map(); _buses.set(ctx, m); }
+  if (m.has(out)) return m.get(out);
+  const inp = ctx.createGain(), wet = ctx.createGain(), conv = ctx.createConvolver();
+  const len = Math.floor(ctx.sampleRate * 1.1), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); let seed = 777 + c * 31; for (let i = 0; i < len; i++) { seed = (seed * 1664525 + 1013904223) >>> 0; d[i] = (seed / 4294967296 * 2 - 1) * Math.pow(1 - i / len, 3.2); } }
+  conv.buffer = ir; wet.gain.value = 0.22;
+  inp.connect(out); inp.connect(conv); conv.connect(wet); wet.connect(out);
+  m.set(out, inp); return inp;
+}
 function synthNote(ctx, midi, t0, dur, vol = 0.22, dest = null, inst = instrument) {
   const f = midiHz(midi), end = t0 + Math.max(0.08, dur), g = ctx.createGain(), out = dest || ctx.destination;
   const rel = (tau) => { g.gain.setTargetAtTime(0.0001, end, tau); };
@@ -7888,13 +7899,32 @@ function synthNote(ctx, midi, t0, dur, vol = 0.22, dest = null, inst = instrumen
     return;
   }
   if (inst === 'piano') {
-    const w = periodicWave(ctx, 'piano', [1, 0.55, 0.32, 0.2, 0.11, 0.07, 0.045, 0.03, 0.02]);
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.4;
-    lp.frequency.setValueAtTime(Math.min(9000, f * 16), t0); lp.frequency.exponentialRampToValueAtTime(Math.max(700, f * 3), t0 + 0.7);
-    const tau = Math.max(0.35, Math.min(1.4, 1.5 - (midi - 40) / 45));
-    g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(vol * 1.5, t0 + 0.004); g.gain.setTargetAtTime(vol * 0.01, t0 + 0.004, tau); rel(0.09);
-    [0, 5].forEach((det, i) => { const o = ctx.createOscillator(), og = ctx.createGain(); o.setPeriodicWave(w); o.frequency.value = f; o.detune.value = det; og.gain.value = i ? 0.45 : 0.8; o.connect(og); og.connect(lp); o.start(t0); o.stop(end + 0.6); });
-    lp.connect(g); g.connect(out); return;
+    // Additives Klaviermodell: unharmonische Teiltöne (Saitensteifigkeit), je Teilton eigenes Abklingen (Obertöne kürzer),
+    // zwei leicht verstimmte Saiten (Schwebung), Hammer-Anschlag (kurzes Rauschen) und ein wenig Raum.
+    const B = 0.00006 * Math.pow(2, (midi - 60) / 15), nP = Math.max(4, Math.min(16, Math.floor(7500 / f)));
+    const tau1 = Math.max(0.6, Math.min(3.2, 3.4 - (midi - 36) / 22));
+    const bus = pianoBus(ctx, out);
+    g.gain.value = 1; g.gain.setTargetAtTime(0, end, 0.11); g.connect(bus);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.min(9000, 2500 + f * 6); lp.Q.value = 0.3; lp.connect(g);
+    for (let n = 1; n <= nP; n++) {
+      const fn = n * f * Math.sqrt(1 + B * n * n); if (fn > 11000) break;
+      const amp = vol * 1.45 * Math.abs(Math.sin(n * Math.PI * 0.13) + 0.15) / Math.pow(n, 1.05);
+      const tn = tau1 / (1 + 0.55 * (n - 1));
+      const strings = n <= 4 ? [-1.3, 1.3] : [0];
+      strings.forEach(det => {
+        const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = fn; o.detune.value = det;
+        const a0 = amp / strings.length;
+        og.gain.setValueAtTime(0.0001, t0); og.gain.linearRampToValueAtTime(a0, t0 + 0.0025);
+        og.gain.setTargetAtTime(a0 * 0.38, t0 + 0.0025, 0.07 + 0.05 / n);        // schneller Anfangsabfall …
+        og.gain.setTargetAtTime(0.0001, t0 + 0.3, tn);                            // … dann langes Ausklingen
+        o.connect(og); og.connect(lp); o.start(t0); o.stop(end + 0.7);
+      });
+    }
+    const nz = ctx.createBufferSource(); nz.buffer = noiseBuf(ctx);
+    const hp = ctx.createBiquadFilter(), hg = ctx.createGain(); hp.type = 'bandpass'; hp.frequency.value = Math.min(5000, f * 4 + 600); hp.Q.value = 0.8;
+    hg.gain.setValueAtTime(vol * 0.9, t0); hg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.025);
+    nz.connect(hp); hp.connect(hg); hg.connect(g); nz.start(t0); nz.stop(t0 + 0.05);
+    return;
   }
   if (inst === 'epiano') {
     const car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), tine = ctx.createOscillator(), tg = ctx.createGain();
@@ -8152,6 +8182,7 @@ function openWarmup() {
   const api = openModal({ title: '🎵 Einsingen', body, wide: true, buttons: [{ label: 'Schliessen' }] });
   let run = null;
   const read = () => ({ ex: exSel.value, base: parseInt(baseSel.value, 10), reps: clamp(parseInt(repsIn.value, 10) || 1, 1, 12), dir: dirSel.value, bpm: clamp(parseInt(bpmIn.value, 10) || 90, 40, 200), mode: modeSel.value });
+  [exSel, baseSel, repsIn, dirSel, bpmIn, modeSel].forEach(el => el.addEventListener('change', () => lsSet('gapp_warmup', JSON.stringify(read()))));   // zuletzt genutzte Einstellungen merken
 
   function draw() {
     const cx = cv.getContext('2d'), W = cv.width, H = cv.height;

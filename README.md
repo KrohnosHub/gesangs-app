@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.20.1 – Klavier überarbeitet, Voreinstellungen (01.10.2026)
+- Klavierklang neu modelliert: unharmonische Teiltöne, je Teilton eigenes Abklingen (schneller Anfangsabfall, dann langes Ausklingen), zwei leicht verstimmte Saiten, Hammer-Anschlag, leichter Raumhall. Weiterhin synthetisch (ohne Sample-Dateien).
+- Einsingen merkt sich jetzt jede Änderung (Übung, Start, Wdh., Richtung, Tempo, Ablauf, Instrument) als Voreinstellung für das nächste Mal (pro Gerät). Das Metronom (Tempo, Takt, Betonung, Klang) tat das schon.
+
 ### v2.20.0 – Natürlichere Klänge im Üben-Bereich (01.10.2026)
 - **Einsingen / Referenzmelodie:** Töne jetzt wahlweise als Klavier (Standard), Gitarre (gezupfte Saite), E-Piano, Orgel oder «Sanft» (alter Synthesizer). Auswahl «Instrument» im Einsingen-Dialog, gilt auch fürs Abspielen der Referenzmelodie. Die Klänge sind synthetisch erzeugt (keine Sample-Dateien), klingen also angenähert, nicht wie Aufnahmen echter Instrumente.
 - **Neuer Ablauf «Einfach mitsingen (ohne Messung, kein Mikrofon)»:** Töne und Einzähler laufen, es wird nichts aufgenommen oder ausgewertet.
