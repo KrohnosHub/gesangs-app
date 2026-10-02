@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Gl6J/jMsrf0NnaF+J0iU0vLBHuBh4+/TM75INtxIdzg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-J0p+gpQ0DIQ0EmU6/hW8eSpEAUWWhC9ZXL5YQj3U9SI=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Gl6J/jMsrf0NnaF+J0iU0vLBHuBh4+/TM75INtxIdzg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-J0p+gpQ0DIQ0EmU6/hW8eSpEAUWWhC9ZXL5YQj3U9SI=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -732,7 +732,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.20.2';
+const APP_VERSION = '2.21.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1451,6 +1451,9 @@ function addLink(songId, link) {
 function renameLink(songId, linkId, title) {
   sTouch(songId, s => { const l = (s.links || []).find(x => x.id === linkId); if (l) { l.u0 = l.u0 || l.u; l.title = title; l.u = Date.now(); } });
 }
+function setLinkKind(songId, linkId, kind) {
+  sTouch(songId, s => { const l = (s.links || []).find(x => x.id === linkId); if (l) { l.u0 = l.u0 || l.u; l.kind = kind; l.u = Date.now(); } });
+}
 function removeLink(songId, linkId) {
   sTouch(songId, s => {
     const l = (s.links || []).find(x => x.id === linkId);
@@ -1559,6 +1562,11 @@ function migrateSongs() {
     x.n0 = x.n;
     if (sp) { x.ar = sp.ar; x.n = sp.n; } else x.ar = '';
     x.u = Date.now(); changed = true;
+  }
+  // Ab v2.21.0: automatisch gefundene Spotify-Treffer, die fälschlich als «Karaoke» einsortiert wurden, obwohl nichts darauf hinweist
+  for (const x of Object.values(lib.songs)) {
+    if (x.d) continue;
+    (x.links || []).forEach(l => { if (l.auto && l.type === 'sp' && l.kind === 'karaoke' && !isKaraokeText(l.title)) { l.kind = 'orig'; l.u = Date.now(); x.u = Date.now(); changed = true; } });
   }
   if (cleanAllLinks()) changed = true;          // ab v2.8.1: unpassende automatische Verknüpfungen entfernen
   if (changed) libChanged();
@@ -4678,8 +4686,22 @@ async function suggestLinksFor(name) {
       .catch(e => out.push({ error: 'Spotify (Karaoke): ' + e.message })));
   }
   await Promise.all(jobs);
-  return out;
+  // Ab v2.21.0: Die Suche «<Song> karaoke» liefert bei Spotify praktisch immer den ORIGINAL-Titel (Spotify ignoriert das
+  // Stichwort weitgehend). Dasselbe Stück tauchte dann auch als «Karaoke» auf und landete je nach Antwortreihenfolge dort.
+  // Jetzt: derselbe Titel wird nur einmal angeboten; als Karaoke gilt er nur, wenn Titel/Interpret das auch sagen.
+  const res = [], bestIdx = new Map();
+  out.forEach(x => {
+    if (x.error) { res.push(x); return; }
+    const key = x.type + ':' + x.mediaId, kar = isKaraokeText(x.title);
+    if (x.type === 'sp') x.kind = kar ? 'karaoke' : 'orig';                      // Spotify: nur nach Beschriftung entscheiden
+    else if (x.kind === 'karaoke' && !kar && out.some(o => !o.error && o !== x && o.type === x.type && o.mediaId === x.mediaId && o.kind === 'orig')) return;   // YouTube: in beiden Suchen gefunden und nicht beschriftet → Original
+    else if (x.kind === 'orig' && kar && out.some(o => !o.error && o !== x && o.type === x.type && o.mediaId === x.mediaId && o.kind === 'karaoke')) x.kind = 'karaoke';
+    if (bestIdx.has(key)) return;
+    bestIdx.set(key, res.length); res.push(x);
+  });
+  return res;
 }
+function isKaraokeText(t) { return /karaoke|instrumental|playback|backing|sing[\s-]?along|minus[\s-]?one|in the style of|originally performed/i.test(String(t || '')); }
 
 const linkIcon = (l) => l.type === 'yt' ? '▶' : l.type === 'xm' ? '🎚' : '♫';
 const linkSourceLabel = (l) => l.type === 'yt' ? 'YouTube' : l.type === 'xm' ? 'x-minus.pro' : 'Spotify';
@@ -4769,6 +4791,7 @@ function manageLinks(s) {
       playableLink(l) ? h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }) : null,
       isLoaded(l) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
       h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); openExternal(l.url); } }),
+      l.type !== 'xm' ? h('button', { class: 'more', text: linkGroup(l) === 'karaoke' ? '→ 🎤' : '→ 🎧', title: linkGroup(l) === 'karaoke' ? 'In Kategorie «Original (mit Gesang)» verschieben' : 'In Kategorie «Karaoke / Playback» verschieben', onclick: (e) => { e.stopPropagation(); setLinkKind(s.id, l.id, linkGroup(l) === 'karaoke' ? 'orig' : 'karaoke'); if (isLoaded(l)) mpSetTitle(l.title || '', linkGroup(l) === 'karaoke' ? 'Original' : 'Karaoke'); draw(); } }) : null,
       h('button', { class: 'more', text: '✎', title: 'Titel ändern', onclick: (e) => { e.stopPropagation(); renameLinkTitle(l); } }),
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } }));
   }

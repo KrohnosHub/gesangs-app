@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.21.0 – Verknüpfungen: Kategorie wechseln, Spotify-Fehleinsortierung (02.10.2026)
+- **Ursache:** Die Spotify-Suche «<Song> karaoke» ignoriert das Stichwort und liefert meist den Original-Titel. Derselbe Titel kam so in beiden Suchen vor und landete – je nach Antwortreihenfolge – unter «Karaoke» (gemeldet bei «Bad Moon Rising»).
+- **Behoben:** Spotify-Treffer gelten nur als Karaoke, wenn Titel/Interpret das ausdrücklich sagen (Karaoke, Instrumental, Playback, Backing …); derselbe Titel wird nur einmal angeboten. YouTube: Treffer, die in beiden Suchen auftauchen und nicht als Karaoke beschriftet sind, gelten als Original.
+- **Reparatur:** Bereits falsch einsortierte, automatisch gefundene Spotify-Links ohne Karaoke-Hinweis wechseln beim nächsten Laden zurück zu «Original».
+- **Neu:** Pro Verknüpfung Knopf «→ 🎧 / → 🎤» zum Wechseln zwischen Original und Karaoke (YouTube und Spotify; x-minus.pro bleibt immer Karaoke).
+
 ### v2.20.2 – Sync-Anzeige «1 offen» und automatische Aktualisierung (02.10.2026)
 - «n noch nicht in Drive» konnte dauerhaft stehen bleiben, wenn ein Eintrag nicht mehr abgleichbar war (Blatt gelöscht/verschoben oder kein lokaler Datensatz). Solche Einträge werden jetzt beim Abgleich entfernt. Nach der Migration der Interpret-Felder bleibt die Bibliothek ebenfalls nicht mehr als «offen» hängen.
 - Antippen der Sync-Anzeige nennt bei Rest-Einträgen, was genau offen ist (Bibliothek / Notizen «…» / Text-Blatt «…»).
