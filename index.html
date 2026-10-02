@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-dgyO+2O62syJzxz8Wz0scA0pf7Epk1t9Ecweifyqjic=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Gl6J/jMsrf0NnaF+J0iU0vLBHuBh4+/TM75INtxIdzg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-dgyO+2O62syJzxz8Wz0scA0pf7Epk1t9Ecweifyqjic=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-Gl6J/jMsrf0NnaF+J0iU0vLBHuBh4+/TM75INtxIdzg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -732,7 +732,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.20.1';
+const APP_VERSION = '2.20.2';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -3565,7 +3565,7 @@ async function syncAnnot(id) {
   const isCur = () => !!(currentFile && currentFile.id === id && ready);
   const startedCur = isCur();
   let rec0 = startedCur ? null : await safe(IDB.get('annots', id));
-  if (!startedCur && !rec0) return;
+  if (!startedCur && !rec0) { if (dirtyIds.delete(id)) persistDirtyIds(); updateSyncState(); return; }   // ohne lokalen Datensatz gibt es nichts abzugleichen (sonst bliebe «1 offen» ewig stehen)
   syncing++; updateSyncState();
   try {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -3639,7 +3639,6 @@ async function syncLibrary() {
         try { remote = JSON.parse(await driveText(meta.id)); } catch (e) { remote = emptyLib(); }
         remote.folders = remote.folders || {}; remote.files = remote.files || {}; remote.setlists = remote.setlists || {};
       }
-      const ver = libVer;
       let merged = lib;
       if (remote) { merged = mergeLib(lib, remote); if (stableStr(merged) !== stableStr(lib)) { lib = merged; renderSidebar(); } }
       // Songs erst NACH dem Merge migrieren: sonst würde ein noch leerer lokaler Bibliotheksstand
@@ -3648,6 +3647,8 @@ async function syncLibrary() {
       // lib immer den bestmöglichen bekannten Stand wider (frisch gemergt, schon aktuell, oder –
       // falls noch nie eine library.json existierte – der lokale Stand, gegen den nichts race'n kann).
       migrateSongs();
+      merged = lib;
+      const ver = libVer;                        // erst NACH der Migration merken, sonst bliebe libDirty nach jeder Migration hängen
       const needUp = remote ? stableStr(merged) !== stableStr(remote) : (libDirty && (meta || libHasData(lib)));
       let up = null;
       if (needUp) {
@@ -3673,6 +3674,7 @@ async function syncAll(force) {
     await enqueue(async () => {
       await loadFileList(false);
       await syncLibrary();
+      pruneStaleDirty();
       const ids = new Set(dirtyIds); if (currentFile && sheetKind !== 'text') ids.add(currentFile.id);
       for (const id of ids) { if (files.some(f => f.id === id)) await syncAnnot(id); }
       const textIds = new Set(textDirtyIds); if (currentFile && sheetKind === 'text') textIds.add(currentFile.id);
@@ -3685,6 +3687,23 @@ async function syncAll(force) {
 }
 
 function pendingCount() { return dirtyIds.size + textDirtyIds.size + (libDirty ? 1 : 0); }
+// Einträge, deren Blatt nicht mehr existiert (gelöscht/verschoben), können nie hochgeladen werden → aus der Offen-Liste entfernen.
+function pruneStaleDirty() {
+  if (!filesKnown || !files.length) return;
+  const ids = new Set(files.map(f => f.id));
+  let a = false, b = false;
+  for (const id of [...dirtyIds]) if (!ids.has(id) && !(currentFile && currentFile.id === id)) { dirtyIds.delete(id); a = true; }
+  for (const id of [...textDirtyIds]) if (!ids.has(id)) { textDirtyIds.delete(id); b = true; }
+  if (a) persistDirtyIds(); if (b) persistTextDirtyIds();
+}
+function pendingDetail() {
+  const nm = (id) => { const f = files.find(x => x.id === id); return f ? f.name.replace(/\.[^.]+$/, '') : id.slice(0, 8); };
+  const parts = [];
+  if (libDirty) parts.push('Bibliothek');
+  dirtyIds.forEach(id => parts.push('Notizen «' + nm(id) + '»'));
+  textDirtyIds.forEach(id => parts.push('Text-Blatt «' + nm(id) + '»'));
+  return parts.join(', ');
+}
 function updateSyncState() {
   const el = $('syncState'), n = pendingCount();
   let t, c = '';
@@ -3702,7 +3721,7 @@ $('syncState').addEventListener('click', async () => {
   if (!tokenValid()) { signIn(); return; }
   conflictShown.clear();                       // zurückgestellte Konflikte beim manuellen Synchronisieren erneut anzeigen
   await flushSave(); await flushTextSave(); await syncAll(true);
-  toast(pendingCount() ? 'Noch nicht alles synchronisiert' : 'Synchronisiert');
+  toast(pendingCount() ? 'Noch offen: ' + pendingDetail() : 'Synchronisiert', pendingCount() ? 6000 : 2600);
 });
 
 // Ab v2.16.0 kein «Speichern»-Knopf mehr: Änderungen werden nach 0,3 s lokal gesichert und nach 2 s mit Drive
@@ -4529,7 +4548,19 @@ window.addEventListener('online', () => { loadGsi(); });
 
   // Service Worker: Programm-Dateien offline verfügbar machen (nur über https bzw. localhost möglich)
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    const hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service Worker:', e));
+    // Neue App-Version wurde installiert: im Leerlauf sofort neu laden (sonst läuft auf dem Handy oft noch die alte Version),
+    // sonst Hinweis zum Antippen.
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloading) return;
+      const idle = () => pendingCount() === 0 && !document.querySelector('.modal-bg') && !document.body.classList.contains('perf');
+      if (idle()) { reloading = true; location.reload(); return; }
+      const t = h('div', { style: 'position:fixed;left:50%;bottom:70px;transform:translateX(-50%);z-index:210;background:#6b4f3b;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;cursor:pointer;max-width:86vw;text-align:center;', text: '⟳ Neue Version – hier antippen zum Aktualisieren' });
+      t.addEventListener('click', () => { reloading = true; location.reload(); });
+      document.body.append(t);
+    });
   }
 
   loadStoredToken(); updateAuthBtn();

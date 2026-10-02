@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.20.2 – Sync-Anzeige «1 offen» und automatische Aktualisierung (02.10.2026)
+- «n noch nicht in Drive» konnte dauerhaft stehen bleiben, wenn ein Eintrag nicht mehr abgleichbar war (Blatt gelöscht/verschoben oder kein lokaler Datensatz). Solche Einträge werden jetzt beim Abgleich entfernt. Nach der Migration der Interpret-Felder bleibt die Bibliothek ebenfalls nicht mehr als «offen» hängen.
+- Antippen der Sync-Anzeige nennt bei Rest-Einträgen, was genau offen ist (Bibliothek / Notizen «…» / Text-Blatt «…»).
+- Neue App-Version: Wird sie im Hintergrund installiert, lädt die App im Leerlauf selbst neu (kein Speicherstand offen, kein Dialog, kein Auftrittsmodus); sonst erscheint ein Hinweis zum Antippen. Vorher lief auf dem Handy oft weiter die alte Version.
+
 ### v2.20.1 – Klavier überarbeitet, Voreinstellungen (01.10.2026)
 - Klavierklang neu modelliert: unharmonische Teiltöne, je Teilton eigenes Abklingen (schneller Anfangsabfall, dann langes Ausklingen), zwei leicht verstimmte Saiten, Hammer-Anschlag, leichter Raumhall. Weiterhin synthetisch (ohne Sample-Dateien).
 - Einsingen merkt sich jetzt jede Änderung (Übung, Start, Wdh., Richtung, Tempo, Ablauf, Instrument) als Voreinstellung für das nächste Mal (pro Gerät). Das Metronom (Tempo, Takt, Betonung, Klang) tat das schon.
