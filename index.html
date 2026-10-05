@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-J0p+gpQ0DIQ0EmU6/hW8eSpEAUWWhC9ZXL5YQj3U9SI=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-H6SrK51RIB+y9UwmGJF8OfPJBR6sKEvglJoqHms5XDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-+nHU6LOqKe6NlxdnX8vOFr7458rxorjEH/sCySmEpbM=' 'sha256-J0p+gpQ0DIQ0EmU6/hW8eSpEAUWWhC9ZXL5YQj3U9SI=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-H6SrK51RIB+y9UwmGJF8OfPJBR6sKEvglJoqHms5XDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -43,11 +43,15 @@
     // Spotify-Suche einfach leer (YouTube funktioniert unabhängig davon weiter).
     SPOTIFY_CLIENT_SECRET: ''
   };
+  // Ab v2.22.0 (Entwicklermodus): «?sim=NAME» startet die App als simulierter neuer Nutzer in einer vollständig getrennten
+  // Umgebung (eigene IndexedDB, eigene localStorage-Schlüssel mit Präfix) – die echten Daten werden weder gelesen noch verändert.
+  const SIM = (() => { try { return (new URLSearchParams(location.search).get('sim') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24); } catch (e) { return ''; } })();
+  const LSP = SIM ? 'sim_' + SIM + '_' : '';
   // Spotify Client-ID/Secret aus den lokalen Geräte-Einstellungen laden (siehe openSettingsDialog()
   // in 11_links.js) -- vor dem Test-Override unten, damit Tests weiterhin Vorrang haben.
   try {
-    const spi = localStorage.getItem('sp_id'); if (spi) CONFIG.SPOTIFY_CLIENT_ID = spi;
-    const sps = localStorage.getItem('sp_secret'); if (sps) CONFIG.SPOTIFY_CLIENT_SECRET = sps;
+    const spi = localStorage.getItem(LSP + 'sp_id'); if (spi) CONFIG.SPOTIFY_CLIENT_ID = spi;
+    const sps = localStorage.getItem(LSP + 'sp_secret'); if (sps) CONFIG.SPOTIFY_CLIENT_SECRET = sps;
   } catch (e) {}
   // Für automatisierte Tests: erlaubt, einzelne Werte oben ohne Codeänderung zu überschreiben.
   if (window.__TEST_CFG) Object.assign(CONFIG, window.__TEST_CFG);
@@ -732,7 +736,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.21.0';
+const APP_VERSION = '2.22.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -753,9 +757,13 @@ function h(tag, props, ...kids) {
   for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
   return e;
 }
-const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
-const lsDel = (k) => { try { localStorage.removeItem(k); } catch (e) {} };
+const lsGet = (k) => { try { return localStorage.getItem(LSP + k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(LSP + k, v); } catch (e) {} };
+const lsDel = (k) => { try { localStorage.removeItem(LSP + k); } catch (e) {} };
+// Unpräfixierter Zugriff (Entwicklermodus-Schalter und Simulationsliste gehören zur echten Umgebung)
+const rawGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const rawSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const idbName = () => 'gesangs-app' + (SIM ? '-sim-' + SIM : '');
 const r5 = (v) => Math.round(v * 1e5) / 1e5;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const escQ = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -1105,7 +1113,7 @@ const IDB = {
   async open() {
     try {
       await new Promise((res, rej) => {
-        const r = indexedDB.open('gesangs-app', 1);
+        const r = indexedDB.open(idbName(), 1);
         r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('blobs'); d.createObjectStore('annots'); d.createObjectStore('kv'); };
         r.onsuccess = () => {
           IDB.db = r.result;
@@ -4916,6 +4924,13 @@ function openSettingsDialog() {
   const idInput = h('input', { type: 'text', placeholder: 'Spotify Client-ID', value: CONFIG.SPOTIFY_CLIENT_ID || '', style: 'width:100%; margin-bottom:6px;' });
   const secretInput = h('input', { type: 'password', placeholder: 'Spotify Client-Secret', value: CONFIG.SPOTIFY_CLIENT_SECRET || '', style: 'width:100%;' });
   body.append(h('div', { style: 'padding:9px 6px;' }, idInput, secretInput));
+  if (!SIM) {
+    const devCb = h('input', { type: 'checkbox', checked: rawGet('gapp_dev') === '1' || null });
+    devCb.addEventListener('change', () => { rawSet('gapp_dev', devCb.checked ? '1' : '0'); devRow.style.display = devCb.checked ? '' : 'none'; });
+    const devRow = h('div', { style: 'padding:0 6px 6px;' + (devCb.checked ? '' : 'display:none;') }, h('button', { text: '🧪 Neuen Nutzer simulieren …', onclick: () => devDialog() }));
+    body.append(h('div', { style: 'border-top:1px solid var(--border);margin-top:8px;padding:10px 6px 4px;' },
+      h('label', { style: 'display:flex;gap:8px;align-items:center;font-size:13px;' }, devCb, h('span', { text: 'Entwicklermodus (Test-Werkzeuge)' }))), devRow);
+  }
   openModal({
     title: '⚙ Einstellungen', body,
     buttons: [
@@ -5583,6 +5598,59 @@ $('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
 
 
 // ---------------------------------------------------------------
+// Entwicklermodus (ab v2.22.0): «Neuen Nutzer simulieren». Öffnet die App mit ?sim=NAME in einer vollständig getrennten,
+// leeren Umgebung (eigene Datenbank, eigener Browser-Speicher) – so lassen sich Erststart, Kurzanleitung und leere Bibliothek
+// prüfen, ohne die eigenen Daten zu berühren. Meldet man sich in der Simulation mit einem Google-Konto an, wird dessen Drive
+// genutzt (dann ist es kein «neuer» Nutzer mehr, aber weiterhin getrennt von den lokal gespeicherten Daten dieses Browsers).
+// ---------------------------------------------------------------
+const simList = () => { try { return JSON.parse(rawGet('gapp_sims') || '[]').filter(x => /^[A-Za-z0-9_-]+$/.test(x)); } catch (e) { return []; } };
+const simUrl = (n) => location.origin + location.pathname + (n ? '?sim=' + encodeURIComponent(n) : '');
+function simWipe(name) {            // Datenbank + Browser-Speicher einer Simulation löschen
+  return new Promise((res) => {
+    try {
+      const pfx = 'sim_' + name + '_';
+      Object.keys(localStorage).filter(k => k.startsWith(pfx)).forEach(k => localStorage.removeItem(k));
+      const rq = indexedDB.deleteDatabase('gesangs-app-sim-' + name);
+      rq.onsuccess = rq.onerror = rq.onblocked = () => res();
+      setTimeout(res, 1500);
+    } catch (e) { res(); }
+  });
+}
+function simBanner() {
+  if (!SIM) return;
+  document.title = '🧪 ' + SIM + ' – Gesangs-App';
+  const bar = h('div', { id: 'simBar', style: 'background:#e08a00;color:#fff;font-size:13px;padding:6px 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:relative;z-index:50;' },
+    h('span', { style: 'flex:1;min-width:180px;', text: '🧪 Simulation «' + SIM + '»: eigene, leere Umgebung – deine echten Daten sind nicht sichtbar und bleiben unberührt.' }),
+    h('button', { text: 'Zurücksetzen', title: 'Alle Daten dieser Simulation löschen (Neustart als neuer Nutzer)', onclick: async () => { if (!confirm('Simulation «' + SIM + '» zurücksetzen? Alle Daten dieser Simulation werden gelöscht.')) return; await simWipe(SIM); location.reload(); } }),
+    h('button', { text: 'Beenden', title: 'Zur echten App zurück', onclick: () => { location.href = simUrl(''); } }));
+  document.body.prepend(bar);
+}
+function devDialog() {
+  const body = h('div');
+  const nameIn = h('input', { type: 'text', value: 'test' + (simList().length + 1), style: 'width:100%;', maxlength: 24, title: 'Name der Simulation (Buchstaben, Ziffern, - _)' });
+  const listEl = h('div', { style: 'margin-top:8px;' });
+  function draw() {
+    listEl.textContent = '';
+    simList().forEach(n => listEl.append(h('div', { class: 'pick-row', style: 'cursor:default;' },
+      h('span', { style: 'flex:1;', text: '🧪 ' + n }),
+      h('button', { text: 'Öffnen', onclick: () => window.open(simUrl(n), '_blank') }),
+      h('button', { text: 'Löschen', onclick: async () => { if (!confirm('Simulation «' + n + '» samt Daten löschen?')) return; await simWipe(n); rawSet('gapp_sims', JSON.stringify(simList().filter(x => x !== n))); draw(); } }))));
+    if (!simList().length) listEl.append(h('div', { class: 'empty-note', text: 'Noch keine Simulation.' }));
+  }
+  body.append(h('div', { class: 'empty-note', style: 'margin-bottom:8px;', text: 'Startet die App als neuer Nutzer in einer getrennten Umgebung (neuer Tab): leere Bibliothek, Kurzanleitung beim Erststart, nicht angemeldet. Die eigenen Daten bleiben unberührt.' }),
+    nameIn,
+    h('button', { class: 'primary', style: 'margin-top:8px;width:100%;', text: '▶ Neuen Nutzer simulieren', onclick: () => {
+      const n = nameIn.value.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);
+      if (!n) { toast('Bitte einen Namen eingeben (Buchstaben/Ziffern).'); return; }
+      if (!simList().includes(n)) rawSet('gapp_sims', JSON.stringify([...simList(), n]));
+      window.open(simUrl(n), '_blank'); draw();
+    } }), listEl);
+  draw();
+  openModal({ title: '🧪 Entwicklermodus', body, buttons: [{ label: 'Schliessen' }] });
+}
+simBanner();
+
+// ---------------------------------------------------------------
 // Kurzanleitung (ab v2.18.0): erscheint einmal beim allerersten Start (nicht, wenn schon angemeldet
 // gewesen), danach jederzeit über «⋯ Mehr → Kurzanleitung». Dient auch als Einstieg für neue Nutzer.
 // ---------------------------------------------------------------
@@ -5609,10 +5677,10 @@ function showTour() {
     body.append(row);
   }
   draw();
-  try { localStorage.setItem('gapp_tour', '1'); } catch (e) {}
+  try { lsSet('gapp_tour', '1'); } catch (e) {}
 }
 setTimeout(() => {
-  try { if (!localStorage.getItem('gapp_tour') && !localStorage.getItem('gapp_hadlogin') && !localStorage.getItem('gapp_folderId')) showTour(); } catch (e) {}
+  try { if (!lsGet('gapp_tour') && !lsGet('gapp_hadlogin') && !lsGet('gapp_folderId')) showTour(); } catch (e) {}
 }, 1800);
 
 

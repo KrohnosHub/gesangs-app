@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.22.0 – Entwicklermodus «Neuen Nutzer simulieren» + Testsuite (05.10.2026)
+- **Simulation:** `index.html?sim=NAME` startet die App als neuer Nutzer in einer komplett getrennten Umgebung (eigene IndexedDB `gesangs-app-sim-NAME`, localStorage-Schlüssel `sim_NAME_*`): leere Bibliothek, Kurzanleitung beim Erststart, nicht angemeldet. Die echten Daten bleiben unsichtbar und unberührt. Oranges Banner mit «Zurücksetzen» (löscht die Simulation) und «Beenden».
+- Aktivieren: ⚙ Einstellungen → «Entwicklermodus (Test-Werkzeuge)» → «🧪 Neuen Nutzer simulieren …» (öffnet neuen Tab, verwaltet/löscht Simulationen). Meldet man sich in einer Simulation mit einem Google-Konto an, wird dessen Drive verwendet.
+- **Testsuite** im Ordner `tests/`: `npm i -g playwright` (Chromium nötig), dann `node tests/run.js [Filter]`. Prüft CSP-Hashes, sw.js-Version, README-Eintrag, Start ohne Fehler, Titel/Interpret (Migration, Sortierung, Filter, Suche), Verknüpfungs-Kategorien, Sync-Anzeige, Einsingen-Einstellungen, Klang-Pegel, Handy-Layout und die Sim-Isolation. Umgebungsvariablen: `CHROMIUM` (Pfad zum Browser).
+
 ### v2.21.0 – Verknüpfungen: Kategorie wechseln, Spotify-Fehleinsortierung (02.10.2026)
 - **Ursache:** Die Spotify-Suche «<Song> karaoke» ignoriert das Stichwort und liefert meist den Original-Titel. Derselbe Titel kam so in beiden Suchen vor und landete – je nach Antwortreihenfolge – unter «Karaoke» (gemeldet bei «Bad Moon Rising»).
 - **Behoben:** Spotify-Treffer gelten nur als Karaoke, wenn Titel/Interpret das ausdrücklich sagen (Karaoke, Instrumental, Playback, Backing …); derselbe Titel wird nur einmal angeboten. YouTube: Treffer, die in beiden Suchen auftauchen und nicht als Karaoke beschriftet sind, gelten als Original.
