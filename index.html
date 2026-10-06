@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-H6SrK51RIB+y9UwmGJF8OfPJBR6sKEvglJoqHms5XDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-1lqnxp1qz5HL3wo9sDdQvlobb0r39YGxbM7dsdIBPl8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-H6SrK51RIB+y9UwmGJF8OfPJBR6sKEvglJoqHms5XDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-1lqnxp1qz5HL3wo9sDdQvlobb0r39YGxbM7dsdIBPl8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -479,6 +479,31 @@
   @keyframes pfPulse{50%{transform:scale(1.12);}}
   body.perf #pageFloat, body.mode-text #pageFloat{display:none !important;}
   #canvasWrap.has-pf{padding-bottom:72px;}
+  /* --- v2.23.0: Zwei-Seiten-Ansicht, Blätter-Hilfen im Auftrittsmodus --- */
+  #baseCanvas2, #inkCanvas2{position:absolute; top:0; display:none;}
+  body.spread-on #canvasStack{background:transparent; box-shadow:none;}
+  body.spread-on #baseCanvas, body.spread-on #baseCanvas2{background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.18);}
+  body.perf.spread-on #baseCanvas, body.perf.spread-on #baseCanvas2{box-shadow:none;}
+  #spreadBtn.on, #perfSpread.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); column-count:2; column-gap:64px;}
+  body.perf.spread-text #textSheet{width:min(1500px, 97vw); height:calc(100% - 24px); margin:12px auto; align-self:stretch; padding:22px 3.5vw;
+    column-count:2; column-gap:7vw; column-fill:auto; overflow:hidden; cursor:default;}
+  body.perf.spread-text #canvasWrap{overflow:hidden;}
+  body.perf.spread-text .perf-txt, body.perf.spread-text .perf-sync{display:none !important;}
+  #perfZones{position:absolute; inset:0; pointer-events:none;}
+  .pz{position:absolute; top:50%; transform:translateY(-50%); pointer-events:auto; width:clamp(46px,6vw,66px); height:clamp(86px,17vh,130px); border:0; border-radius:14px;
+    background:rgba(20,20,20,.38); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; opacity:.55; padding:0; cursor:pointer; transition:opacity .2s, background .2s;}
+  .pz-l{left:6px;} .pz-r{right:6px;}
+  .pz .pz-a{font-size:36px; line-height:1;} .pz .pz-t{font-size:10px; line-height:1.1; text-align:center; padding:0 2px;}
+  .pz.off{opacity:.14; pointer-events:none;}
+  .pz.flash{opacity:1; background:rgba(36,113,163,.85);}
+  #perfHint{position:absolute; inset:0; display:none; pointer-events:none; font-size:15px; color:#fff; text-align:center;}
+  #perfHint.show{display:block;}
+  #perfHint .ph{position:absolute; top:0; bottom:0; display:flex; align-items:center; justify-content:center; padding:10px; line-height:1.4; text-shadow:0 1px 4px rgba(0,0,0,.8);}
+  #perfHint .ph-l{left:0; width:30%; background:rgba(25,80,125,.62);}
+  #perfHint .ph-r{right:0; width:30%; background:rgba(25,80,50,.62);}
+  #perfHint .ph-c{left:30%; width:40%; background:rgba(0,0,0,.45);}
+  #perfHint .ph-b{position:absolute; left:50%; bottom:calc(40px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:rgba(0,0,0,.75); padding:8px 14px; border-radius:10px; font-size:13px; width:min(560px,92vw); text-shadow:none;}
   body.perf.pn-on #canvasWrap{margin-bottom:var(--pnh, 0px);}
   body.perf.pn-on #perfPage{bottom:calc(var(--pnh, 0px) + 8px);}
   body.perf.pn-on #perfNotes{left:0; right:0; bottom:0; width:auto; max-height:34vh; border-radius:0; box-shadow:0 -2px 12px rgba(0,0,0,.35); padding-bottom:calc(10px + env(safe-area-inset-bottom));}
@@ -614,6 +639,7 @@
           <span id="pageLabel">1 / 1</span>
           <button id="nextPage" class="icon">›</button>
         </div>
+        <button id="spreadBtn" class="icon" title="Zwei Seiten nebeneinander (Zeichnen: automatisch eine Seite)">▯▯</button>
         <div style="flex:1"></div>
         <button id="toolMoreBtn" class="tool" title="Ebenen, Helligkeit, Finger-Modus, Bildschirm an, Seite leeren">⋯ Mehr</button>
         <button id="exportBtn" title="Als PDF mit Annotationen exportieren">⤓ PDF</button>
@@ -636,6 +662,8 @@
           <div id="canvasStack">
             <canvas id="baseCanvas"></canvas>
             <canvas id="inkCanvas"></canvas>
+            <canvas id="baseCanvas2"></canvas>
+            <canvas id="inkCanvas2"></canvas>
           </div>
           <div id="textSheet" spellcheck="false"></div>
         </div>
@@ -712,7 +740,15 @@
     <button id="perfSync" class="perf-txt" title="Synchron zur Wiedergabe im Mini-Player mitlaufen (braucht Zeitstempel)">♫ Sync</button>
     <button id="perfOfsDown" class="perf-sync" title="Text läuft zu früh: 0.5 s später">−0.5 s</button>
     <button id="perfOfsUp" class="perf-sync" title="Text läuft zu spät: 0.5 s früher">+0.5 s</button>
+    <button id="perfSpread" title="Zwei Seiten nebeneinander ein-/ausschalten">▯▯ 2 Seiten</button>
+    <button id="perfHelp" title="Erklärt, wie man blättert">? Blättern</button>
     <button id="perfFull" title="Vollbild">⤢ Vollbild</button>
+  </div>
+  <div id="perfZones">
+    <div id="perfHint"><div class="ph ph-l">‹<br>Tippen:<br>zurück blättern</div><div class="ph ph-c">Tippen in die Mitte:<br>Leiste ein-/ausblenden</div><div class="ph ph-r">›<br>Tippen:<br>weiter blättern</div>
+      <div class="ph-b">Blättern geht auch per <b>Wischen</b>, mit den <b>Pfeiltasten / Bild auf-ab</b> oder per <b>Fusspedal</b>. Am Ende eines Liedes geht es in der Setliste zum nächsten.</div></div>
+    <button id="pzL" class="pz pz-l" title="Zurück blättern"><span class="pz-a">‹</span><span class="pz-t">zurück</span></button>
+    <button id="pzR" class="pz pz-r" title="Weiter blättern"><span class="pz-a">›</span><span class="pz-t">weiter</span></button>
   </div>
   <div id="perfNotes"></div>
   <div id="perfPage"></div>
@@ -736,7 +772,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.22.0';
+const APP_VERSION = '2.23.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1598,6 +1634,7 @@ let currentImg = null;          // HTMLImageElement (Bilddatei)
 let currentImgUrl = null;
 let currentBlob = null;         // Original-Blatt (für Export)
 let currentPage = 1, totalPages = 1;
+let spreadPref = lsGet('gapp_spread') === '1', spreadShown = false;   // Zwei-Seiten-Ansicht (ab v2.23.0)
 let annotData = emptyAnnot();
 let annotRec = { aid: null, aTime: null, base: null };   // Sync-Zustand des geöffneten Blatts
 let ready = false;              // Datei + Annotationen geladen
@@ -2432,7 +2469,7 @@ function closeCurrent() {
   currentFile = null; currentSongId = null; annotRec = { aid: null, aTime: null, base: null }; annotData = emptyAnnot();
   undoStack = []; zoom = 1; currentPage = 1; totalPages = 1; notesScope = 'file'; selId = null; dirty = false;
   asStop();
-  sheetKind = 'sheet'; textDirty = false; textBaseMd5 = null; document.body.classList.remove('mode-text');
+  sheetKind = 'sheet'; textDirty = false; textBaseMd5 = null; document.body.classList.remove('mode-text', 'spread-on', 'spread-text'); spreadShown = false; hideSecond();
   updateSelBar && updateSelBar();
   renderSidebar();
 }
@@ -2510,6 +2547,7 @@ async function openFile(f, opts = {}) {
       ready = true;
       bindNotes();
       textSheetEl.contentEditable = perf ? 'false' : 'true';
+      refreshSpread(true);
       updatePageNav();
       if (seq === openSeq) { setStatus(''); updateSyncState(); }
       if (perf) { $('perfTitle').textContent = perfTitleText(); updatePerfPage(); asPrepare(); }
@@ -2553,6 +2591,8 @@ async function openFile(f, opts = {}) {
     if (dirtyIds.has(f.id)) dirty = true;
     if (opts.page === 'last') currentPage = totalPages;
     ready = true;
+    if (spreadOn()) currentPage = spreadStart(currentPage);
+    spreadShown = spreadOn(); hideSecond(); refreshSpread(true);
     bindNotes(); updatePageNav(); applyDisplay(); renderLayerPop();
     await renderPage();
     if (seq === openSeq) { setStatus(''); updateSyncState(); }
@@ -2572,13 +2612,16 @@ async function openFile(f, opts = {}) {
 function fitWidth() {
   const cw = canvasWrap.clientWidth, ch = canvasWrap.clientHeight, pad = perf ? 0 : 32;
   let w = cw - pad;
+  if (spreadOn()) w = (w - spreadGap()) / 2;
   if (fitMode === 'page') w = Math.min(w, (ch - pad) / pageAspect);
   return Math.max(200, Math.min(w, perf ? 4000 : 1400));
 }
 function applyCssSize() {
   const w = Math.round(fitWidth() * zoom), h_ = Math.round(w * pageAspect);
-  stack.style.width = w + 'px'; stack.style.height = h_ + 'px';
+  const sp = spreadOn(), gap = sp ? spreadGap() : 0, h2 = Math.round(w * (aspect2 || pageAspect));
+  stack.style.width = (sp ? 2 * w + gap : w) + 'px'; stack.style.height = (sp ? Math.max(h_, h2) : h_) + 'px';
   [baseCanvas, inkCanvas].forEach(c => { c.style.width = w + 'px'; c.style.height = h_ + 'px'; });
+  [baseCanvas2, inkCanvas2].forEach(c => { c.style.width = w + 'px'; c.style.height = h2 + 'px'; c.style.left = (w + gap) + 'px'; });
 }
 function targetPixelWidth() {
   // Ab v2.9.0: auf Geräten mit Grob-Zeigern (i. d. R. Handy/Tablet) deutlich kleineres Speicherbudget --
@@ -2593,6 +2636,80 @@ function targetPixelWidth() {
   if (px * px * pageAspect > maxArea) px = Math.floor(Math.sqrt(maxArea / pageAspect));
   return Math.max(px, 100);
 }
+const spreadGap = () => perf ? 6 : 14;
+const spreadOn = () => spreadPref && sheetKind !== 'text' && totalPages > 1 && (perf || tool === 'view');
+const textSpread = () => spreadPref && sheetKind === 'text';
+const textSpreadPaged = () => perf && textSpread();
+const spreadStart = (p) => p - ((p - 1) % 2);
+const baseCanvas2 = $('baseCanvas2'), inkCanvas2 = $('inkCanvas2');
+let base2Cache = null, prefetched2 = null, render2Seq = 0, aspect2 = 0;
+function hideSecond() {
+  render2Seq++;
+  [baseCanvas2, inkCanvas2].forEach(c => { c.style.display = 'none'; });
+  if (base2Cache) { freeCanvas(base2Cache); base2Cache = null; }
+  if (prefetched2) { freeCanvas(prefetched2.canvas); prefetched2 = null; }
+}
+// Rechte Seite der Doppelseite (nur lesen/anzeigen; Annotationen werden mitgezeichnet)
+async function renderSecond() {
+  const seq = ++render2Seq, p = currentPage + 1;
+  if (!spreadOn() || !currentDoc) { hideSecond(); return; }
+  if (p > totalPages) { [baseCanvas2, inkCanvas2].forEach(c => { c.style.display = 'none'; }); return; }
+  const doc = currentDoc;
+  let off, aspect;
+  if (prefetched2 && prefetched2.page === p && Math.abs(prefetched2.px - targetPixelWidthFor(prefetched2.aspect)) <= 2) {
+    off = prefetched2.canvas; aspect = prefetched2.aspect; prefetched2 = null;
+  } else {
+    try {
+      const page = await doc.getPage(p);
+      if (seq !== render2Seq) return;
+      const vp1 = page.getViewport({ scale: 1 });
+      aspect = vp1.height / vp1.width;
+      const vp = page.getViewport({ scale: targetPixelWidthFor(aspect) / vp1.width });
+      off = document.createElement('canvas'); off.width = Math.ceil(vp.width); off.height = Math.ceil(vp.height);
+      await page.render({ canvasContext: off.getContext('2d'), viewport: vp }).promise;
+    } catch (e) { return; }
+    if (seq !== render2Seq || doc !== currentDoc) { freeCanvas(off); return; }
+  }
+  [baseCanvas2, inkCanvas2].forEach(c => { c.width = off.width; c.height = off.height; c.style.display = 'block'; });
+  if (base2Cache && base2Cache !== off) freeCanvas(base2Cache);
+  base2Cache = off; aspect2 = aspect;
+  applyCssSize(); paintSecond();
+}
+function paintSecond() {
+  if (!base2Cache || !spreadOn() || currentPage + 1 > totalPages) return;
+  const W = inkCanvas2.width, H = inkCanvas2.height, objs = pageArrRO(currentPage + 1);
+  const bc = baseCanvas2.getContext('2d'), ic = inkCanvas2.getContext('2d');
+  bc.globalCompositeOperation = 'source-over'; bc.clearRect(0, 0, W, H); bc.drawImage(base2Cache, 0, 0);
+  ic.clearRect(0, 0, W, H);
+  const hl = objs.filter(o => isHlObj(o) && o.hl && visLayer(o.l));
+  if (hl.length) { const t = document.createElement('canvas'); t.width = W; t.height = H; renderObjects(t.getContext('2d'), W, hl); bc.globalCompositeOperation = 'multiply'; bc.drawImage(t, 0, 0); bc.globalCompositeOperation = 'source-over'; freeCanvas(t); }
+  renderObjects(ic, W, objs.filter(o => !isHlObj(o)));
+}
+// Zustand der Zwei-Seiten-Ansicht (Einstellung, Modus, Seitenzahl) in die Oberfläche übernehmen
+function refreshSpread(force) {
+  const sp = spreadOn(), tx = textSpread();
+  document.body.classList.toggle('spread-on', sp);
+  document.body.classList.toggle('spread-text', tx);
+  ['spreadBtn', 'perfSpread'].forEach(id => $(id).classList.toggle('on', spreadPref));
+  if (!ready) { spreadShown = sp; return; }
+  if (sheetKind === 'text') { spreadShown = false; textPageSync(); updatePageNav(); return; }
+  if (sp === spreadShown && !force) return;
+  spreadShown = sp;
+  if (sp) currentPage = spreadStart(currentPage); else hideSecond();
+  updatePageNav(); bindNotes(); applyCssSize();
+  if (sp) { pageReady = false; }
+  scheduleRender(20);
+}
+function setSpread(on) {
+  spreadPref = on; lsSet('gapp_spread', on ? '1' : '0');
+  if (ready && on && sheetKind !== 'text' && totalPages < 2) toast('Dieses Blatt hat nur eine Seite.', 1800);
+  else if (ready && on && sheetKind !== 'text' && !perf && tool !== 'view') toast('Zwei Seiten gelten im Lesemodus; zum Zeichnen wird eine Seite gezeigt.', 2600);
+  refreshSpread(true); if (perf) updatePerfPage();
+}
+$('spreadBtn').addEventListener('click', () => setSpread(!spreadPref));
+$('perfSpread').addEventListener('click', () => { setSpread(!spreadPref); setPerfBar(true); });
+window.addEventListener('resize', () => { if (ready && sheetKind === 'text') textPageSync(); });
+
 function commitCanvas(off) {
   [baseCanvas, inkCanvas].forEach(c => { c.width = off.width; c.height = off.height; });
   if (baseCache && baseCache !== off) freeCanvas(baseCache);
@@ -2602,6 +2719,7 @@ function commitCanvas(off) {
   applyCssSize();
   redrawInk();
   pageReady = true;
+  if (spreadOn()) renderSecond().catch(() => {}); else if (spreadShown || base2Cache) hideSecond();
 }
 
 // Rendert offscreen und übernimmt nur das jeweils neueste Ergebnis (keine Render-Kollisionen beim schnellen Blättern/Zoomen)
@@ -2648,9 +2766,10 @@ function targetPixelWidthFor(aspect) { const keep = pageAspect; pageAspect = asp
 let prefetchTimer = null;
 function schedulePrefetch() {
   clearTimeout(prefetchTimer);
-  if (!perf || !currentDoc || currentPage >= totalPages) return;
+  const step = spreadOn() ? 2 : 1;
+  if (!perf || !currentDoc || currentPage + step > totalPages) return;
   prefetchTimer = setTimeout(async () => {
-    const doc = currentDoc, n = currentPage + 1;
+    const doc = currentDoc, n = currentPage + step;
     if (!doc || !perf) return;
     try {
       const page = await doc.getPage(n);
@@ -2664,6 +2783,14 @@ function schedulePrefetch() {
       if (doc === currentDoc && perf) {
         if (prefetched && prefetched.canvas !== off) freeCanvas(prefetched.canvas);   // alten, nicht verbrauchten Vorab-Render freigeben
         prefetched = { page: n, px, aspect, canvas: off };
+        if (spreadOn() && n + 1 <= totalPages) {
+          const pg2 = await doc.getPage(n + 1), v1 = pg2.getViewport({ scale: 1 }), asp2 = v1.height / v1.width, px2 = targetPixelWidthFor(asp2);
+          const v2 = pg2.getViewport({ scale: px2 / v1.width }), off2 = document.createElement('canvas');
+          off2.width = Math.ceil(v2.width); off2.height = Math.ceil(v2.height);
+          await pg2.render({ canvasContext: off2.getContext('2d'), viewport: v2 }).promise;
+          if (doc === currentDoc && perf && spreadOn()) { if (prefetched2) freeCanvas(prefetched2.canvas); prefetched2 = { page: n + 1, px: px2, aspect: asp2, canvas: off2 }; }
+          else freeCanvas(off2);
+        }
       } else freeCanvas(off);   // Seite/Modus inzwischen gewechselt -- Render war umsonst, Speicher sofort wieder freigeben
     } catch (e) { /* egal */ }
   }, 250);
@@ -2674,22 +2801,33 @@ function scheduleRender(ms) {
   renderTimer = setTimeout(() => { const doc = currentDoc; renderPage().catch(e => { if (doc !== currentDoc || /Transport destroyed|Worker was destroyed/i.test(String(e && e.message))) return; console.error(e); setStatus('Renderfehler', 'error'); }); }, ms);
 }
 
+const spanLabel = (p) => (spreadOn() && p < totalPages) ? p + '–' + (p + 1) : String(p);
+function pageLabelText() {
+  if (textSpreadPaged()) return 'Doppelseite ' + (tsIdx() + 1) + ' / ' + tsCount();
+  return spanLabel(currentPage) + ' / ' + totalPages;
+}
 function updatePageNav() {
-  pageLabel.textContent = `${currentPage} / ${totalPages}`;
+  const step = spreadOn() ? 2 : 1, hasNext = currentPage + step <= totalPages;
+  pageLabel.textContent = pageLabelText();
   $('prevPage').disabled = currentPage <= 1;
-  $('nextPage').disabled = currentPage >= totalPages;
+  $('nextPage').disabled = !hasNext;
   // Seitenwechsel gut sichtbar unten am Blatt (ab v2.8.3), nur bei mehrseitigen Blättern
   const multi = totalPages > 1 && sheetKind !== 'text';
   $('pageFloat').style.display = multi ? 'flex' : 'none';
   canvasWrap.classList.toggle('has-pf', multi);
-  $('pfLabel').textContent = 'Seite ' + currentPage + ' / ' + totalPages;
+  $('pfLabel').textContent = 'Seite ' + spanLabel(currentPage) + ' / ' + totalPages;
   $('pfPrev').disabled = currentPage <= 1;
-  $('pfNext').disabled = currentPage >= totalPages;
-  $('pfNext').textContent = currentPage < totalPages ? 'Seite ' + (currentPage + 1) + ' ›' : 'Ende';
+  $('pfNext').disabled = !hasNext;
+  $('pfNext').textContent = hasNext ? 'Seite ' + spanLabel(currentPage + step) + ' ›' : 'Ende';
   if (typeof updatePerfPage === 'function') updatePerfPage();
 }
 async function goPage(p) {
-  if (!ready || p < 1 || p > totalPages || p === currentPage) return;
+  if (!ready) return;
+  if (spreadOn()) {                         // Zwei-Seiten-Ansicht: ±1 von Tasten/Knöpfen = eine Doppelseite weiter/zurück
+    if (p === currentPage + 1) p = currentPage + 2; else if (p === currentPage - 1) p = currentPage - 2;
+    if (p >= 1) p = spreadStart(p);
+  }
+  if (p < 1 || p > totalPages || p === currentPage) return;
   cancelStroke();
   currentPage = p; selId = null; updateSelBar();
   pageReady = false;
@@ -3064,6 +3202,7 @@ function redrawInk() {
   hlWasLive = liveHl;
   inkCtx.drawImage(inkCache, 0, 0);
   if (live && !liveHl) drawObj(inkCtx, live.o, W);
+  if (spreadShown && base2Cache) paintSecond();
   const so = tool === 'select' ? selObj() : null;
   if (so) {
     const b = bbox(so), pad = 6;
@@ -3396,6 +3535,7 @@ stack.addEventListener('pointercancel', (e) => endPointer(e, true));
 // Werkzeugleiste
 // ---------------------------------------------------------------
 function setTool(t) {
+  const wasSpread = spreadOn();
   tool = t; lsSet('gapp_tool', t);
   document.body.classList.toggle('draw-mode', t !== 'view');
   if (t !== 'view') { lastDrawTool = t; lsSet('gapp_drawtool', t); }
@@ -3405,6 +3545,8 @@ function setTool(t) {
   $('stampBar').classList.toggle('show', t === 'stamp' || t === 'text');
   $('stampBar').classList.toggle('text-only', t === 'text');
   fillObjSizeSel();
+  refreshSpread();
+  if (wasSpread && !spreadOn() && ready) toast('Zeichnen: eine Seite. Zurück zu «Lesen» zeigt wieder zwei Seiten.', 2600);
   stack.style.cursor = t === 'view' ? 'grab' : t === 'select' ? 'default' : (t === 'eraser' ? 'cell' : 'crosshair');
   updateSelBar(); requestInk();
 }
@@ -3837,8 +3979,8 @@ function perfNotesSpace(on) {
 $('perfNotesBtn').addEventListener('click', () => { lsSet('gapp_perfnotes', lsGet('gapp_perfnotes') === '1' ? '0' : '1'); renderPerfNotes(); setPerfBar(true); });
 function updatePerfPage() {
   if (!perf) { $('perfNotes').classList.remove('show'); if (document.body.classList.contains('pn-on')) perfNotesSpace(false); return; }
-  renderPerfNotes();
-  let t = `${currentPage} / ${totalPages}`;
+  renderPerfNotes(); updatePerfZones();
+  let t = pageLabelText();
   if (perfCtx && lib.setlists[perfCtx.setId]) t += ` · Lied ${perfCtx.idx + 1}/${lib.setlists[perfCtx.setId].it.length}`;
   const pl = mpTimeLabel();
   if (pl) t += ' · ♫ ' + pl;
@@ -3849,6 +3991,7 @@ function enterPerf() {
   cancelStroke();
   perf = true; document.body.classList.add('perf');
   fitMode = 'page'; zoom = 1; selId = null; updateSelBar();
+  refreshSpread(); showPerfHint();
   sidebar.classList.remove('open'); $('layerPop').classList.remove('show'); $('dispPop').classList.remove('show');
   $('perfTitle').textContent = perfTitleText(); updatePerfPage();
   setPerfBar(true);
@@ -3865,7 +4008,8 @@ function enterPerf() {
 function exitPerf() {
   if (!perf) return;
   perf = false; document.body.classList.remove('perf');
-  fitMode = 'width'; zoom = 1; prefetched = null;
+  fitMode = 'width'; zoom = 1; prefetched = null; hidePerfHint();
+  refreshSpread();
   setPerfBar(false);
   try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
   updateWake();
@@ -3888,27 +4032,62 @@ $('perfBar').addEventListener('pointerdown', () => setPerfBar(true));
 $('perfBar').addEventListener('input', () => setPerfBar(true));
 
 // --- Setlisten im Auftrittsmodus -------------------------------------------
-async function stepSong(dir, page) {
-  if (!perfCtx || !lib.setlists[perfCtx.setId]) return false;
+function songStepTarget(dir) {
+  if (!perfCtx || !lib.setlists[perfCtx.setId]) return -1;
   const s = lib.setlists[perfCtx.setId];
   const avail = (i) => lib.songs[s.it[i]] && primarySheet(s.it[i]);
   let i = perfCtx.idx + dir;
   while (i >= 0 && i < s.it.length && !avail(i)) i += dir;
-  if (i < 0 || i >= s.it.length) return false;
+  return (i < 0 || i >= s.it.length) ? -1 : i;
+}
+async function stepSong(dir, page) {
+  const i = songStepTarget(dir);
+  if (i < 0) return false;
   perfCtx.idx = i;
-  await openFile(avail(i), page ? { page } : {});
+  await openFile(primarySheet(lib.setlists[perfCtx.setId].it[i]), page ? { page } : {});
   return true;
 }
+// --- Text im Auftrittsmodus: Doppelseiten (Spalten) per Tippen blättern -------
+const tsStep = () => { const cs = getComputedStyle(textSheetEl); return Math.max(50, textSheetEl.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) + (parseFloat(cs.columnGap) || 0)); };
+const tsCount = () => Math.max(1, Math.ceil((textSheetEl.scrollWidth - textSheetEl.clientWidth) / tsStep() - 0.01) + 1);
+const tsIdx = () => Math.min(tsCount() - 1, Math.max(0, Math.round(textSheetEl.scrollLeft / tsStep())));
+function tsGo(i) { textSheetEl.scrollLeft = Math.round(Math.min(tsCount() - 1, Math.max(0, i)) * tsStep()); updatePageNav(); updatePerfPage(); }
+function textPageSync() { if (textSpreadPaged()) { requestAnimationFrame(() => tsGo(tsIdx())); } else textSheetEl.scrollLeft = 0; }
+// Sichtbare Blätter-Zonen (Pfeile am Rand) und Erklärung beim Start des Auftrittsmodus
+let perfHintTimer = null;
+function showPerfHint() { $('perfHint').classList.add('show'); clearTimeout(perfHintTimer); perfHintTimer = setTimeout(hidePerfHint, 7000); }
+function hidePerfHint() { clearTimeout(perfHintTimer); $('perfHint').classList.remove('show'); }
+function pzFlash(side) { const b = $(side === 'l' ? 'pzL' : 'pzR'); b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 260); }
+function updatePerfZones() {
+  const paged = textSpreadPaged(), text = sheetKind === 'text';
+  const atEnd = paged ? tsIdx() >= tsCount() - 1 : text ? true : currentPage + (spreadOn() ? 2 : 1) > totalPages;
+  const atStart = paged ? tsIdx() <= 0 : text ? true : currentPage <= 1;
+  const set = (id, atLimit, dir, arrow, lbl, songLbl) => {
+    const b = $(id), hasSong = songStepTarget(dir) >= 0;
+    b.querySelector('.pz-a').textContent = !atLimit ? arrow : hasSong ? (dir > 0 ? '⏭' : '⏮') : '■';
+    b.querySelector('.pz-t').textContent = !atLimit ? lbl : hasSong ? songLbl : (dir > 0 ? 'Ende' : 'Anfang');
+    b.classList.toggle('off', atLimit && !hasSong);
+    b.title = !atLimit ? lbl : hasSong ? songLbl : '';
+  };
+  set('pzL', atStart, -1, '‹', 'zurück', 'voriges Lied');
+  set('pzR', atEnd, 1, '›', 'weiter', 'nächstes Lied');
+}
+$('pzL').addEventListener('click', (e) => { e.stopPropagation(); hidePerfHint(); perfPrev(); setPerfBar(false); });
+$('pzR').addEventListener('click', (e) => { e.stopPropagation(); hidePerfHint(); perfNext(); setPerfBar(false); });
+$('perfHelp').addEventListener('click', () => { showPerfHint(); setPerfBar(true); });
+canvasWrap.addEventListener('pointerdown', () => { if (perf) hidePerfHint(); });
 async function perfNext() {
   if (!ready) return;
-  if (currentPage < totalPages) { await goPage(currentPage + 1); return; }
-  if (await stepSong(1)) return;
+  if (textSpreadPaged()) { if (tsIdx() < tsCount() - 1) { tsGo(tsIdx() + 1); pzFlash('r'); return; } }
+  else if (currentPage + (spreadOn() ? 2 : 1) <= totalPages) { await goPage(currentPage + 1); pzFlash('r'); return; }
+  if (await stepSong(1)) { pzFlash('r'); return; }
   toast(perfCtx ? 'Ende der Setliste' : 'Letzte Seite', 1200);
 }
 async function perfPrev() {
   if (!ready) return;
-  if (currentPage > 1) { await goPage(currentPage - 1); return; }
-  if (await stepSong(-1, 'last')) return;
+  if (textSpreadPaged()) { if (tsIdx() > 0) { tsGo(tsIdx() - 1); pzFlash('l'); return; } }
+  else if (currentPage > 1) { await goPage(currentPage - 1); pzFlash('l'); return; }
+  if (await stepSong(-1, 'last')) { pzFlash('l'); if (textSpreadPaged()) setTimeout(() => tsGo(tsCount() - 1), 80); }
 }
 async function startSetlist(setId) {
   const s = lib.setlists[setId];
@@ -5660,7 +5839,7 @@ function showTour() {
     ['Song anlegen', 'Links (auf dem Handy über ☰) auf «♪ Neuer Song». Dem Song fügst du Blätter hinzu: PDF/Bild hochladen, scannen oder ein Text-Blatt schreiben. Mehrere Blätter pro Song sind möglich (Reiter über dem Blatt).'],
     ['Lesen und Zeichnen', 'Standard ist «Lesen»: scrollen und blättern, nichts wird versehentlich gezeichnet. Mit «✏ Zeichnen» erscheinen Stift, Marker, Text und Symbole. Notizen liegen auf Ebenen (unter «⋯ Mehr»).'],
     ['Üben', 'Im Reiter «Üben» findest du Aufwärmen, Metronom, Aufgaben und Stimmumfang. Pro Song: «🎙 Aufnahmen» (eigene Aufnahmen, Backing-Tracks, Melodie), «🔗 Verknüpfungen» (YouTube/Spotify) und «📓 Journal».'],
-    ['Auftritt', '«▶ Auftritt» blendet alle Bedienelemente aus: grosse Ansicht, Umblättern per Tipp an den Rand.'],
+    ['Auftritt', '«▶ Auftritt» blendet alle Bedienelemente aus. Blättern: auf die Pfeile am linken/rechten Rand tippen (oder irgendwo im linken/rechten Drittel), wischen, Pfeiltasten oder Fusspedal; Mitte antippen = Leiste. «▯▯ 2 Seiten» zeigt zwei Seiten nebeneinander.'],
     ['Teilen und Sicherheit', 'Mit «📤 Teilen» gibst du Blätter an deine Gesangslehrerin bzw. Schüler frei. Unter «⋯ Mehr» gibt es Backup und «Alle Blätter offline speichern» (für Proben ohne Internet).']
   ];
   let i = 0;
@@ -6725,7 +6904,7 @@ function asSavePrefs() {
   AS.saveT = setTimeout(() => { if (id) fset(id, { scr: AS.speed, lro: AS.ofs }); }, 1200);
 }
 function asStart() {
-  if (!perf || sheetKind !== 'text' || !ready) return;
+  if (!perf || sheetKind !== 'text' || !ready || textSpreadPaged()) return;
   if (AS.sync && !asEnsureSyncReady()) { AS.sync = false; asLabel(); return; }
   AS.on = true; AS.last = performance.now(); AS.pos = canvasWrap.scrollTop;
   asLabel();

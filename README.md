@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.23.0 – Zwei-Seiten-Ansicht und klareres Blättern im Auftrittsmodus (06.10.2026)
+- **Blättern im Auftrittsmodus:** Beim Start erscheint ein Hinweis (linkes Drittel = zurück, rechtes Drittel = weiter, Mitte = Leiste; Wischen, Pfeiltasten/Bild auf-ab, Fusspedal). Dauerhaft sichtbare Pfeil-Knöpfe am linken/rechten Rand (antippbar, kurzes Aufleuchten beim Blättern); am Ende eines Lieds zeigen sie «⏭ nächstes Lied», sonst gesperrt. Knopf «? Blättern» in der Leiste zeigt den Hinweis erneut.
+- **Zwei Seiten nebeneinander:** Knopf «▯▯» in der Werkzeugleiste und «▯▯ 2 Seiten» in der Auftrittsleiste (pro Gerät gemerkt). PDF: Doppelseiten 1–2, 3–4 …; die letzte, ungerade Seite steht allein links. Blättern springt um eine Doppelseite; Annotationen sind auf beiden Seiten sichtbar. **Zeichnen/Bearbeiten nur in der Einzelseite:** beim Wechsel zu «Zeichnen» wird automatisch eine Seite gezeigt, zurück in «Lesen» wieder zwei.
+- **Text-Blätter:** zwei Spalten (auch beim Bearbeiten). Im Auftrittsmodus wird der Text in Doppelseiten (Spaltenpaaren) geblättert statt automatisch gescrollt (Auto-Scroll und Sync mit der Wiedergabe sind in dieser Ansicht aus).
+- Bilder (Einzelseite) bleiben unverändert. Tests: `tests/04-spread.test.js`.
+
 ### v2.22.0 – Entwicklermodus «Neuen Nutzer simulieren» + Testsuite (05.10.2026)
 - **Simulation:** `index.html?sim=NAME` startet die App als neuer Nutzer in einer komplett getrennten Umgebung (eigene IndexedDB `gesangs-app-sim-NAME`, localStorage-Schlüssel `sim_NAME_*`): leere Bibliothek, Kurzanleitung beim Erststart, nicht angemeldet. Die echten Daten bleiben unsichtbar und unberührt. Oranges Banner mit «Zurücksetzen» (löscht die Simulation) und «Beenden».
 - Aktivieren: ⚙ Einstellungen → «Entwicklermodus (Test-Werkzeuge)» → «🧪 Neuen Nutzer simulieren …» (öffnet neuen Tab, verwaltet/löscht Simulationen). Meldet man sich in einer Simulation mit einem Google-Konto an, wird dessen Drive verwendet.
