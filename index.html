@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-WU7yKbbgJcquFccL1mv/Sh62oXmb489BRJG4aN+dbm0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-r558X4IgnGs1SWoF6/S3gS7VZskJuK1vqILqDLpNi30=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-WU7yKbbgJcquFccL1mv/Sh62oXmb489BRJG4aN+dbm0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-r558X4IgnGs1SWoF6/S3gS7VZskJuK1vqILqDLpNi30=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -196,7 +196,8 @@
   }
   #canvasStack{position:relative; margin:auto; flex:none; box-shadow:0 2px 10px rgba(0,0,0,.15); background:#fff; touch-action:none;}
   #baseCanvas, #inkCanvas{position:absolute; top:0; left:0;}
-  #inkCanvas{touch-action:none;}
+  #inkCanvas, #inkCanvas2{touch-action:none;}
+  #inkCanvas.side-act, #inkCanvas2.side-act{outline:2px solid rgba(36,113,163,.45); outline-offset:-2px;}
 
   #selBar{
     position:absolute; left:50%; bottom:14px; transform:translateX(-50%); z-index:12;
@@ -777,7 +778,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.24.0';
+const APP_VERSION = '2.25.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1675,6 +1676,7 @@ let currentImg = null;          // HTMLImageElement (Bilddatei)
 let currentImgUrl = null;
 let currentBlob = null;         // Original-Blatt (für Export)
 let currentPage = 1, totalPages = 1;
+let pageOff = 0;                // Zwei-Seiten-Ansicht: 0 = links, 1 = rechts ist die aktive (zu bearbeitende) Seite (ab v2.25.0)
 let spreadPref = lsGet('gapp_spread') === '1', spreadShown = false;   // Zwei-Seiten-Ansicht (ab v2.23.0)
 let annotData = emptyAnnot();
 let annotRec = { aid: null, aTime: null, base: null };   // Sync-Zustand des geöffneten Blatts
@@ -2506,7 +2508,7 @@ function closeCurrent() {
   if (renderTask) { try { renderTask.cancel(); } catch (e) {} renderTask = null; }
   if (currentDoc) { destroyDoc(currentDoc); currentDoc = null; }
   if (currentImgUrl) { URL.revokeObjectURL(currentImgUrl); currentImgUrl = null; }
-  freeCanvas(baseCache); if (prefetched) freeCanvas(prefetched.canvas);
+  freeCanvas(baseCache); if (prefetched) freeCanvas(prefetched.canvas); pageOff = 0; hideSecond();
   currentImg = null; currentBlob = null; prefetched = null; baseCache = null;
   currentFile = null; currentSongId = null; annotRec = { aid: null, aTime: null, base: null }; annotData = emptyAnnot();
   undoStack = []; zoom = 1; currentPage = 1; totalPages = 1; notesScope = 'file'; selId = null; dirty = false;
@@ -2679,7 +2681,9 @@ function targetPixelWidth() {
   return Math.max(px, 100);
 }
 const spreadGap = () => perf ? 6 : 14;
-const spreadOn = () => spreadPref && sheetKind !== 'text' && totalPages > 1 && (perf || tool === 'view');
+const spreadOn = () => spreadPref && sheetKind !== 'text' && totalPages > 1;
+const curP = () => currentPage + (spreadShown && pageOff && currentPage + 1 <= totalPages ? 1 : 0);   // Seite, auf die gezeichnet wird
+const activeInk = () => curP() > currentPage ? inkCanvas2 : inkCanvas;
 const textSpread = () => spreadPref && sheetKind === 'text';
 const textSpreadPaged = () => perf && textSpread();
 const spreadStart = (p) => p - ((p - 1) % 2);
@@ -2719,13 +2723,40 @@ async function renderSecond() {
 }
 function paintSecond() {
   if (!base2Cache || !spreadOn() || currentPage + 1 > totalPages) return;
-  const W = inkCanvas2.width, H = inkCanvas2.height, objs = pageArrRO(currentPage + 1);
+  const W = inkCanvas2.width, H = inkCanvas2.height, P2 = currentPage + 1;
   const bc = baseCanvas2.getContext('2d'), ic = inkCanvas2.getContext('2d');
-  bc.globalCompositeOperation = 'source-over'; bc.clearRect(0, 0, W, H); bc.drawImage(base2Cache, 0, 0);
+  const key = currentFile.id + ':' + P2 + ':' + [...hiddenLayers].join(',');
+  if (!ink2Cache || ink2Cache.width !== W || ink2Cache.height !== H) {
+    ink2Cache = document.createElement('canvas'); ink2Cache.width = W; ink2Cache.height = H;
+    hl2Cache = document.createElement('canvas'); hl2Cache.width = W; hl2Cache.height = H; sec2Valid = false;
+  }
+  if (key !== sec2Key) { sec2Key = key; sec2Valid = false; }
+  let rebuilt = false;
+  if (!sec2Valid) {
+    const objs = pageArrRO(P2), c = ink2Cache.getContext('2d'), c2 = hl2Cache.getContext('2d');
+    c.clearRect(0, 0, W, H); c2.clearRect(0, 0, W, H);
+    renderObjects(c, W, objs.filter(o => !isHlObj(o)));
+    const hls = objs.filter(isHlObj);
+    hl2Has = hls.some(o => o.hl && visLayer(o.l));
+    if (hl2Has) renderObjects(c2, W, hls);
+    sec2Valid = true; rebuilt = true;
+  }
+  const onSide = curP() === P2, liveHl = !!(live && onSide && live.o.hl);
+  if (rebuilt || liveHl || hl2WasLive) {
+    bc.globalCompositeOperation = 'source-over'; bc.clearRect(0, 0, W, H); bc.drawImage(base2Cache, 0, 0);
+    if (hl2Has || liveHl) {
+      bc.globalCompositeOperation = 'multiply';
+      if (hl2Has) bc.drawImage(hl2Cache, 0, 0);
+      if (liveHl) drawObj(bc, live.o, W);
+      bc.globalCompositeOperation = 'source-over';
+    }
+  }
+  hl2WasLive = liveHl;
   ic.clearRect(0, 0, W, H);
-  const hl = objs.filter(o => isHlObj(o) && o.hl && visLayer(o.l));
-  if (hl.length) { const t = document.createElement('canvas'); t.width = W; t.height = H; renderObjects(t.getContext('2d'), W, hl); bc.globalCompositeOperation = 'multiply'; bc.drawImage(t, 0, 0); bc.globalCompositeOperation = 'source-over'; freeCanvas(t); }
-  renderObjects(ic, W, objs.filter(o => !isHlObj(o)));
+  ic.drawImage(ink2Cache, 0, 0);
+  if (live && onSide && !liveHl) drawObj(ic, live.o, W);
+  const so = onSide && tool === 'select' ? selObj() : null;
+  if (so) drawSel(ic, so, W);
 }
 // Zustand der Zwei-Seiten-Ansicht (Einstellung, Modus, Seitenzahl) in die Oberfläche übernehmen
 function refreshSpread(force) {
@@ -2736,8 +2767,9 @@ function refreshSpread(force) {
   if (!ready) { spreadShown = sp; return; }
   if (sheetKind === 'text') { spreadShown = false; textPageSync(); updatePageNav(); return; }
   if (sp === spreadShown && !force) return;
-  spreadShown = sp;
+  spreadShown = sp; pageOff = 0; selId = null;
   if (sp) currentPage = spreadStart(currentPage); else hideSecond();
+  markActive();
   updatePageNav(); bindNotes(); applyCssSize();
   if (sp) { pageReady = false; }
   scheduleRender(20);
@@ -2745,7 +2777,6 @@ function refreshSpread(force) {
 function setSpread(on) {
   spreadPref = on; lsSet('gapp_spread', on ? '1' : '0');
   if (ready && on && sheetKind !== 'text' && totalPages < 2) toast('Dieses Blatt hat nur eine Seite.', 1800);
-  else if (ready && on && sheetKind !== 'text' && !perf && tool !== 'view') toast('Zwei Seiten gelten im Lesemodus; zum Zeichnen wird eine Seite gezeigt.', 2600);
   refreshSpread(true); if (perf) updatePerfPage();
 }
 $('spreadBtn').addEventListener('click', () => setSpread(!spreadPref));
@@ -2871,7 +2902,7 @@ async function goPage(p) {
   }
   if (p < 1 || p > totalPages || p === currentPage) return;
   cancelStroke();
-  currentPage = p; selId = null; updateSelBar();
+  currentPage = p; pageOff = 0; selId = null; updateSelBar(); markActive();
   pageReady = false;
   inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
   updatePageNav(); bindNotes();
@@ -2955,7 +2986,7 @@ window.addEventListener('resize', () => { if (ready) { applyCssSize(); scheduleR
 // ---------------------------------------------------------------
 function applyDisplay() {
   const m = currentFile ? fget(currentFile.id) : { bri: 1, con: 1 };
-  baseCanvas.style.filter = (m.bri === 1 && m.con === 1) ? '' : `brightness(${m.bri}) contrast(${m.con})`;
+  baseCanvas.style.filter = baseCanvas2.style.filter = (m.bri === 1 && m.con === 1) ? '' : `brightness(${m.bri}) contrast(${m.con})`;
   const b = Math.round((m.bri || 1) * 100), c = Math.round((m.con || 1) * 100);
   $('briRange').value = b; $('briVal').textContent = b + '%';
   $('conRange').value = c; $('conVal').textContent = c + '%';
@@ -2963,7 +2994,7 @@ function applyDisplay() {
   $('dispBtn').classList.toggle('on', b !== 100 || c !== 100);
 }
 function previewDisplay(bri, con) {
-  baseCanvas.style.filter = (bri === 1 && con === 1) ? '' : `brightness(${bri}) contrast(${con})`;
+  baseCanvas.style.filter = baseCanvas2.style.filter = (bri === 1 && con === 1) ? '' : `brightness(${bri}) contrast(${con})`;
   $('briVal').textContent = Math.round(bri * 100) + '%'; $('conVal').textContent = Math.round(con * 100) + '%';
 }
 function commitDisplay(bri, con) { if (currentFile) fset(currentFile.id, { bri, con }); }
@@ -2984,10 +3015,10 @@ function bindNotes() {
   if (totalPages <= 1) notesScope = 'file';
   const tabPage = $('tabPage');
   tabPage.style.display = totalPages > 1 ? '' : 'none';
-  tabPage.textContent = `Seite ${currentPage}`;
+  tabPage.textContent = `Seite ${curP()}`;
   $('tabFile').classList.toggle('active', notesScope === 'file');
   tabPage.classList.toggle('active', notesScope === 'page');
-  notesArea.value = notesScope === 'file' ? (annotData.notes || '') : (annotData.pageNotes[String(currentPage)] || '');
+  notesArea.value = notesScope === 'file' ? (annotData.notes || '') : (annotData.pageNotes[String(curP())] || '');
   notesArea.disabled = !ready;
 }
 $('tabFile').addEventListener('click', () => { notesScope = 'file'; bindNotes(); });
@@ -2995,7 +3026,7 @@ $('tabPage').addEventListener('click', () => { notesScope = 'page'; bindNotes();
 notesArea.addEventListener('input', () => {
   if (!ready) return;
   if (notesScope === 'file') annotData.notes = notesArea.value;
-  else annotData.pageNotes[String(currentPage)] = notesArea.value;
+  else annotData.pageNotes[String(curP())] = notesArea.value;
   queueSave();
 });
 function applyNotesCollapsed(c) {
@@ -3085,8 +3116,8 @@ const STAMPS = [
 ];
 const DYN = { pp: 'pp', p: 'p', mp: 'mp', mf: 'mf', f: 'f', ff: 'ff' };
 const visLayer = (id) => !hiddenLayers.has(id || 'e');
-const pageArr = (p = currentPage) => annotData.pages[String(p)] || (annotData.pages[String(p)] = []);
-const pageArrRO = (p = currentPage) => annotData.pages[String(p)] || [];
+const pageArr = (p = curP()) => annotData.pages[String(p)] || (annotData.pages[String(p)] = []);
+const pageArrRO = (p = curP()) => annotData.pages[String(p)] || [];
 // Grösse für Symbole und Textfelder (ab v2.6.0 eigene Auswahl statt des Strichstärke-Schiebers; in px bei 900 px Seitenbreite)
 const OBJ_SIZES = {
   stamp: [['xs', 'sehr klein', 9], ['s', 'klein', 12], ['m', 'mittel', 15], ['l', 'gross', 20], ['xl', 'sehr gross', 26]],
@@ -3199,8 +3230,9 @@ const selObj = () => selId ? (pageArrRO().find(o => o.id === selId) || null) : n
 // ---------------------------------------------------------------
 // Kein CSS-mix-blend-mode mehr (auf manchen Handy-Browsern wurde die Ink-Ebene damit unsichtbar):
 // Stift/Text/Symbole liegen normal auf dem Ink-Canvas, der Marker wird per Canvas-"multiply" direkt ins Blatt gerechnet.
+let ink2Cache = null, hl2Cache = null, sec2Valid = false, sec2Key = '', hl2Has = false, hl2WasLive = false;
 let inkCache = null, hlCache = null, inkCacheValid = false, inkKey = '', inkRaf = 0, inkFallback = 0, hlHasAny = false, hlWasLive = false;
-const invalidateInk = () => { inkCacheValid = false; };
+const invalidateInk = () => { inkCacheValid = false; sec2Valid = false; };
 const isHlObj = (o) => !!(o.hl || o.er);                 // Marker (und alte Radierstriche) gehören in die Marker-Ebene
 function paintBase(liveHl) {
   const W = baseCanvas.width, H = baseCanvas.height;
@@ -3220,7 +3252,7 @@ function redrawInk() {
   if (!W) return;
   inkCtx.clearRect(0, 0, W, H);
   if (!ready || !currentFile) return;
-  const key = currentFile.id + ':' + currentPage + ':' + [...hiddenLayers].join(',');
+  const key = currentFile.id + ':' + currentPage + ':' + [...hiddenLayers].join(',');   // linke Seite; die rechte hat paintSecond
   if (!inkCache || inkCache.width !== W || inkCache.height !== H || key !== inkKey) {
     if (!inkCache || inkCache.width !== W || inkCache.height !== H) {
       inkCache = document.createElement('canvas'); inkCache.width = W; inkCache.height = H;
@@ -3239,21 +3271,23 @@ function redrawInk() {
     if (hlHasAny) renderObjects(c2, W, hls);
     inkCacheValid = true; rebuilt = true;
   }
-  const liveHl = !!(live && live.o.hl);
+  const liveHl = !!(live && live.o.hl && curP() === currentPage);
   if (rebuilt || liveHl || hlWasLive) paintBase(liveHl);
   hlWasLive = liveHl;
   inkCtx.drawImage(inkCache, 0, 0);
-  if (live && !liveHl) drawObj(inkCtx, live.o, W);
+  const left = curP() === currentPage;
+  if (live && left && !liveHl) drawObj(inkCtx, live.o, W);
   if (spreadShown && base2Cache) paintSecond();
-  const so = tool === 'select' ? selObj() : null;
-  if (so) {
-    const b = bbox(so), pad = 6;
-    inkCtx.save();
-    inkCtx.globalCompositeOperation = 'source-over';
-    inkCtx.strokeStyle = '#2471a3'; inkCtx.lineWidth = Math.max(1.5, W / 700); inkCtx.setLineDash([W / 150, W / 220]);
-    inkCtx.strokeRect(b.x0 * W - pad, b.y0 * W - pad, (b.x1 - b.x0) * W + pad * 2, (b.y1 - b.y0) * W + pad * 2);
-    inkCtx.restore();
-  }
+  const so = left && tool === 'select' ? selObj() : null;
+  if (so) drawSel(inkCtx, so, W);
+}
+function drawSel(ctx, so, W) {
+  const b = bbox(so), pad = 6;
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = '#2471a3'; ctx.lineWidth = Math.max(1.5, W / 700); ctx.setLineDash([W / 150, W / 220]);
+  ctx.strokeRect(b.x0 * W - pad, b.y0 * W - pad, (b.x1 - b.x0) * W + pad * 2, (b.y1 - b.y0) * W + pad * 2);
+  ctx.restore();
 }
 function inkTick() {
   if (inkRaf) cancelAnimationFrame(inkRaf);
@@ -3287,14 +3321,16 @@ function undo() {
   else if (e.t === 'erase') { [...e.items].sort((a, b) => a.idx - b.idx).forEach(it => arr.splice(Math.min(it.idx, arr.length), 0, it.o)); }
   else if (e.t === 'edit') { const i = arr.findIndex(o => o.id === e.before.id); if (i >= 0) arr[i] = JSON.parse(JSON.stringify(e.before)); }
   if (selId && !selObj()) selId = null;
-  if (e.page !== currentPage) { goPage(e.page).then(commitChange); return; }
+  if (spreadShown && e.page === currentPage + 1 && e.page <= totalPages) { if (pageOff !== 1) { pageOff = 1; selId = null; updateSelBar(); bindNotes(); markActive(); } }
+  else if (spreadShown && e.page === currentPage) { if (pageOff !== 0) { pageOff = 0; selId = null; updateSelBar(); bindNotes(); markActive(); } }
+  else if (e.page !== currentPage) { goPage(e.page).then(commitChange); return; }
   commitChange();
 }
 $('undoBtn').addEventListener('click', undo);
 
 function addObject(o) {
   pageArr().push(o);
-  pushHist({ t: 'add', page: currentPage, id: o.id });
+  pushHist({ t: 'add', page: curP(), id: o.id });
   commitChange();
 }
 function deleteObjects(objs, extra) {
@@ -3306,7 +3342,7 @@ function deleteObjects(objs, extra) {
 function editObject(o, fn) {
   const before = JSON.parse(JSON.stringify(o));
   fn(o);
-  pushHist({ t: 'edit', page: currentPage, before, after: JSON.parse(JSON.stringify(o)) });
+  pushHist({ t: 'edit', page: curP(), before, after: JSON.parse(JSON.stringify(o)) });
   commitChange();
 }
 
@@ -3317,7 +3353,7 @@ $('clearBtn').addEventListener('click', () => {
   if (!objs.length) { toast('Auf dieser Seite gibt es in «' + L.n + '» nichts zu löschen.'); return; }
   if (!confirm(`Alle ${objs.length} Objekte der Ebene «${L.n}» auf dieser Seite löschen?\n(Mit ↶ rückgängig zu machen.)`)) return;
   const items = deleteObjects(objs);
-  pushHist({ t: 'erase', page: currentPage, items });
+  pushHist({ t: 'erase', page: curP(), items });
   selId = null; commitChange();
 });
 
@@ -3371,7 +3407,7 @@ function updateSelBar() {
     btn('● Farbe', () => editObject(o, x => { x.c = color; }), 'Aktuelle Farbe übernehmen'),
     btn('＋', () => resizeSel(o, 1.15), 'Grösser'),
     btn('－', () => resizeSel(o, 1 / 1.15), 'Kleiner'),
-    btn('🗑', () => { const it = deleteObjects([o]); pushHist({ t: 'erase', page: currentPage, items: it }); selId = null; commitChange(); }, 'Löschen'));
+    btn('🗑', () => { const it = deleteObjects([o]); pushHist({ t: 'erase', page: curP(), items: it }); selId = null; commitChange(); }, 'Löschen'));
   bar.classList.add('show');
 }
 function resizeSel(o, f) {
@@ -3395,7 +3431,7 @@ function textDialog(existing, pos) {
   if (existing && !OBJ_SIZES.text.some(r => Math.abs(r[2] - curPx) < 0.5)) sizeSel.prepend(h('option', { value: String(curPx), text: 'Grösse: unverändert', selected: true }));
   const hint = existing ? h('div', { class: 'sub', style: 'font-size:12px; color:var(--muted); margin-top:8px;', text: 'Tipp: Zum Verschieben den Text mit dem Werkzeug «T Text» (oder «➤ Auswahl») anfassen und ziehen.' }) : null;
   const buttons = [{ label: 'Abbrechen' }];
-  if (existing) buttons.push({ label: 'Löschen', fn: () => { const it = deleteObjects([existing]); pushHist({ t: 'erase', page: currentPage, items: it }); selId = null; commitChange(); } });
+  if (existing) buttons.push({ label: 'Löschen', fn: () => { const it = deleteObjects([existing]); pushHist({ t: 'erase', page: curP(), items: it }); selId = null; commitChange(); } });
   buttons.push({
     label: 'OK', primary: true, fn: () => {
       const v = ta.value.replace(/\s+$/, '');
@@ -3417,8 +3453,22 @@ let action = null;      // {kind:'stroke'|'erase'|'select-drag'|'pan', ...}
 let pinch = null;
 
 const fingerActs = () => fingerMode === 'draw' || (fingerMode === 'auto' && !penSeen);
+// Zwei-Seiten-Ansicht: die Seite unter dem Stift/Finger wird zur aktiven Seite (ab v2.25.0)
+function chooseSide(e) {
+  let off = 0;
+  if (spreadShown && currentPage + 1 <= totalPages) {
+    const r2 = inkCanvas2.getBoundingClientRect(), r1 = inkCanvas.getBoundingClientRect();
+    off = e.clientX >= (r1.right + r2.left) / 2 ? 1 : 0;
+  }
+  if (off !== pageOff) { pageOff = off; selId = null; updateSelBar(); bindNotes(); markActive(); invalidateInk(); requestInk(); }
+}
+function markActive() {
+  const two = !!spreadShown && currentPage + 1 <= totalPages;
+  inkCanvas.classList.toggle('side-act', two && pageOff === 0 && tool !== 'view');
+  inkCanvas2.classList.toggle('side-act', two && pageOff === 1 && tool !== 'view');
+}
 function pagePt(e) {
-  const r = stack.getBoundingClientRect();
+  const r = activeInk().getBoundingClientRect();
   return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.width };
 }
 function cancelStroke() {
@@ -3450,12 +3500,13 @@ stack.addEventListener('pointerdown', (e) => {
 
   const fingerPan = (e.pointerType === 'touch' && !fingerActs()) || tool === 'view';     // «📖 Lesen» (ab v2.8.3): Finger/Maus scrollt immer
   if (fingerPan) { action = { kind: 'pan', sx: e.clientX, sy: e.clientY, sl: canvasWrap.scrollLeft, st: canvasWrap.scrollTop, moved: false, over: 0 }; return; }
+  chooseSide(e);
   startTool(e);
 });
 
 // Strichstärke in Seitenbreiten; auf schmalen Bildschirmen (Handy) mindestens ~0.7 px pro Schieberstufe, damit der Strich nicht zum Haarstrich wird
 function strokeW(hl) {
-  const cssW = stack.getBoundingClientRect().width || 900, k = hl ? 5 : 1;
+  const cssW = activeInk().getBoundingClientRect().width || 900, k = hl ? 5 : 1;
   return r5(Math.max(widthVal * k / REF_W, widthVal * k * 0.7 / cssW));
 }
 function startTool(e) {
@@ -3490,7 +3541,7 @@ function startTool(e) {
 }
 
 function eraseAt(pt) {
-  const tol = 10 / stack.getBoundingClientRect().width, arr = pageArr();
+  const tol = 10 / (activeInk().getBoundingClientRect().width || 900), arr = pageArr();
   let hit = false;
   for (let i = arr.length - 1; i >= 0; i--) {
     const o = arr[i];
@@ -3548,12 +3599,12 @@ function endPointer(e, cancelled) {
     const o = live.o; live = null;
     addObject(o);
   } else if (a.kind === 'erase') {
-    if (a.items.length) { pushHist({ t: 'erase', page: currentPage, items: a.items }); commitChange(); }
+    if (a.items.length) { pushHist({ t: 'erase', page: curP(), items: a.items }); commitChange(); }
   } else if (a.kind === 'drag') {
     const o = pageArrRO().find(x => x.id === a.id);
     const smallMove = a.sx != null && Math.hypot(e.clientX - a.sx, e.clientY - a.sy) < 8;
     if (a.moved && !(smallMove && (a.tapEdit || a.tapPlace))) {
-      if (o) pushHist({ t: 'edit', page: currentPage, before: a.before, after: JSON.parse(JSON.stringify(o)) });
+      if (o) pushHist({ t: 'edit', page: curP(), before: a.before, after: JSON.parse(JSON.stringify(o)) });
       commitChange();
     } else {
       if (a.moved && o) { Object.assign(o, a.before); invalidateInk(); requestInk(); }    // Mini-Zittern beim Antippen zurücknehmen
@@ -3577,7 +3628,6 @@ stack.addEventListener('pointercancel', (e) => endPointer(e, true));
 // Werkzeugleiste
 // ---------------------------------------------------------------
 function setTool(t) {
-  const wasSpread = spreadOn();
   tool = t; lsSet('gapp_tool', t);
   document.body.classList.toggle('draw-mode', t !== 'view');
   if (t !== 'view') { lastDrawTool = t; lsSet('gapp_drawtool', t); }
@@ -3587,8 +3637,7 @@ function setTool(t) {
   $('stampBar').classList.toggle('show', t === 'stamp' || t === 'text');
   $('stampBar').classList.toggle('text-only', t === 'text');
   fillObjSizeSel();
-  refreshSpread();
-  if (wasSpread && !spreadOn() && ready) toast('Zeichnen: eine Seite. Zurück zu «Lesen» zeigt wieder zwei Seiten.', 2600);
+  refreshSpread(); markActive();
   stack.style.cursor = t === 'view' ? 'grab' : t === 'select' ? 'default' : (t === 'eraser' ? 'cell' : 'crosshair');
   updateSelBar(); requestInk();
 }
@@ -3650,7 +3699,7 @@ window.addEventListener('keydown', (e) => {
   if (typing || document.querySelector('.modal-bg')) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && selObj()) {
-    e.preventDefault(); const o = selObj(); const it = deleteObjects([o]); pushHist({ t: 'erase', page: currentPage, items: it }); selId = null; commitChange();
+    e.preventDefault(); const o = selObj(); const it = deleteObjects([o]); pushHist({ t: 'erase', page: curP(), items: it }); selId = null; commitChange();
   } else if (e.key === 'Escape') { selId = null; updateSelBar(); requestInk(); }
 });
 

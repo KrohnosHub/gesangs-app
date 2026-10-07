@@ -29,13 +29,39 @@ module.exports = async () => {
       ok(dims.w1 === dims.w2 && dims.gap > 0 && dims.gap < 40, 'Geometrie ' + JSON.stringify(dims));
       eq(pg.errs, []); await pg.context().close();
     });
-    await test('Zeichnen schaltet auf eine Seite, Lesen zurück auf Doppelseite; Einstellung bleibt gespeichert', async () => {
+    await test('Zeichnen behält die Doppelseite; Einstellung bleibt gespeichert', async () => {
       const pg = await open(b, D, { logs: false }); await prep(pg);
       await pg.click('#spreadBtn'); await wait(pg, 1000); await pg.click('#nextPage'); await wait(pg);
-      await pg.click('#modeDraw'); await wait(pg); let s = await st(pg); eq([s.label, s.c2, s.cls.includes('spread-on')], ['3 / 5', 'none', false]);
-      await pg.click('[data-tool=view]'); await wait(pg, 1100); s = await st(pg); eq([s.label, s.c2], ['3–4 / 5', 'block']);
+      await pg.click('#modeDraw'); await wait(pg); let s = await st(pg); eq([s.label, s.c2, s.cls.includes('spread-on')], ['3–4 / 5', 'block', true]);
+      await pg.click('[data-tool=view]'); await wait(pg, 600); s = await st(pg); eq([s.label, s.c2], ['3–4 / 5', 'block']);
       await pg.reload(); await wait(pg, 1500); ok(await pg.evaluate(() => spreadPref === true), 'Einstellung nach Neuladen');
       await pg.context().close();
+    });
+    await test('Doppelseite: Zeichnen, Radieren, Auswählen und Rückgängig auf linker UND rechter Seite', async () => {
+      const pg = await open(b, D, { logs: false }); await prep(pg);
+      await pg.click('#spreadBtn'); await wait(pg, 1000); await pg.click('#nextPage'); await wait(pg, 1000);
+      await pg.click('#modeDraw'); await wait(pg, 300);
+      const rect = (id) => pg.evaluate((i) => { const r = document.getElementById(i).getBoundingClientRect(); return { l: r.left, t: r.top, w: r.width, h: r.height }; }, id);
+      const stroke = async (id, fx, fy, tx, ty) => { const r = await rect(id); await pg.mouse.move(r.l + r.w * fx, r.t + r.h * fy); await pg.mouse.down(); await pg.mouse.move(r.l + r.w * (fx + tx) / 2, r.t + r.h * (fy + ty) / 2, { steps: 5 }); await pg.mouse.move(r.l + r.w * tx, r.t + r.h * ty, { steps: 5 }); await pg.mouse.up(); await wait(pg, 300); };
+      const cnt = () => pg.evaluate(() => ({ p3: (annotData.pages['3'] || []).length, p4: (annotData.pages['4'] || []).length, cur: curP(), off: pageOff }));
+      await stroke('inkCanvas', .2, .3, .6, .3); eq(await cnt(), { p3: 1, p4: 0, cur: 3, off: 0 });
+      await stroke('inkCanvas2', .2, .4, .6, .4); eq(await cnt(), { p3: 1, p4: 1, cur: 4, off: 1 });
+      const px = await pg.evaluate(() => { const c = document.getElementById('inkCanvas2'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++; return n; });
+      ok(px > 200, 'rechte Ink-Ebene hat Pixel: ' + px);
+      await pg.click('#undoBtn'); await wait(pg, 300); eq(await cnt(), { p3: 1, p4: 0, cur: 4, off: 1 });
+      await pg.click('#undoBtn'); await wait(pg, 300); eq(await cnt(), { p3: 0, p4: 0, cur: 3, off: 0 });
+      await stroke('inkCanvas2', .2, .4, .6, .4); await stroke('inkCanvas', .2, .3, .6, .3);
+      await pg.click('[data-tool=eraser]'); await wait(pg, 200);
+      await stroke('inkCanvas2', .1, .4, .7, .4); eq(await cnt(), { p3: 1, p4: 0, cur: 4, off: 1 });
+      await pg.click('#undoBtn'); await wait(pg, 300); eq((await cnt()).p4, 1);
+      await pg.click('[data-tool=select]'); await wait(pg, 200);
+      let r = await rect('inkCanvas2'); await pg.mouse.click(r.l + r.w * .4, r.t + r.h * .4); await wait(pg, 300);
+      ok(await pg.evaluate(() => !!selObj() && curP() === 4), 'Auswahl rechts');
+      r = await rect('inkCanvas'); await pg.mouse.click(r.l + r.w * .4, r.t + r.h * .3); await wait(pg, 300);
+      ok(await pg.evaluate(() => !!selObj() && curP() === 3), 'Auswahl links, rechte abgewählt');
+      await pg.click('[data-tool=view]'); await pg.click('#nextPage'); await wait(pg, 1000); await pg.click('#modeDraw');
+      eq(await pg.evaluate(() => [curP(), spreadShown]), [5, true]);
+      eq(pg.errs, []); await pg.context().close();
     });
     await test('Auftritt: Zonen/Hinweis sichtbar, Blättern in Doppelseiten, Pfeil-Knöpfe, Ende', async () => {
       const pg = await open(b, D, { logs: false }); await prep(pg);

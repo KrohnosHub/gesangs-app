@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.25.0 – Zeichnen auf beiden Seiten der Doppelseite (07.10.2026)
+- Die Zwei-Seiten-Ansicht bleibt auch im Zeichenmodus bestehen: Stift, Marker, Radierer, Text, Symbole und Auswahl funktionieren auf der linken und der rechten Seite.
+- Die Seite unter Stift/Finger wird zur aktiven Seite (dezenter blauer Rahmen); Rückgängig, Seitennotizen und Auswahl folgen ihr.
+- Linke und rechte Seite haben je eigene Zwischenspeicher – Zeichnen auf einer Seite zeichnet die andere nicht neu.
+- Helligkeit/Kontrast gilt für beide Seiten. Tests: neuer Test für Zeichnen/Radieren/Auswählen/Rückgängig auf beiden Seiten.
+
 ### v2.24.0 – Uhr-Korrektur im Sync und automatische Drive-Sicherung (07.10.2026)
 - **Uhr-Korrektur:** Alle Daten-Zeitstempel («neuester gewinnt») nutzen jetzt die Drive-Zeit statt der Geräteuhr. Die Abweichung wird bei jedem Upload (und, wenn der Browser den Date-Header freigibt, bei jeder Antwort) gemessen, über 5 Messungen geglättet und gespeichert; unter 4 s wird ignoriert. Weicht die Uhr um mehr als 2 min ab, erscheint einmal ein Hinweis. Bereits falsch gestempelte alte Einträge werden dadurch nicht rückwirkend korrigiert.
 - **Automatische Sicherung:** Einmal täglich (geräteübergreifend nur einmal) legt der Abgleich `library-JJJJ-MM-TT.json` (Bibliothek + Annotationen) im Drive-Unterordner «Backups» ab; die letzten 7 bleiben. Zurückholen: «⋯ Mehr → ♻ Aus Drive-Sicherung …» – Einträge der Sicherung gewinnen, Neueres bleibt erhalten; Striche/Notizen auf Blättern werden dabei nicht verändert (liegen aber in der Datei). Das manuelle ZIP-Backup (mit PDFs/Audio) bleibt.
