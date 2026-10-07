@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-1lqnxp1qz5HL3wo9sDdQvlobb0r39YGxbM7dsdIBPl8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G95+4W8efKBlZUOMpTleha4+Em9r1SmSU7eYhqQwXNo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-1lqnxp1qz5HL3wo9sDdQvlobb0r39YGxbM7dsdIBPl8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G95+4W8efKBlZUOMpTleha4+Em9r1SmSU7eYhqQwXNo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -491,12 +491,12 @@
   body.perf.spread-text #canvasWrap{overflow:hidden;}
   body.perf.spread-text .perf-txt, body.perf.spread-text .perf-sync{display:none !important;}
   #perfZones{position:absolute; inset:0; pointer-events:none;}
-  .pz{position:absolute; top:50%; transform:translateY(-50%); pointer-events:auto; width:clamp(46px,6vw,66px); height:clamp(86px,17vh,130px); border:0; border-radius:14px;
-    background:rgba(20,20,20,.38); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; opacity:.55; padding:0; cursor:pointer; transition:opacity .2s, background .2s;}
+  .pz{position:absolute; top:50%; transform:translateY(-50%); pointer-events:auto; width:clamp(52px,7vw,72px); height:clamp(96px,19vh,140px); border:2px solid rgba(0,0,0,.55); border-radius:16px;
+    background:rgba(255,248,235,.94); color:#2b1d12; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; opacity:1; padding:0; cursor:pointer; box-shadow:0 0 0 2px rgba(255,255,255,.35), 0 3px 12px rgba(0,0,0,.5); transition:opacity .2s, background .2s, color .2s;}
   .pz-l{left:6px;} .pz-r{right:6px;}
-  .pz .pz-a{font-size:36px; line-height:1;} .pz .pz-t{font-size:10px; line-height:1.1; text-align:center; padding:0 2px;}
-  .pz.off{opacity:.14; pointer-events:none;}
-  .pz.flash{opacity:1; background:rgba(36,113,163,.85);}
+  .pz .pz-a{font-size:44px; line-height:1; font-weight:700;} .pz .pz-t{font-size:11px; font-weight:600; line-height:1.1; text-align:center; padding:0 2px;}
+  .pz.off{opacity:.3; pointer-events:none; box-shadow:none;}
+  .pz.flash{background:#2471a3; color:#fff; border-color:#fff;}
   #perfHint{position:absolute; inset:0; display:none; pointer-events:none; font-size:15px; color:#fff; text-align:center;}
   #perfHint.show{display:block;}
   #perfHint .ph{position:absolute; top:0; bottom:0; display:flex; align-items:center; justify-content:center; padding:10px; line-height:1.4; text-shadow:0 1px 4px rgba(0,0,0,.8);}
@@ -741,7 +741,7 @@
     <button id="perfOfsDown" class="perf-sync" title="Text läuft zu früh: 0.5 s später">−0.5 s</button>
     <button id="perfOfsUp" class="perf-sync" title="Text läuft zu spät: 0.5 s früher">+0.5 s</button>
     <button id="perfSpread" title="Zwei Seiten nebeneinander ein-/ausschalten">▯▯ 2 Seiten</button>
-    <button id="perfHelp" title="Erklärt, wie man blättert">? Blättern</button>
+    <button id="perfHelp" title="Erklärt, wie man blättert">ⓘ Blättern</button>
     <button id="perfFull" title="Vollbild">⤢ Vollbild</button>
   </div>
   <div id="perfZones">
@@ -772,7 +772,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.23.0';
+const APP_VERSION = '2.23.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;

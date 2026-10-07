@@ -21,8 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.23.1 – Blätter-Pfeile besser sichtbar (07.10.2026)
+- Die Pfeil-Knöpfe am Rand im Auftrittsmodus sind jetzt hell mit dunklem Pfeil und Rahmen (vorher dunkel auf schwarz, kaum sichtbar), grösser und mit fetterer Beschriftung.
+
 ### v2.23.0 – Zwei-Seiten-Ansicht und klareres Blättern im Auftrittsmodus (06.10.2026)
-- **Blättern im Auftrittsmodus:** Beim Start erscheint ein Hinweis (linkes Drittel = zurück, rechtes Drittel = weiter, Mitte = Leiste; Wischen, Pfeiltasten/Bild auf-ab, Fusspedal). Dauerhaft sichtbare Pfeil-Knöpfe am linken/rechten Rand (antippbar, kurzes Aufleuchten beim Blättern); am Ende eines Lieds zeigen sie «⏭ nächstes Lied», sonst gesperrt. Knopf «? Blättern» in der Leiste zeigt den Hinweis erneut.
+- **Blättern im Auftrittsmodus:** Beim Start erscheint ein Hinweis (linkes Drittel = zurück, rechtes Drittel = weiter, Mitte = Leiste; Wischen, Pfeiltasten/Bild auf-ab, Fusspedal). Dauerhaft sichtbare Pfeil-Knöpfe am linken/rechten Rand (antippbar, kurzes Aufleuchten beim Blättern); am Ende eines Lieds zeigen sie «⏭ nächstes Lied», sonst gesperrt. Knopf «ⓘ Blättern» in der Leiste zeigt den Hinweis erneut.
 - **Zwei Seiten nebeneinander:** Knopf «▯▯» in der Werkzeugleiste und «▯▯ 2 Seiten» in der Auftrittsleiste (pro Gerät gemerkt). PDF: Doppelseiten 1–2, 3–4 …; die letzte, ungerade Seite steht allein links. Blättern springt um eine Doppelseite; Annotationen sind auf beiden Seiten sichtbar. **Zeichnen/Bearbeiten nur in der Einzelseite:** beim Wechsel zu «Zeichnen» wird automatisch eine Seite gezeigt, zurück in «Lesen» wieder zwei.
 - **Text-Blätter:** zwei Spalten (auch beim Bearbeiten). Im Auftrittsmodus wird der Text in Doppelseiten (Spaltenpaaren) geblättert statt automatisch gescrollt (Auto-Scroll und Sync mit der Wiedergabe sind in dieser Ansicht aus).
 - Bilder (Einzelseite) bleiben unverändert. Tests: `tests/04-spread.test.js`.
