@@ -66,6 +66,15 @@ module.exports = async () => {
       Object.entries(res).forEach(([k, p]) => ok(p > 0.01 && p <= 1, k + ' Peak ' + p));
       await pg.context().close();
     });
+    await test('Fehlerprotokoll: unbehandelte Fehler werden mitgeschrieben und sind im Dialog sichtbar', async () => {
+      const pg = await open(b, D, { logs: false });
+      await pg.evaluate(() => { Promise.reject(new Error('Testfehler-XYZ')); });
+      await pg.waitForTimeout(300);
+      ok(await pg.evaluate(() => ERRLOG.some(x => x.m.includes('Testfehler-XYZ'))), 'Eintrag fehlt');
+      await pg.evaluate(() => errLogDialog()); await pg.waitForTimeout(200);
+      ok(await pg.evaluate(() => document.querySelector('.modal textarea').value.includes('Testfehler-XYZ')), 'Dialog zeigt Eintrag');
+      await pg.context().close();
+    });
     await test('Handy (390 px): kein horizontaler Überlauf, Seitenleiste ein-/ausklappbar', async () => {
       const pg = await open(b, { width: 390, height: 800 }, { logs: false });
       ok(await pg.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'horizontaler Überlauf');

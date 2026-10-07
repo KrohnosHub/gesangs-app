@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-v97+nDKqQShULC+QVkkmGCmkqHO25znJoGOQCPnH3X0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-qga7hm1AW/8iAvwnyrdnEXO0EpaSylaDSu61h9wNI60=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-v97+nDKqQShULC+QVkkmGCmkqHO25znJoGOQCPnH3X0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-qga7hm1AW/8iAvwnyrdnEXO0EpaSylaDSu61h9wNI60=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -76,7 +76,7 @@
   }
   header h1 small.hdr-artist{display:block; font-size:11px; font-weight:400; color:var(--muted); line-height:1.1; overflow:hidden; text-overflow:ellipsis;}
   header h1{font-size:16px; margin:0; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
-  button, select, textarea, input[type=search], input[type=text]{
+  button, select, textarea, input[type=search], input[type=text], input[type=password]{
     font:inherit; border:1px solid var(--border); background:var(--panel); color:var(--text);
     padding:8px 12px; border-radius:8px; -webkit-tap-highlight-color:transparent;
   }
@@ -137,6 +137,7 @@
   .file-item .sub{font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .file-item .sub > span:not(.tagchip){margin-right:7px;}
   .file-item .type-icon{width:22px; text-align:center; color:var(--muted); font-size:11px; flex-shrink:0;}
+  @media (pointer:coarse){ #songBar button, #sheetTabs button, #toolbar button{min-height:40px;} .file-item .fav, .file-item .more{min-width:42px; min-height:42px; display:inline-flex; align-items:center; justify-content:center;} }
   .file-item .more{border:none; background:none; padding:4px 8px; font-size:18px; line-height:1; color:var(--muted);}
   .file-item .off{font-size:10px; color:var(--ok);}
   .folder-item .type-icon{font-size:16px;}
@@ -268,7 +269,7 @@
   #sidebarToggle{display:none;}
   @media (max-width: 800px){
     #sidebarToggle{display:flex;}
-    #sidebar{position:absolute; top:0; bottom:0; left:0; width:min(88vw,340px); transform:translateX(-100%); box-shadow:4px 0 12px rgba(0,0,0,.15);}
+    #sidebar{z-index:40; position:absolute; top:0; bottom:0; left:0; width:min(88vw,340px); transform:translateX(-100%); box-shadow:4px 0 12px rgba(0,0,0,.15);}
     #sidebar.open{transform:translateX(0);}
     #app{position:relative;}
   }
@@ -725,7 +726,7 @@
       </div>
     </div>
 
-    <div id="empty" style="display:none;">Wähle links einen Song aus oder lege über «♪ Neuer Song» einen neuen an.</div>
+    <div id="empty" style="display:none;">Wähle in der Songliste (☰ bzw. links) einen Song aus oder lege über «♪ Neuer Song» einen neuen an.</div>
   </div>
 </div>
 
@@ -776,7 +777,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.23.2';
+const APP_VERSION = '2.23.3';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -819,6 +820,27 @@ function freeCanvas(c) { if (c) { try { c.width = 0; c.height = 0; } catch (e) {
 // Externe Links nur als https öffnen (Links stammen u. a. aus library.json/Backups – kein javascript: o. Ä.)
 function openExternal(url) { if (/^https:\/\/[^\s]+$/i.test(String(url || ''))) window.open(url, '_blank', 'noopener'); else toast('Ungültiger Link.'); }
 
+// Fehlerprotokoll (ab v2.23.3): unerwartete Fehler werden still mitgeschrieben (letzte 30), «Mehr → Fehlerprotokoll»
+const ERRLOG = (() => { try { return JSON.parse(lsGet('gapp_errlog') || '[]'); } catch (e) { return []; } })();
+function logErr(kind, msg) {
+  try {
+    msg = String(msg || '').slice(0, 300);
+    if (/ResizeObserver loop/.test(msg)) return;
+    ERRLOG.push({ t: new Date().toISOString(), k: kind, m: msg, v: typeof APP_VERSION === 'string' ? APP_VERSION : '' });
+    while (ERRLOG.length > 30) ERRLOG.shift();
+    lsSet('gapp_errlog', JSON.stringify(ERRLOG));
+  } catch (e) {}
+}
+window.addEventListener('error', (e) => logErr('error', (e.message || '') + (e.filename ? ' @' + String(e.filename).split('/').pop() + ':' + e.lineno : '')));
+window.addEventListener('unhandledrejection', (e) => logErr('promise', e.reason && (e.reason.stack || e.reason.message) || e.reason));
+function errLogDialog() {
+  const txt = ERRLOG.length ? ERRLOG.slice().reverse().map(x => x.t.replace('T', ' ').slice(0, 19) + ' [' + x.k + ' v' + x.v + '] ' + x.m).join('\n\n') : 'Keine Fehler aufgezeichnet.';
+  const ta = h('textarea', { readonly: true, rows: 12, style: 'width:100%; font:12px/1.4 monospace;' }); ta.value = txt;
+  openModal({ title: '🐞 Fehlerprotokoll', body: ta, buttons: [
+    { label: 'Kopieren', fn: () => { try { navigator.clipboard.writeText(txt); toast('Kopiert.'); } catch (e) { ta.select(); } return false; } },
+    { label: 'Leeren', fn: () => { ERRLOG.length = 0; lsSet('gapp_errlog', '[]'); } },
+    { label: 'Schliessen' }] });
+}
 function toast(msg, ms = 2600) {
   const t = $('toast');
   t.textContent = msg; t.style.display = 'block';
@@ -1196,7 +1218,11 @@ const IDB = {
   all(store) { return IDB.tx(store, 'readonly', s => s.getAll()).then(r => r || []); }
 };
 // Fehler beim lokalen Speichern nie den Ablauf stören lassen
-const safe = (p) => Promise.resolve(p).catch(e => { console.warn('IDB:', e); });
+let quotaWarned = false;
+const safe = (p) => Promise.resolve(p).catch(e => {
+  console.warn('IDB:', e); logErr('idb', e && (e.name + ': ' + e.message));
+  if (e && e.name === 'QuotaExceededError' && !quotaWarned) { quotaWarned = true; toast('Speicher auf diesem Gerät ist voll – Änderungen werden eventuell nicht lokal gesichert. Bitte Platz schaffen.', 7000); }
+});
 
 // ---------------------------------------------------------------
 // Annotationen (Format v3)
@@ -4029,7 +4055,7 @@ $('perfBtn').addEventListener('click', enterPerf);
 $('perfExit').addEventListener('click', exitPerf);
 $('perfLayers').addEventListener('click', () => { renderLayerPop(); $('layerPop').classList.toggle('show'); setPerfBar(true); });
 $('perfFull').addEventListener('click', () => {
-  try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); } catch (e) { toast('Vollbild wird von diesem Browser nicht unterstützt.'); }
+  try { if (!document.fullscreenElement) { const r = document.documentElement.requestFullscreen(); if (r && r.catch) r.catch(() => toast('Vollbild wurde vom Browser nicht erlaubt.')); } } catch (e) { toast('Vollbild wird von diesem Browser nicht unterstützt.'); }
   setPerfBar(true);
 });
 $('perfBar').addEventListener('pointerdown', () => setPerfBar(true));
@@ -5792,7 +5818,8 @@ $('newMenuBtn').addEventListener('click', () => menuSheet('Neu', [
 $('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
   { label: '💾 Backup & Wiederherstellen …', fn: () => $('backupBtn').click() },
   { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() },
-  { label: '❓ Kurzanleitung', fn: () => showTour() }
+  { label: '❓ Kurzanleitung', fn: () => showTour() },
+  { label: '🐞 Fehlerprotokoll …', fn: () => errLogDialog() }
 ]));
 
 

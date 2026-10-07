@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.23.3 – Stabilität und Feinschliff nach Gesamtprüfung (07.10.2026)
+- **Fehlerprotokoll:** unerwartete Fehler (auch abgewiesene Promises, Speicherfehler) werden still mitgeschrieben (letzte 30); «⋯ Mehr → 🐞 Fehlerprotokoll» zeigt sie zum Kopieren. Meldung, wenn der Gerätespeicher voll ist (vorher stiller Datenverlust-Risiko).
+- Vollbild-Knopf: verweigert der Browser das Vollbild, erscheint ein Hinweis statt eines unbehandelten Fehlers.
+- Handy: grössere Tippflächen (Song-Leiste, Blatt-Reiter, Favorit/«⋯» in der Liste), die Seitenzahl-Schaltfläche liegt nicht mehr über der geöffneten Songliste, Leertext passt zum Handy («☰»), Passwortfeld in den Einstellungen im gleichen Stil wie die anderen Felder.
+
 ### v2.23.2 – Auftrittsmodus: Vollbild und Menü (07.10.2026)
 - Esc (bzw. Verlassen des Vollbilds) beendet jetzt auch den Auftrittsmodus – kein Auftritt ohne Vollbild mehr. «Vollbild» erscheint nur noch, wenn der Browser das Vollbild nicht selbst gestartet hat.
 - Menü-Leiste erscheint, wenn die Maus an den oberen Rand geht; auf Handy/Tablet: oberen Rand antippen oder von oben nach unten wischen. Zusätzlich zeigt ein kleiner Knopf «⌄ Menü» oben in der Mitte, wo es herauskommt.
