@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-qga7hm1AW/8iAvwnyrdnEXO0EpaSylaDSu61h9wNI60=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-WU7yKbbgJcquFccL1mv/Sh62oXmb489BRJG4aN+dbm0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-qga7hm1AW/8iAvwnyrdnEXO0EpaSylaDSu61h9wNI60=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-WU7yKbbgJcquFccL1mv/Sh62oXmb489BRJG4aN+dbm0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -777,7 +777,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.23.3';
+const APP_VERSION = '2.24.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -808,6 +808,17 @@ const idbName = () => 'gesangs-app' + (SIM ? '-sim-' + SIM : '');
 const r5 = (v) => Math.round(v * 1e5) / 1e5;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const escQ = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+// Uhr-Korrektur (ab v2.24.0): Zeitstempel der Daten ('u') nutzen die Drive-Zeit, nicht die (evtl. falsche) Geräteuhr.
+let clockSkew = Number(lsGet('gapp_skew')) || 0, skewSamples = (() => { try { return JSON.parse(lsGet('gapp_skews') || '[]'); } catch (e) { return []; } })(), skewWarned = false;
+const nowTs = () => Date.now() + clockSkew;
+function noteServerTime(srvMs, t0, t1) {            // srvMs: Serverzeit (ms) einer Antwort, t0/t1: lokale Zeit vor/nach der Anfrage
+  if (!srvMs || !isFinite(srvMs) || t1 - t0 > 10000) return;
+  skewSamples.push(Math.round(srvMs - (t0 + t1) / 2)); while (skewSamples.length > 5) skewSamples.shift();
+  const sorted = skewSamples.slice().sort((a, b) => a - b), med = sorted[Math.floor(sorted.length / 2)];
+  clockSkew = Math.abs(med) < 4000 ? 0 : med;        // kleine Abweichungen (Netzlaufzeit) ignorieren
+  lsSet('gapp_skew', String(clockSkew)); lsSet('gapp_skews', JSON.stringify(skewSamples));
+  if (Math.abs(clockSkew) > 120000 && !skewWarned) { skewWarned = true; toast('Die Uhr dieses Geräts weicht ca. ' + Math.round(Math.abs(clockSkew) / 60000) + ' min von Google ab – Zeitstempel werden automatisch korrigiert. Bitte Datum/Uhrzeit prüfen.', 7000); }
+}
 const uid = (p) => p + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
 const hash = (str) => { let x = 5381; for (let i = 0; i < str.length; i++) x = ((x << 5) + x + str.charCodeAt(i)) | 0; return (x >>> 0).toString(36); };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -1324,12 +1335,12 @@ const newFmeta = () => ({ f: null, tg: [], fv: 0, lo: 0, bri: 1, con: 1, u: 0 })
 const fget = (id) => lib.files[id] || newFmeta();
 function fset(id, patch) {
   const m = lib.files[id] || (lib.files[id] = newFmeta());
-  Object.assign(m, patch); m.u = Date.now();
+  Object.assign(m, patch); m.u = nowTs();
   libChanged();
 }
 function touchOpened(id) {
   const m = lib.files[id] || (lib.files[id] = newFmeta());
-  m.lo = Date.now();
+  m.lo = nowTs();
   if (m.sg && lib.songs[m.sg]) lib.songs[m.sg].lo = m.lo;
   // ab v2.8.5 kein sofortiger Upload der ganzen Bibliothek nur fürs «zuletzt geöffnet» (geht mit dem nächsten
   // regulären Abgleich mit, spätestens nach einer Minute) und Seitenleiste gebündelt neu zeichnen
@@ -1379,7 +1390,7 @@ function unionById(winList, otherList) {           // Reihenfolge des Gewinners,
   return [...m.values()];
 }
 function mergeLib(a, b) {
-  const out = emptyLib(), cutoff = Date.now() - TOMB_TTL;
+  const out = emptyLib(), cutoff = nowTs() - TOMB_TTL;
   for (const key of ['folders', 'files', 'setlists', 'songs']) {
     const ids = new Set([...Object.keys(a[key] || {}), ...Object.keys(b[key] || {})]);
     for (const id of ids) {
@@ -1457,7 +1468,7 @@ function mergeLib(a, b) {
 // auf die einzelne Datei; lib.files[id] verwaltet nur noch sg (zugehöriger Song),
 // bri/con (Anzeige) und lo (zuletzt geöffnet, pro Blatt).
 // ---------------------------------------------------------------
-const newSong = (n, ar = '') => ({ n, ar, f: null, tg: [], fv: 0, lo: 0, u: Date.now(), sheets: [], links: [], audio: [] });
+const newSong = (n, ar = '') => ({ n, ar, f: null, tg: [], fv: 0, lo: 0, u: nowTs(), sheets: [], links: [], audio: [] });
 const songAlive = (id) => !!(id && lib.songs[id] && !lib.songs[id].d);
 const sget = (id) => lib.songs[id] || null;
 // Ab v2.19.0: n = Songtitel, ar = Interpret. songFull() = «Interpret – Titel» für Suchen, Dateinamen und Exporte.
@@ -1466,7 +1477,7 @@ function splitLegacyName(n) {
   const m = String(n || '').match(/^\s*(.+?)\s+[-–—]\s+(.+?)\s*$/);
   return m ? { ar: m[1], n: m[2] } : null;
 }
-function sTouch(id, fn) { const s = lib.songs[id]; if (!s) return; fn(s); s.u = Date.now(); libChanged(); }
+function sTouch(id, fn) { const s = lib.songs[id]; if (!s) return; fn(s); s.u = nowTs(); libChanged(); }
 function songForFile(fileId) {
   const m = lib.files[fileId];
   return (m && m.sg && songAlive(m.sg)) ? m.sg : null;
@@ -1491,13 +1502,13 @@ function attachSheet(songId, fileId, { toFront = false } = {}) {
   const prevSid = songForFile(fileId);
   if (prevSid && prevSid !== songId) {                 // Blatt gehörte noch einem anderen Song: dort entfernen
     const prev = lib.songs[prevSid];
-    prev.sheets = prev.sheets.filter(x => x !== fileId); prev.u = Date.now();
+    prev.sheets = prev.sheets.filter(x => x !== fileId); prev.u = nowTs();
     if (!prev.sheets.length) prev.d = 1;
   }
   if (!s.sheets.includes(fileId)) { toFront ? s.sheets.unshift(fileId) : s.sheets.push(fileId); }
   const m = lib.files[fileId] || (lib.files[fileId] = newFmeta());
-  m.sg = songId; m.u = Date.now();
-  s.u = Date.now();
+  m.sg = songId; m.u = nowTs();
+  s.u = nowTs();
   libChanged();
 }
 function songLinks(id) { const s = lib.songs[id]; return (s && s.links) || []; }
@@ -1518,21 +1529,21 @@ function addLink(songId, link) {
   sTouch(songId, s => {
     s.links = s.links || [];
     if (!link.auto && s.lxk) s.lxk = s.lxk.filter(k => k !== linkKey(link));      // bewusst von Hand wieder hinzugefügt
-    if (!s.links.some(l => l.url === link.url)) { s.links.push(Object.assign({ id: uid('lk'), u: Date.now() }, link)); added = true; }
+    if (!s.links.some(l => l.url === link.url)) { s.links.push(Object.assign({ id: uid('lk'), u: nowTs() }, link)); added = true; }
   });
   return added;
 }
 function renameLink(songId, linkId, title) {
-  sTouch(songId, s => { const l = (s.links || []).find(x => x.id === linkId); if (l) { l.u0 = l.u0 || l.u; l.title = title; l.u = Date.now(); } });
+  sTouch(songId, s => { const l = (s.links || []).find(x => x.id === linkId); if (l) { l.u0 = l.u0 || l.u; l.title = title; l.u = nowTs(); } });
 }
 function setLinkKind(songId, linkId, kind) {
-  sTouch(songId, s => { const l = (s.links || []).find(x => x.id === linkId); if (l) { l.u0 = l.u0 || l.u; l.kind = kind; l.u = Date.now(); } });
+  sTouch(songId, s => { const l = (s.links || []).find(x => x.id === linkId); if (l) { l.u0 = l.u0 || l.u; l.kind = kind; l.u = nowTs(); } });
 }
 function removeLink(songId, linkId) {
   sTouch(songId, s => {
     const l = (s.links || []).find(x => x.id === linkId);
     s.links = (s.links || []).filter(x => x.id !== linkId);
-    s.gone = s.gone || {}; s.gone[linkId] = Date.now();
+    s.gone = s.gone || {}; s.gone[linkId] = nowTs();
     if (l && l.mediaId) s.lxk = [...new Set([...(s.lxk || []), linkKey(l)])];
   });
 }
@@ -1546,17 +1557,17 @@ function addAudio(songId, item) {
   sTouch(songId, s => {
     s.audio = s.audio || [];
     s.audio = s.audio.filter(x => x.id !== item.id);   // gleiche Drive-id ersetzt (z. B. erneuter Sync)
-    const now = Date.now();
+    const now = nowTs();
     s.audio.push(Object.assign({ u: now, u0: now }, item));   // u0 = Zeitpunkt der Aufnahme (u ändert sich bei Umbenennen/Analyse)
   });
 }
 function removeAudioMeta(songId, id) {
-  sTouch(songId, s => { s.audio = (s.audio || []).filter(x => x.id !== id); s.gone = s.gone || {}; s.gone[id] = Date.now(); });
+  sTouch(songId, s => { s.audio = (s.audio || []).filter(x => x.id !== id); s.gone = s.gone || {}; s.gone[id] = nowTs(); });
 }
 function detachSheet(songId, fileId) {
   const s = lib.songs[songId]; if (!s) return;
   s.sheets = s.sheets.filter(x => x !== fileId);
-  s.u = Date.now();
+  s.u = nowTs();
   libChanged();
 }
 function createSongRaw(name, { folder = null, sheetFileId = null, artist = '' } = {}) {
@@ -1588,7 +1599,7 @@ function migrateSongs() {
       const owner = songOwningSheet(f.id, 'sg_' + f.id);
       if (owner) {
         const mm = lib.files[f.id] || (lib.files[f.id] = newFmeta());
-        if (mm.sg !== owner) { mm.sg = owner; mm.u = Date.now(); changed = true; }
+        if (mm.sg !== owner) { mm.sg = owner; mm.u = nowTs(); changed = true; }
         continue;
       }
       if (m && m.sg && lib.songs[m.sg]) continue;       // gehört zu einem gelöschten Song: nichts neu anlegen
@@ -1597,7 +1608,7 @@ function migrateSongs() {
         const meta = m || newFmeta();
         lib.songs[sid] = Object.assign(newSong(f.name.replace(/\.[^.]+$/, '')), {
           f: meta.f || null, tg: meta.tg || [], fv: meta.fv || 0, lo: meta.lo || 0,
-          u: meta.u || Date.now(), sheets: [f.id]
+          u: meta.u || nowTs(), sheets: [f.id]
         });
         changed = true;
       } else if (!lib.songs[sid].sheets.includes(f.id)) { lib.songs[sid].sheets.push(f.id); changed = true; }
@@ -1609,7 +1620,7 @@ function migrateSongs() {
   // (automatische ID sg_<Datei-ID>, genau dieses eine Blatt), deren Blatt zugleich zu einem echten Song
   // gehört, werden entfernt – sofern sie keine eigenen Inhalte (Aufnahmen, Aufgaben, Tags, Favorit,
   // Referenz, von Hand gesetzte Links) haben. Das Blatt bleibt beim echten Song.
-  const now = Date.now();
+  const now = nowTs();
   for (const [sid, x] of Object.entries(lib.songs)) {
     if (x.d || !sid.startsWith('sg_') || (x.sheets || []).length !== 1 || sid !== 'sg_' + x.sheets[0]) continue;
     const fid = x.sheets[0], owner = songOwningSheet(fid, sid);
@@ -1627,7 +1638,7 @@ function migrateSongs() {
   for (const s of Object.values(lib.setlists)) {
     if (s.d || !s.it || !s.it.length) continue;
     const mapped = s.it.map(x => lib.songs[x] ? x : (songForFile(x) || ('sg_' + x)));
-    if (mapped.some((x, i) => x !== s.it[i])) { s.it = mapped; s.u = Date.now(); changed = true; }
+    if (mapped.some((x, i) => x !== s.it[i])) { s.it = mapped; s.u = nowTs(); changed = true; }
   }
   // Ab v2.19.0: «Interpret – Titel» im Namen auftrennen. Nur Songs ohne Feld `ar`; der alte Name bleibt als `n0` erhalten.
   for (const x of Object.values(lib.songs)) {
@@ -1635,12 +1646,12 @@ function migrateSongs() {
     const sp = splitLegacyName(x.n);
     x.n0 = x.n;
     if (sp) { x.ar = sp.ar; x.n = sp.n; } else x.ar = '';
-    x.u = Date.now(); changed = true;
+    x.u = nowTs(); changed = true;
   }
   // Ab v2.21.0: automatisch gefundene Spotify-Treffer, die fälschlich als «Karaoke» einsortiert wurden, obwohl nichts darauf hinweist
   for (const x of Object.values(lib.songs)) {
     if (x.d) continue;
-    (x.links || []).forEach(l => { if (l.auto && l.type === 'sp' && l.kind === 'karaoke' && !isKaraokeText(l.title)) { l.kind = 'orig'; l.u = Date.now(); x.u = Date.now(); changed = true; } });
+    (x.links || []).forEach(l => { if (l.auto && l.type === 'sp' && l.kind === 'karaoke' && !isKaraokeText(l.title)) { l.kind = 'orig'; l.u = nowTs(); x.u = nowTs(); changed = true; } });
   }
   if (cleanAllLinks()) changed = true;          // ab v2.8.1: unpassende automatische Verknüpfungen entfernen
   if (changed) libChanged();
@@ -1880,6 +1891,7 @@ async function driveFetch(url, opts = {}, retry = true, interactive = true) {
     throw new Error('unauthorized');
   }
   if (!res.ok) { const t = await res.text(); throw new Error('Drive-Fehler: ' + res.status + ' ' + t); }
+  try { const dh = res.headers && res.headers.get('date'); if (dh) { const t1 = Date.now(); noteServerTime(Date.parse(dh), t1 - 300, t1); } } catch (e) {}   // nur wenn der Browser den Header freigibt
   return res;
 }
 const bg = (url, opts) => driveFetch(url, opts, true, false);   // Hintergrund-Variante ohne Popup
@@ -2273,7 +2285,7 @@ function pickFolder({ title = 'Ordner wählen', exclude = new Set() } = {}) {
 }
 function newFolderRaw(name, parent) {
   const id = uid('f');
-  lib.folders[id] = { n: name.replace(/[\\/]+/g, '-'), p: parent || null, u: Date.now() };
+  lib.folders[id] = { n: name.replace(/[\\/]+/g, '-'), p: parent || null, u: nowTs() };
   libChanged();
   return id;
 }
@@ -2285,7 +2297,7 @@ function newFolder(parent) {
 function renameFolder(id) {
   const n = (prompt('Neuer Name des Ordners:', lib.folders[id].n) || '').trim();
   if (!n || n === lib.folders[id].n) return;
-  lib.folders[id].n = n.replace(/[\\/]+/g, '-'); lib.folders[id].u = Date.now();
+  lib.folders[id].n = n.replace(/[\\/]+/g, '-'); lib.folders[id].u = nowTs();
   libChanged();
 }
 async function moveFolderTo(id) {
@@ -2293,13 +2305,13 @@ async function moveFolderTo(id) {
   Object.keys(lib.folders).forEach(k => { if (isDescendant(k, id)) exclude.add(k); });
   const target = await pickFolder({ title: 'Ordner verschieben nach …', exclude });
   if (target === undefined) return;
-  lib.folders[id].p = target; lib.folders[id].u = Date.now();
+  lib.folders[id].p = target; lib.folders[id].u = nowTs();
   libChanged();
 }
 function deleteFolder(id) {
   const f = lib.folders[id], kids = childFolders(id), n = aliveSongs().filter(s => effSongFolder(s.id) === id).length;
   if (!confirm(`Ordner «${f.n}» löschen?\nDie ${n} Songs und ${kids.length} Unterordner darin werden in den übergeordneten Ordner verschoben – es wird nichts gelöscht.`)) return;
-  const parent = effParent(f), now = Date.now();
+  const parent = effParent(f), now = nowTs();
   kids.forEach(k => { lib.folders[k.id].p = parent; lib.folders[k.id].u = now; });
   Object.values(lib.songs).forEach(s => { if (s.f === id) { s.f = parent; s.u = now; } });
   f.d = 1; f.u = now;
@@ -2318,11 +2330,11 @@ function folderMenu(fo) {
 // --- Setlisten -----------------------------------------------------------
 function newSetlistRaw(name) {
   const id = uid('s');
-  lib.setlists[id] = { n: name, it: [], u: Date.now() };
+  lib.setlists[id] = { n: name, it: [], u: nowTs() };
   libChanged();
   return id;
 }
-function setTouch(id, fn) { const s = lib.setlists[id]; fn(s); s.u = Date.now(); libChanged(); }
+function setTouch(id, fn) { const s = lib.setlists[id]; fn(s); s.u = nowTs(); libChanged(); }
 
 async function addToSetlist(songId) {
   const sets = aliveSetlists();
@@ -3708,17 +3720,88 @@ function syncFail(e) {
 }
 
 // --- Drive-Helfer ----------------------------------------------------
-async function driveUploadJson(name, obj, existingId) {
-  const body = JSON.stringify(obj);
+async function driveUploadJson(name, obj, existingId, parentId) {
+  const body = JSON.stringify(obj), t0 = Date.now();
+  let r;
   if (existingId) {
-    const r = await bg(`${DRIVE_UPLOAD}/${existingId}?uploadType=media&fields=id,modifiedTime`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
-    return r.json();
+    r = await bg(`${DRIVE_UPLOAD}/${existingId}?uploadType=media&fields=id,modifiedTime`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+  } else {
+    const b = '-------gapp' + Date.now().toString(36);
+    const meta = { name, parents: [parentId || folderId], mimeType: 'application/json' };
+    const mp = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
+    r = await bg(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id,modifiedTime`, { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: mp });
   }
-  const b = '-------gapp' + Date.now().toString(36);
-  const meta = { name, parents: [folderId], mimeType: 'application/json' };
-  const mp = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
-  const r = await bg(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id,modifiedTime`, { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: mp });
-  return r.json();
+  const out = await r.json();
+  try { if (out && out.modifiedTime) noteServerTime(Date.parse(out.modifiedTime), t0, Date.now()); } catch (e) {}    // Drive-Zeit als Uhr-Referenz
+  return out;
+}
+
+// --- Automatische Sicherung in Drive (ab v2.24.0) --------------------------------------
+// Einmal pro Tag (geräteübergreifend: gleicher Dateiname) wird die Bibliothek samt Annotationen als JSON im
+// Drive-Unterordner «Backups» abgelegt; die letzten 7 bleiben. Wiederherstellen: «⋯ Mehr → Aus Drive-Sicherung».
+const BK_KEEP = 7;
+async function backupFolderId() {
+  const cached = lsGet('gapp_backupFolder');
+  if (cached) { const m = await driveMeta(cached).catch(() => null); if (m) return cached; lsDel('gapp_backupFolder'); }
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and name='Backups' and mimeType='application/vnd.google-apps.folder'`);
+  const found = (await (await bg(`${DRIVE_FILES}?q=${q}&fields=files(id)`)).json()).files || [];
+  let id = found.length ? found[0].id : null;
+  if (!id) id = (await (await bg(`${DRIVE_FILES}?fields=id`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Backups', mimeType: 'application/vnd.google-apps.folder', parents: [folderId] }) })).json()).id;
+  lsSet('gapp_backupFolder', id); return id;
+}
+async function listBackups() {
+  const bid = await backupFolderId();
+  const q = encodeURIComponent(`'${bid}' in parents and trashed=false and name contains 'library-'`);
+  const files_ = (await (await bg(`${DRIVE_FILES}?q=${q}&pageSize=100&fields=files(id,name,modifiedTime,size)`)).json()).files || [];
+  return files_.filter(f => /^library-\d{4}-\d{2}-\d{2}\.json$/.test(f.name)).sort((a, b) => b.name.localeCompare(a.name));
+}
+async function autoBackup(force) {
+  if (!canSyncNow() || SIM) return false;
+  const day = new Date(nowTs()).toLocaleDateString('sv-SE');
+  if (!force && lsGet('gapp_lastbackup') === day) return false;
+  if (!Object.keys(lib.songs).length && !libHasData(lib)) return false;
+  const bid = await backupFolderId();
+  const name = `library-${day}.json`;
+  const ex = (await (await bg(`${DRIVE_FILES}?q=${encodeURIComponent(`'${bid}' in parents and trashed=false and name='${name}'`)}&fields=files(id)`)).json()).files || [];
+  if (!ex.length || force) {
+    const annots = {};
+    for (const f of files) { const rec = await safe(IDB.get('annots', f.id)); if (rec && rec.json && rec.json.length > 60) annots[f.id] = rec.json; }
+    await driveUploadJson(name, { app: 'gesangs-app', v: APP_VERSION, at: new Date(nowTs()).toISOString(), lib, annots }, ex.length ? ex[0].id : null, bid);
+  }
+  lsSet('gapp_lastbackup', day);
+  const all = await listBackups();
+  for (const old of all.slice(BK_KEEP)) await bg(`${DRIVE_FILES}/${old.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) }).catch(() => {});
+  return true;
+}
+// Bibliothek aus einer Sicherung zurückholen: Einträge der Sicherung gewinnen (Stand zurück, Gelöschtes kommt wieder);
+// Einträge, die es nur jetzt gibt, bleiben erhalten – es geht nichts verloren. Annotationen (Striche) bleiben unberührt.
+function restoreFromLibBackup(B) {
+  if (!B || !B.lib || typeof B.lib !== 'object') throw new Error('Keine gültige Sicherung');
+  const t = nowTs(); let n = 0;
+  const strip = (o) => { const c = Object.assign({}, o); delete c.u; return stableStr(c); };
+  for (const key of ['folders', 'files', 'setlists', 'songs']) {
+    for (const [id, v] of Object.entries(B.lib[key] || {})) {
+      if (UNSAFE_KEYS.has(id) || !v || typeof v !== 'object') continue;
+      const cur = lib[key][id];
+      if (cur && strip(cur) === strip(v)) continue;
+      lib[key][id] = Object.assign({}, v, { u: t }); n++;
+    }
+  }
+  if (n) { migrateSongs(); libChanged(); }
+  return n;
+}
+async function driveRestoreDialog() {
+  let list;
+  try { list = await listBackups(); } catch (e) { toast('Sicherungen nicht erreichbar: ' + (e.message === 'unauthorized' ? 'bitte anmelden.' : e.message), 4500); return; }
+  if (!list.length) { toast('Noch keine automatische Sicherung vorhanden (entsteht einmal täglich beim Abgleich).', 4500); return; }
+  const body = h('div', {}, h('div', { class: 'empty-note', style: 'margin-bottom:8px;', text: 'Automatische Tagessicherungen der Bibliothek (Songs, Tags, Setlisten, Links, Journal). Beim Zurückholen gewinnen die Einträge der Sicherung; Neueres, das es in der Sicherung nicht gibt, bleibt erhalten. Striche/Notizen auf Blättern werden nicht verändert.' }));
+  const api = openModal({ title: '♻ Aus Drive-Sicherung', body, buttons: [{ label: 'Schliessen' }] });
+  list.forEach(f => body.append(h('div', { class: 'pick-row', style: 'cursor:default;' },
+    h('span', { style: 'flex:1;', text: f.name.replace(/^library-|\.json$/g, '') }),
+    h('button', { text: 'Zurückholen', onclick: async () => {
+      if (!confirm('Bibliothek auf den Stand «' + f.name.replace(/^library-|\.json$/g, '') + '» zurücksetzen?\n(Neuere Einträge, die es dort nicht gibt, bleiben erhalten.)')) return;
+      try { const B = JSON.parse(await driveText(f.id)); const n = restoreFromLibBackup(B); api.close(); toast(n ? n + ' Einträge zurückgeholt.' : 'Bereits identisch – nichts zu tun.', 4500); } catch (e) { toast('Fehlgeschlagen: ' + e.message, 4500); }
+    } }))));
 }
 async function driveMeta(id) {          // null wenn gelöscht/nicht mehr da
   try {
@@ -3868,6 +3951,7 @@ async function syncAll(force) {
       const textIds = new Set(textDirtyIds); if (currentFile && sheetKind === 'text') textIds.add(currentFile.id);
       for (const id of textIds) { if (files.some(f => f.id === id)) await syncTextSheet(id); }
       await refreshOpenTextSheet();
+      await autoBackup().catch(e => logErr('backup', e && e.message));
     });
     if (statusEl.className !== 'error') setStatus('');
   } catch (e) { syncFail(e); }
@@ -4271,7 +4355,7 @@ async function finishUploads(items) {          // items: [{created, file}]
     // Bei sehr schneller Verbindung kann loadFileList() (oben) die neue Datei bereits sehen und via
     // migrateSongs() automatisch einen (ordnerlosen) Song dafür anlegen, bevor wir hier ankommen –
     // für eine gerade erst hochgeladene Datei gewinnt in diesem Fall trotzdem der aktuelle Ordner.
-    else if (lib.songs[sid]) { lib.songs[sid].f = currentFolder; lib.songs[sid].u = Date.now(); }
+    else if (lib.songs[sid]) { lib.songs[sid].f = currentFolder; lib.songs[sid].u = nowTs(); }
     await storeBlob(f, file).catch(() => {});
     if (!firstSong) firstSong = sid;
   }
@@ -4971,7 +5055,7 @@ function cleanAllLinks() {
     if (s.d || !s.links || !s.links.length) continue;
     const bad = s.links.filter(l => l.auto && playableLink(l) && !looksRelevant(songFull(s), l.title));
     if (!bad.length) continue;
-    const now = Date.now();
+    const now = nowTs();
     s.gone = s.gone || {};
     bad.forEach(l => { s.gone[l.id] = now; });
     s.lxk = [...new Set([...(s.lxk || []), ...bad.map(linkKey)])];
@@ -5593,7 +5677,7 @@ function manageAudio(s) {
   function renameAudio(item) {
     const n = (prompt('Neuer Name:', item.name) || '').trim();
     if (!n || n === item.name) return;
-    sTouch(s.id, x => { const it = (x.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.name = n; it.u = Date.now(); } });
+    sTouch(s.id, x => { const it = (x.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.name = n; it.u = nowTs(); } });
     if (isLoaded(item)) mpSetTitle(n, item.kind === 'backing' ? 'Backing-Track' : 'Aufnahme');
     draw();
   }
@@ -5817,6 +5901,7 @@ $('newMenuBtn').addEventListener('click', () => menuSheet('Neu', [
 ]));
 $('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
   { label: '💾 Backup & Wiederherstellen …', fn: () => $('backupBtn').click() },
+  { label: '♻ Aus Drive-Sicherung (täglich automatisch) …', fn: () => driveRestoreDialog() },
   { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() },
   { label: '❓ Kurzanleitung', fn: () => showTour() },
   { label: '🐞 Fehlerprotokoll …', fn: () => errLogDialog() }
@@ -7190,7 +7275,7 @@ async function runShare(target, opts, progress) {
   let lk = prev && prev.lk ? 1 : 0;
   if (opts.link && !lk) { await driveAddPermission(fid, { role: 'reader', type: 'anyone' }); lk = 1; }
   else if (!opts.link && lk) { await driveRemoveLinkPermission(fid); lk = 0; }
-  const sh = { fid, em: [...em], lk, u: Date.now() };
+  const sh = { fid, em: [...em], lk, u: nowTs() };
   if (target.kind === 'set') setTouch(target.id, x => { x.sh = sh; }); else sTouch(target.id, x => { x.sh = sh; });
   return { fid, count: jobs.length };
 }
@@ -7824,7 +7909,7 @@ async function takeStats(songId, item, onProgress) {
   const st = pitchStats(res, mel), s = sget(songId), rk = refSig(s);
   const summary = { acc: st.acc, dev: st.dev, bias: st.bias, lo: st.lo, hi: st.hi, ra: st.ra, rb: st.rb, v: st.v, rk };
   const cur = (s.audio || []).find(a => a.id === item.id);
-  if (cur && JSON.stringify(cur.st || {}) !== JSON.stringify(summary)) { const it = (s.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.st = summary; it.u = Date.now(); libChanged(); } }   // ohne den Song-Zeitstempel zu erhöhen (v2.8.5)
+  if (cur && JSON.stringify(cur.st || {}) !== JSON.stringify(summary)) { const it = (s.audio || []).find(a => a.id === item.id); if (it) { it.u0 = it.u0 || it.u; it.st = summary; it.u = nowTs(); libChanged(); } }   // ohne den Song-Zeitstempel zu erhöhen (v2.8.5)
   return { res, mel, st };
 }
 const tendText = (b) => Math.abs(b) < 6 ? 'ausgeglichen' : (b < 0 ? 'eher zu tief (' + b + ' ct)' : 'eher zu hoch (+' + b + ' ct)');
@@ -8463,7 +8548,7 @@ async function removeRef(songId, silent) {
   stopRefPlayback();
   await trashAudio(item);
   refCache.delete(item.id);
-  sTouch(songId, x => { x.audio = (x.audio || []).filter(a => a.id !== item.id); x.gone = x.gone || {}; x.gone[item.id] = Date.now(); delete x.ref; });
+  sTouch(songId, x => { x.audio = (x.audio || []).filter(a => a.id !== item.id); x.gone = x.gone || {}; x.gone[item.id] = nowTs(); delete x.ref; });
 }
 
 
@@ -8791,12 +8876,12 @@ function jTouch(id, fn) {
   updateTasksBtn();
 }
 function addTask(id, text, due) {
-  const now = Date.now();
+  const now = nowTs();
   jTouch(id, s => { s.tasks.push({ id: uid('tk'), t: text, d: due || '', s: 'open', c: now, u: now }); });
 }
-function setTask(id, tid, patch) { jTouch(id, s => { const t = s.tasks.find(x => x.id === tid); if (t) Object.assign(t, patch, { u: Date.now() }); }); }
-function addLog(id, d, m, t) { jTouch(id, s => { s.log.push({ id: uid('lg'), d: d || todayStr(), m: m || 0, t: t || '', u: Date.now() }); }); }
-function delLog(id, lid) { jTouch(id, s => { const e = s.log.find(x => x.id === lid); if (e) { e.x = 1; e.u = Date.now(); } }); }
+function setTask(id, tid, patch) { jTouch(id, s => { const t = s.tasks.find(x => x.id === tid); if (t) Object.assign(t, patch, { u: nowTs() }); }); }
+function addLog(id, d, m, t) { jTouch(id, s => { s.log.push({ id: uid('lg'), d: d || todayStr(), m: m || 0, t: t || '', u: nowTs() }); }); }
+function delLog(id, lid) { jTouch(id, s => { const e = s.log.find(x => x.id === lid); if (e) { e.x = 1; e.u = nowTs(); } }); }
 const nextStatus = { open: 'doing', doing: 'done', done: 'open' };
 const statusIcon = { open: '○', doing: '◐', done: '✓' };
 const statusText = { open: 'offen', doing: 'in Arbeit', done: 'erledigt' };
@@ -9029,7 +9114,7 @@ async function runRestore(P, { undelete }, progress) {
   }
   // Bibliothek umschreiben und zusammenführen
   const B = remapLibIds(JSON.parse(JSON.stringify(P.blib)), idMap);
-  const now = Date.now();
+  const now = nowTs();
   if (undelete) P.deleted.forEach(d => { if (B[d.key][d.id]) B[d.key][d.id].u = now; });
   for (const key of ['folders', 'files', 'setlists', 'songs']) B[key] = B[key] || {};
   const merged = mergeLib(remapLibIds(JSON.parse(JSON.stringify(lib)), idMap), B);

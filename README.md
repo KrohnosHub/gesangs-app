@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.24.0 – Uhr-Korrektur im Sync und automatische Drive-Sicherung (07.10.2026)
+- **Uhr-Korrektur:** Alle Daten-Zeitstempel («neuester gewinnt») nutzen jetzt die Drive-Zeit statt der Geräteuhr. Die Abweichung wird bei jedem Upload (und, wenn der Browser den Date-Header freigibt, bei jeder Antwort) gemessen, über 5 Messungen geglättet und gespeichert; unter 4 s wird ignoriert. Weicht die Uhr um mehr als 2 min ab, erscheint einmal ein Hinweis. Bereits falsch gestempelte alte Einträge werden dadurch nicht rückwirkend korrigiert.
+- **Automatische Sicherung:** Einmal täglich (geräteübergreifend nur einmal) legt der Abgleich `library-JJJJ-MM-TT.json` (Bibliothek + Annotationen) im Drive-Unterordner «Backups» ab; die letzten 7 bleiben. Zurückholen: «⋯ Mehr → ♻ Aus Drive-Sicherung …» – Einträge der Sicherung gewinnen, Neueres bleibt erhalten; Striche/Notizen auf Blättern werden dabei nicht verändert (liegen aber in der Datei). Das manuelle ZIP-Backup (mit PDFs/Audio) bleibt.
+
 ### v2.23.3 – Stabilität und Feinschliff nach Gesamtprüfung (07.10.2026)
 - **Fehlerprotokoll:** unerwartete Fehler (auch abgewiesene Promises, Speicherfehler) werden still mitgeschrieben (letzte 30); «⋯ Mehr → 🐞 Fehlerprotokoll» zeigt sie zum Kopieren. Meldung, wenn der Gerätespeicher voll ist (vorher stiller Datenverlust-Risiko).
 - Vollbild-Knopf: verweigert der Browser das Vollbild, erscheint ein Hinweis statt eines unbehandelten Fehlers.
