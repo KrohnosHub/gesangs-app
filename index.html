@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G95+4W8efKBlZUOMpTleha4+Em9r1SmSU7eYhqQwXNo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-v97+nDKqQShULC+QVkkmGCmkqHO25znJoGOQCPnH3X0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G95+4W8efKBlZUOMpTleha4+Em9r1SmSU7eYhqQwXNo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-v97+nDKqQShULC+QVkkmGCmkqHO25znJoGOQCPnH3X0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -490,6 +490,9 @@
     column-count:2; column-gap:7vw; column-fill:auto; overflow:hidden; cursor:default;}
   body.perf.spread-text #canvasWrap{overflow:hidden;}
   body.perf.spread-text .perf-txt, body.perf.spread-text .perf-sync{display:none !important;}
+  #pzTop{position:absolute; top:0; left:50%; transform:translateX(-50%); pointer-events:auto; border:2px solid rgba(0,0,0,.55); border-top:0; border-radius:0 0 14px 14px; background:rgba(255,248,235,.92); color:#2b1d12; font-size:13px; font-weight:600; padding:3px 16px 5px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.5); opacity:.85; z-index:2;}
+  #perfUI.show #pzTop{display:none;}
+  body:not(.perf-full) #perfFull{display:inline-flex;} body.perf-full #perfFull{display:none;}
   #perfZones{position:absolute; inset:0; pointer-events:none;}
   .pz{position:absolute; top:50%; transform:translateY(-50%); pointer-events:auto; width:clamp(52px,7vw,72px); height:clamp(96px,19vh,140px); border:2px solid rgba(0,0,0,.55); border-radius:16px;
     background:rgba(255,248,235,.94); color:#2b1d12; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; opacity:1; padding:0; cursor:pointer; box-shadow:0 0 0 2px rgba(255,255,255,.35), 0 3px 12px rgba(0,0,0,.5); transition:opacity .2s, background .2s, color .2s;}
@@ -744,8 +747,9 @@
     <button id="perfHelp" title="Erklärt, wie man blättert">ⓘ Blättern</button>
     <button id="perfFull" title="Vollbild">⤢ Vollbild</button>
   </div>
+  <button id="pzTop" title="Menü einblenden (Maus nach oben bewegen, oben antippen oder nach unten wischen)">⌄ Menü</button>
   <div id="perfZones">
-    <div id="perfHint"><div class="ph ph-l">‹<br>Tippen:<br>zurück blättern</div><div class="ph ph-c">Tippen in die Mitte:<br>Leiste ein-/ausblenden</div><div class="ph ph-r">›<br>Tippen:<br>weiter blättern</div>
+    <div id="perfHint"><div class="ph ph-l">‹<br>Tippen:<br>zurück blättern</div><div class="ph ph-c">Tippen in die Mitte:<br>Menü ein-/ausblenden<br><br>Menü auch: Maus an den oberen Rand, oben antippen oder von oben nach unten wischen</div><div class="ph ph-r">›<br>Tippen:<br>weiter blättern</div>
       <div class="ph-b">Blättern geht auch per <b>Wischen</b>, mit den <b>Pfeiltasten / Bild auf-ab</b> oder per <b>Fusspedal</b>. Am Ende eines Liedes geht es in der Setliste zum nächsten.</div></div>
     <button id="pzL" class="pz pz-l" title="Zurück blättern"><span class="pz-a">‹</span><span class="pz-t">zurück</span></button>
     <button id="pzR" class="pz pz-r" title="Weiter blättern"><span class="pz-a">›</span><span class="pz-t">weiter</span></button>
@@ -772,7 +776,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.23.1';
+const APP_VERSION = '2.23.2';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -4025,10 +4029,22 @@ $('perfBtn').addEventListener('click', enterPerf);
 $('perfExit').addEventListener('click', exitPerf);
 $('perfLayers').addEventListener('click', () => { renderLayerPop(); $('layerPop').classList.toggle('show'); setPerfBar(true); });
 $('perfFull').addEventListener('click', () => {
-  try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { toast('Vollbild wird von diesem Browser nicht unterstützt.'); }
+  try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); } catch (e) { toast('Vollbild wird von diesem Browser nicht unterstützt.'); }
   setPerfBar(true);
 });
 $('perfBar').addEventListener('pointerdown', () => setPerfBar(true));
+$('perfBar').addEventListener('pointermove', () => { if (perf) setPerfBar(true); });
+// Vollbild und Auftrittsmodus gehören zusammen (v2.23.2): Vollbild verlassen (z. B. Esc) beendet auch den Auftrittsmodus
+let perfWasFull = false;
+document.addEventListener('fullscreenchange', () => {
+  const full = !!document.fullscreenElement;
+  document.body.classList.toggle('perf-full', full);
+  if (full) perfWasFull = true;
+  else if (perfWasFull) { perfWasFull = false; if (perf) exitPerf(); }
+});
+// Leiste einblenden: Maus an den oberen Rand, Antippen des oberen Rands oder Mitte, Wischen nach unten vom oberen Rand
+window.addEventListener('mousemove', (e) => { if (perf && e.clientY < 48 && !$('perfUI').classList.contains('show')) setPerfBar(true); });
+$('pzTop').addEventListener('click', (e) => { e.stopPropagation(); setPerfBar(true); });
 $('perfBar').addEventListener('input', () => setPerfBar(true));
 
 // --- Setlisten im Auftrittsmodus -------------------------------------------
@@ -4100,19 +4116,23 @@ async function startSetlist(setId) {
 }
 
 // --- Eingaben im Auftrittsmodus ---------------------------------------------
-let tap = null;
+let tap = null, tapStartY = 0;
 canvasWrap.addEventListener('pointerdown', (e) => {
   if (!perf) return;
   tap = { x: e.clientX, y: e.clientY, t: Date.now(), id: e.pointerId };
+  tapStartY = e.clientY;
 });
 canvasWrap.addEventListener('pointerup', (e) => {
   if (!perf || !tap || tap.id !== e.pointerId) return;
   const dx = e.clientX - tap.x, dy = e.clientY - tap.y, dt = Date.now() - tap.t;
   tap = null;
+  const topY = tapStartY - canvasWrap.getBoundingClientRect().top;
+  if (topY < 40 && dy > 35 && Math.abs(dx) < 60) { setPerfBar(true); return; }          // vom oberen Rand nach unten wischen = Leiste
   if (Math.abs(dx) > 60 && Math.abs(dy) < 80 && dt < 700) { if (dx < 0) perfNext(); else perfPrev(); return; }
   if (Math.abs(dx) > 12 || Math.abs(dy) > 12 || dt > 600) return;
   const r = canvasWrap.getBoundingClientRect(), f = (e.clientX - r.left) / r.width;
   if ($('perfUI').classList.contains('show') && e.clientY - r.top < 70) return;
+  if (e.clientY - r.top < 36) { setPerfBar(true); return; }                              // oberer Rand antippen = Leiste
   if (f < 0.3) perfPrev();
   else if (f > 0.7) perfNext();
   else setPerfBar(!$('perfUI').classList.contains('show'));

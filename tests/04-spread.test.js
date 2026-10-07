@@ -56,6 +56,19 @@ module.exports = async () => {
       await pg.mouse.click(1250, 400); await wait(pg); eq((await st(pg)).label, '2 / 5');
       eq(await pg.evaluate(() => document.querySelector('#pzR .pz-t').textContent), 'weiter'); await pg.context().close();
     });
+    await test('Auftritt: Menü per Maus am oberen Rand / Antippen oben; Verlassen des Vollbilds beendet den Auftritt', async () => {
+      const pg = await open(b, D, { logs: false }); await prep(pg);
+      await pg.click('#perfBtn'); await wait(pg, 1500);
+      const shown = () => pg.evaluate(() => document.getElementById('perfUI').classList.contains('show'));
+      await pg.evaluate(() => setPerfBar(false)); await wait(pg, 300); eq(await shown(), false);
+      ok(await pg.isVisible('#pzTop'), '«Menü»-Knopf bei verstecktem Menü');
+      await pg.mouse.move(640, 300); await pg.mouse.move(640, 10); await wait(pg, 300); eq(await shown(), true, 'Maus oben');
+      await pg.evaluate(() => setPerfBar(false)); await wait(pg, 300);
+      await pg.mouse.click(300, 15); await wait(pg, 300); eq(await shown(), true, 'oberen Rand antippen');
+      const fs = await pg.evaluate(async () => { try { await document.documentElement.requestFullscreen(); await new Promise(r => setTimeout(r, 400)); return !!document.fullscreenElement; } catch (e) { return false; } });
+      if (fs) { await pg.evaluate(() => document.exitFullscreen()); await wait(pg, 600); eq(await pg.evaluate(() => perf), false, 'Auftritt nach Vollbild-Ende'); }
+      eq(pg.errs, []); await pg.context().close();
+    });
     await test('Text: zwei Spalten; im Auftritt Doppelseiten per Tippen', async () => {
       const pg = await open(b, D, { logs: false }); await prep(pg);
       await pg.click('text=Text >> nth=0'); await wait(pg, 1500); await pg.click('#spreadBtn'); await wait(pg, 700);

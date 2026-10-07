@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.23.2 – Auftrittsmodus: Vollbild und Menü (07.10.2026)
+- Esc (bzw. Verlassen des Vollbilds) beendet jetzt auch den Auftrittsmodus – kein Auftritt ohne Vollbild mehr. «Vollbild» erscheint nur noch, wenn der Browser das Vollbild nicht selbst gestartet hat.
+- Menü-Leiste erscheint, wenn die Maus an den oberen Rand geht; auf Handy/Tablet: oberen Rand antippen oder von oben nach unten wischen. Zusätzlich zeigt ein kleiner Knopf «⌄ Menü» oben in der Mitte, wo es herauskommt.
+
 ### v2.23.1 – Blätter-Pfeile besser sichtbar (07.10.2026)
 - Die Pfeil-Knöpfe am Rand im Auftrittsmodus sind jetzt hell mit dunklem Pfeil und Rahmen (vorher dunkel auf schwarz, kaum sichtbar), grösser und mit fetterer Beschriftung.
 
