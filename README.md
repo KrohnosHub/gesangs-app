@@ -21,6 +21,13 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.27.0 – Virtuelle Klaviatur (13.10.2026)
+- Schwebende Klaviatur am unteren Rand, überall verfügbar (Bibliothek, Blatt, Aufnahme-Dialog, Auftrittsmodus). Öffnen: 🎹 in der Kopfzeile bzw. Auftrittsleiste, Eintrag im ⋯-Menü oder Taste P.
+- Klang = gewählter Instrumentklang der App. Anzeige von Notenname (deutsch: C, Cis, D, Es, … B, H) und Frequenz.
+- Bedienung: Maus/Touch (mehrstimmig, Darüberwischen) oder Computertastatur (untere Reihe Y X C V B N M ab linkem C, obere Reihe Q W E R T Z U I eine Oktave höher; schwarze Tasten S D G H J bzw. 2 3 5 6 7).
+- Bereich: Oktave verschieben, 1–3 Oktaven (Handy bis 2); Einstellung wird pro Gerät gemerkt. Minimieren auf die Leiste möglich; Mini-Player und Metronom rücken über das Panel.
+- Neuer Test (tests/07).
+
 ### v2.26.0 – Verknüpfungen bearbeiten, Aufnahme mit Tempo/Tonhöhe (13.10.2026)
 - Verknüpfungen: Der Knopf «→ Kategorie» ist weg. Der Bearbeiten-Knopf (✎) öffnet einen Dialog für Name und Kategorie (Original / Karaoke; x-minus nur Name).
 - Neue Aufnahme: Das gewählte Backing startet nicht mehr beim Öffnen oder Auswählen, sondern mit dem Start der Aufnahme. Mit «▶ Vorhören» lässt es sich vorher unabhängig abspielen.

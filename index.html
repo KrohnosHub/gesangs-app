@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G1Ab9W6L9GiHR1ybYmmKlEZSfG96OSfwy4Q21hZVWd8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-iPm5bTgA312+cPT7psbXypexWbamhmtfZiI0WR9npS0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G1Ab9W6L9GiHR1ybYmmKlEZSfG96OSfwy4Q21hZVWd8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-iPm5bTgA312+cPT7psbXypexWbamhmtfZiI0WR9npS0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -446,6 +446,21 @@
   .wu-results{margin-top:6px; max-height:220px; overflow:auto;}
   .wu-dots{display:flex; gap:3px; flex-wrap:wrap; margin-left:auto;}
   .wu-dot{font-size:12px; line-height:1;} .wu-dot.good{color:var(--ok);} .wu-dot.hit{color:var(--warn);} .wu-dot.miss{color:var(--danger);} .wu-dot.none{color:#bbb;}
+  /* --- v2.27.0: virtuelle Klaviatur (schwebendes Panel, überall verfügbar) --- */
+  #pianoPanel{position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:min(100vw, 820px); z-index:105; background:var(--panel); border:1px solid var(--border); border-bottom:0; border-radius:12px 12px 0 0; box-shadow:0 -4px 20px rgba(0,0,0,.25); display:none; flex-direction:column; padding-bottom:env(safe-area-inset-bottom);}
+  #pianoPanel.show{display:flex;}
+  #pianoPanel .pk-head{display:flex; align-items:center; gap:6px; padding:5px 8px; flex-wrap:wrap; font-size:13px;}
+  #pianoPanel .pk-head button{padding:3px 9px; min-height:30px;}
+  #pianoPanel .pk-name{flex:1; min-width:90px; font-weight:600; text-align:center; color:var(--accent); white-space:nowrap;}
+  #pianoPanel.min .pk-board{display:none;}
+  .pk-board{position:relative; height:124px; margin:0 8px 8px; display:flex; user-select:none; -webkit-user-select:none; touch-action:none; background:#222; border-radius:0 0 6px 6px; padding:0 1px 1px;}
+  .pk-w{flex:1; position:relative; background:#fdfcfa; border:1px solid #888; border-top:0; border-radius:0 0 5px 5px; display:flex; align-items:flex-end; justify-content:center; font-size:11px; color:#666; padding-bottom:4px; box-sizing:border-box;}
+  .pk-w.on{background:#e8c9a0;}
+  .pk-b{position:absolute; top:0; height:62%; width:6.2%; transform:translateX(-50%); background:#242020; border-radius:0 0 4px 4px; z-index:2;}
+  .pk-b.on{background:#8a5a2b;}
+  .pk-c{font-weight:700; color:#333;}
+  @media (max-width:800px){ .pk-board{height:96px;} #pianoPanel .pk-lbl{display:none;} #pianoPanel .pk-head{flex-wrap:nowrap; gap:4px; padding:5px 6px;} #pianoPanel .pk-head > .sub{display:none;} #pianoPanel .pk-head button{padding:3px 7px;} #pianoPanel .pk-name{min-width:0; font-size:12px; overflow:hidden; text-overflow:ellipsis;} }
+  body.piano-open #miniPlayer, body.piano-open #metroChip{bottom:calc(var(--pianoH, 0px) + 10px);}
   #metroChip{position:fixed; left:10px; bottom:10px; z-index:90; display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--border); border-radius:999px; padding:4px 6px 4px 12px; box-shadow:0 4px 16px rgba(0,0,0,.25); font-size:13px;}
   #metroChip .mb{font-weight:700; cursor:pointer; font-variant-numeric:tabular-nums;}
   #metroChip .mds{display:flex; gap:3px;}
@@ -521,6 +536,7 @@
   <h1 id="currentTitle">Gesangs-App – Lyric-Blätter</h1>
   <button id="renameBtn" class="icon" title="Song umbenennen" style="display:none;">✎</button>
   <button id="perfBtn" title="Auftritts-/Übungsmodus: Vollbild ohne Werkzeuge, Umblättern per Tipp an den Rand" style="display:none;"><span>▶</span><span class="lbl-t"> Auftritt</span></button>
+  <button id="pianoBtn" class="icon" title="Klaviatur ein-/ausblenden (Taste P)">🎹</button>
   <span id="syncState" title="Synchronisierung – antippen zum Synchronisieren">…</span>
   <span id="status"></span>
   <button id="authBtn" class="primary">Anmelden</button>
@@ -746,6 +762,7 @@
     <button id="perfOfsDown" class="perf-sync" title="Text läuft zu früh: 0.5 s später">−0.5 s</button>
     <button id="perfOfsUp" class="perf-sync" title="Text läuft zu spät: 0.5 s früher">+0.5 s</button>
     <button id="perfSpread" title="Zwei Seiten nebeneinander ein-/ausschalten">▯▯ 2 Seiten</button>
+    <button id="perfPiano" title="Klaviatur ein-/ausblenden (Taste P)">🎹 Klaviatur</button>
     <button id="perfHelp" title="Erklärt, wie man blättert">ⓘ Blättern</button>
     <button id="perfFull" title="Vollbild">⤢ Vollbild</button>
   </div>
@@ -778,7 +795,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.26.0';
+const APP_VERSION = '2.27.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -6027,6 +6044,7 @@ $('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
   { label: '💾 Backup & Wiederherstellen …', fn: () => $('backupBtn').click() },
   { label: '♻ Aus Drive-Sicherung (täglich automatisch) …', fn: () => driveRestoreDialog() },
   { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() },
+  { label: '🎹 Klaviatur (Taste P)', fn: () => pianoToggle() },
   { label: '❓ Kurzanleitung', fn: () => showTour() },
   { label: '🐞 Fehlerprotokoll …', fn: () => errLogDialog() }
 ]));
@@ -8531,6 +8549,98 @@ async function playRefMelody(songId, onEnd) {
   refPlayer = { ctx, songId, timer: setTimeout(() => { stopRefPlayback(); if (onEnd) onEnd(); }, (last + 0.5) * 1000) };
   return true;
 }
+
+
+// ---------------------------------------------------------------
+// Virtuelle Klaviatur (ab v2.27.0): schwebendes Panel am unteren Rand, überall verfügbar (Bibliothek, Blatt,
+// Aufnahme, Auftrittsmodus). Öffnen: 🎹 in der Kopfzeile / Auftrittsleiste, ⋯-Menü oder Taste P.
+// Klang = gewählter Instrumentklang der App (synthNote). Tasten per Maus/Touch (mehrstimmig, Darüberwischen)
+// oder Computertastatur (untere Reihe Y X C V B N M = ab linkem C, obere Reihe Q W E R T Z U I = eine Oktave höher).
+// ---------------------------------------------------------------
+const PK = { el: null, board: null, nameEl: null, open: false, min: false, ctx: null, ptr: new Map(), keyNote: new Map(), cfg: { start: 48, oct: 2 } };
+try { const c = JSON.parse(lsGet('gapp_piano') || 'null'); if (c && c.start >= 24 && c.start <= 84 && c.oct >= 1 && c.oct <= 3) PK.cfg = { start: c.start - c.start % 12, oct: c.oct }; } catch (e) {}
+const NOTE_DE = ['C', 'Cis', 'D', 'Es', 'E', 'F', 'Fis', 'G', 'As', 'A', 'B', 'H'];
+const pkName = (m) => NOTE_DE[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+const PK_LOWER = { y: 0, x: 2, c: 4, v: 5, b: 7, n: 9, m: 11, s: 1, d: 3, g: 6, h: 8, j: 10 };
+const PK_UPPER = { q: 0, w: 2, e: 4, r: 5, t: 7, z: 9, u: 11, i: 12, 2: 1, 3: 3, 5: 6, 6: 8, 7: 10 };
+function pkNoteForKey(k) {                       // Computertastatur → MIDI-Note (relativ zum linken C des Panels)
+  k = k.toLowerCase();
+  if (k in PK_UPPER) return PK.cfg.start + 12 + PK_UPPER[k];
+  if (k in PK_LOWER) return PK.cfg.start + PK_LOWER[k];
+  return null;
+}
+function pkSave() { lsSet('gapp_piano', JSON.stringify(PK.cfg)); }
+function pkPlay(m) {
+  try {
+    if (!PK.ctx) PK.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (PK.ctx.state === 'suspended') PK.ctx.resume().catch(() => {});
+    synthNote(PK.ctx, m, PK.ctx.currentTime + 0.005, 2.4, 0.3);
+  } catch (e) {}
+  if (PK.nameEl) PK.nameEl.textContent = pkName(m) + ' · ' + (Math.round(midiHz(m) * 10) / 10) + ' Hz';
+}
+function pkMark(m, on) { const k = PK.board && PK.board.querySelector('[data-m="' + m + '"]'); if (k) k.classList.toggle('on', on); }
+function pkBuild() {
+  const { start, oct } = PK.cfg, board = PK.board; board.innerHTML = '';
+  const nW = 7 * oct + 1, whites = [0, 2, 4, 5, 7, 9, 11];
+  const blackAfter = { 0: 1, 2: 3, 5: 6, 7: 8, 9: 10 };
+  for (let i = 0; i < nW; i++) {
+    const note = i === nW - 1 ? start + oct * 12 : start + Math.floor(i / 7) * 12 + whites[i % 7];
+    board.append(h('div', { class: 'pk-w' + (note % 12 === 0 ? ' pk-c' : ''), 'data-m': note }, h('span', { class: 'pk-lbl', text: note % 12 === 0 ? pkName(note) : NOTE_DE[note % 12] })));
+    const bk = blackAfter[note % 12];
+    if (bk != null && i < nW - 1) board.append(h('div', { class: 'pk-b', 'data-m': note + 1, style: 'left:' + ((i + 1) * 100 / nW) + '%' }));
+  }
+  PK.hd.textContent = pkName(start) + ' – ' + pkName(start + oct * 12);
+}
+function pkKeyAt(x, y) { const el = document.elementFromPoint(x, y); const k = el && el.closest && el.closest('[data-m]'); return k && PK.board.contains(k) ? +k.dataset.m : null; }
+function pkBuildPanel() {
+  const hd = PK.hd = h('span', { class: 'sub', style: 'min-width:70px;' });
+  const nameEl = PK.nameEl = h('span', { class: 'pk-name', text: '–' });
+  const btn = (text, title, fn) => h('button', { text, title, onclick: fn });
+  const shift = (d) => { PK.cfg.start = clamp(PK.cfg.start + d * 12, 24, 84 - 12 * PK.cfg.oct + 12); pkSave(); pkBuild(); };
+  const octs = (d) => { PK.cfg.oct = clamp(PK.cfg.oct + d, 1, matchMedia('(max-width:800px)').matches ? 2 : 3); PK.cfg.start = clamp(PK.cfg.start, 24, 84 - 12 * PK.cfg.oct + 12); pkSave(); pkBuild(); };
+  const board = PK.board = h('div', { class: 'pk-board' });
+  const minBtn = btn('▾', 'Nur Leiste anzeigen', () => { PK.min = !PK.min; PK.el.classList.toggle('min', PK.min); minBtn.textContent = PK.min ? '▴' : '▾'; pkLayout(); });
+  PK.el = h('div', { id: 'pianoPanel' },
+    h('div', { class: 'pk-head' }, h('b', { text: '🎹' }), hd, btn('◀', 'Eine Oktave tiefer', () => shift(-1)), btn('▶', 'Eine Oktave höher', () => shift(1)), btn('−', 'Weniger Oktaven', () => octs(-1)), btn('+', 'Mehr Oktaven', () => octs(1)), nameEl, minBtn, btn('✕', 'Schliessen (Taste P)', () => pianoToggle(false))),
+    board);
+  document.body.append(PK.el);
+  board.addEventListener('pointerdown', (e) => {
+    const m = pkKeyAt(e.clientX, e.clientY); if (m == null) return;
+    e.preventDefault(); try { board.setPointerCapture(e.pointerId); } catch (er) {}
+    PK.ptr.set(e.pointerId, m); pkMark(m, true); pkPlay(m);
+  });
+  board.addEventListener('pointermove', (e) => {
+    if (!PK.ptr.has(e.pointerId)) return;
+    const m = pkKeyAt(e.clientX, e.clientY), old = PK.ptr.get(e.pointerId);
+    if (m == null || m === old) return;
+    pkMark(old, false); PK.ptr.set(e.pointerId, m); pkMark(m, true); pkPlay(m);
+  });
+  const up = (e) => { const old = PK.ptr.get(e.pointerId); if (old != null) { pkMark(old, false); PK.ptr.delete(e.pointerId); } };
+  board.addEventListener('pointerup', up); board.addEventListener('pointercancel', up);
+  pkBuild();
+}
+function pkLayout() { document.body.style.setProperty('--pianoH', PK.open ? PK.el.offsetHeight + 'px' : '0px'); document.body.classList.toggle('piano-open', PK.open); }
+function pianoToggle(force) {
+  if (!PK.el) pkBuildPanel();
+  PK.open = force == null ? !PK.open : !!force;
+  PK.el.classList.toggle('show', PK.open);
+  pkLayout();
+  if (!PK.open) { PK.ptr.forEach((m) => pkMark(m, false)); PK.ptr.clear(); PK.keyNote.forEach((m) => pkMark(m, false)); PK.keyNote.clear(); }
+}
+window.addEventListener('resize', () => { if (PK.open) pkLayout(); });
+$('pianoBtn').addEventListener('click', () => pianoToggle());
+$('perfPiano').addEventListener('click', () => { pianoToggle(); setPerfBar(true); });
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+  if (typing) return;
+  if (e.key === 'p' || e.key === 'P') { if (e.repeat) return; e.preventDefault(); e.stopPropagation(); pianoToggle(); return; }
+  if (!PK.open || e.repeat) return;
+  const m = pkNoteForKey(e.key); if (m == null) return;
+  e.preventDefault(); e.stopPropagation();
+  PK.keyNote.set(e.key.toLowerCase(), m); pkMark(m, true); pkPlay(m);
+}, true);
+window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(), m = PK.keyNote.get(k); if (m != null) { pkMark(m, false); PK.keyNote.delete(k); } }, true);
 
 // --- Abschnitt in «Aufnahmen & Backing-Tracks» ---------------------------------------------
 function refSection(songId, redraw) {
