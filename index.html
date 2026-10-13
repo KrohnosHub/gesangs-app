@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-r558X4IgnGs1SWoF6/S3gS7VZskJuK1vqILqDLpNi30=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G1Ab9W6L9GiHR1ybYmmKlEZSfG96OSfwy4Q21hZVWd8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-r558X4IgnGs1SWoF6/S3gS7VZskJuK1vqILqDLpNi30=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-G1Ab9W6L9GiHR1ybYmmKlEZSfG96OSfwy4Q21hZVWd8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -778,7 +778,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.25.0';
+const APP_VERSION = '2.26.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1086,7 +1086,7 @@ function playLinkInMiniPlayer(link) {
 }
 // Startet/setzt eine Verknüpfung von vorne fort -- für den Aufnahme-Mitspiel-Start.
 // Läuft der gleiche YouTube-Link schon, wird nur zurückgespult statt neu geladen.
-function startMiniPlayerLink(link) {
+function startMiniPlayerLink(link, opts) {
   ensureMiniPlayer();
   if (mp.kind === 'link' && mp.link && mp.link.id === link.id && mp.ytPlayer) {
     try { mp.ytPlayer.seekTo(0); mp.ytPlayer.playVideo(); } catch (e) {}
@@ -1101,7 +1101,7 @@ function startMiniPlayerLink(link) {
     mp.mount.append(inner);
     loadYouTubeApi().then(YT => {
       if (mp.link !== link) return;
-      mp.ytPlayer = new YT.Player(inner, { videoId: link.mediaId, playerVars: { playsinline: 1 }, events: { onReady: (e) => e.target.playVideo(), onStateChange: () => mpTick() } });
+      mp.ytPlayer = new YT.Player(inner, { videoId: link.mediaId, playerVars: { playsinline: 1 }, events: { onReady: (e) => { if (!(opts && opts.paused)) e.target.playVideo(); }, onStateChange: () => mpTick() } });
       mpNotify();
     }).catch(e => { toast('YouTube: ' + e.message); stopMiniPlayer(); });
   } else startSpotifyInMiniPlayer(link);
@@ -5157,8 +5157,7 @@ function manageLinks(s) {
       playableLink(l) ? h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }) : null,
       isLoaded(l) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
       h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); openExternal(l.url); } }),
-      l.type !== 'xm' ? h('button', { class: 'more', text: linkGroup(l) === 'karaoke' ? '→ 🎤' : '→ 🎧', title: linkGroup(l) === 'karaoke' ? 'In Kategorie «Original (mit Gesang)» verschieben' : 'In Kategorie «Karaoke / Playback» verschieben', onclick: (e) => { e.stopPropagation(); setLinkKind(s.id, l.id, linkGroup(l) === 'karaoke' ? 'orig' : 'karaoke'); if (isLoaded(l)) mpSetTitle(l.title || '', linkGroup(l) === 'karaoke' ? 'Original' : 'Karaoke'); draw(); } }) : null,
-      h('button', { class: 'more', text: '✎', title: 'Titel ändern', onclick: (e) => { e.stopPropagation(); renameLinkTitle(l); } }),
+      h('button', { class: 'more', text: '✎', title: 'Bearbeiten (Name und Kategorie)', onclick: (e) => { e.stopPropagation(); editLink(l); } }),
       h('button', { class: 'more', text: '🗑', title: 'Entfernen', onclick: (e) => { e.stopPropagation(); removeLink(s.id, l.id); draw(); } }));
   }
   function section(title, list) {
@@ -5201,12 +5200,24 @@ function manageLinks(s) {
 
   // Titel nachträglich ändern -- ab v2.13.0: vorher nur beim erstmaligen manuellen Hinzufügen
   // (per Prompt) setzbar, automatisch gefundene Vorschläge bekamen nie einen eigenen Titel.
-  function renameLinkTitle(l) {
-    const n = (prompt('Titel:', l.title || '') || '').trim();
-    if (!n || n === l.title) return;
-    renameLink(s.id, l.id, n);
-    if (isLoaded(l)) mpSetTitle(n, linkKindLabel(l));
-    draw();
+  function editLink(l) {
+    const inp = h('input', { type: 'text', value: l.title || '', style: 'width:100%; box-sizing:border-box; font-size:16px; padding:8px;' });
+    const sel = h('select', { style: 'width:100%; font-size:16px; padding:8px; margin-top:4px;' },
+      h('option', { value: 'orig', text: '🎤 Original (mit Gesang)' }), h('option', { value: 'karaoke', text: '🎧 Karaoke / Playback' }));
+    sel.value = linkGroup(l) === 'karaoke' ? 'karaoke' : 'orig';
+    const body = [h('label', { class: 'sub', text: 'Name' }), inp];
+    if (l.type !== 'xm') body.push(h('div', { class: 'sub', style: 'margin-top:10px;', text: 'Kategorie' }), sel);
+    const save = () => {
+      const n = inp.value.trim(), kind = sel.value;
+      const titleChanged = !!n && n !== l.title, kindChanged = l.type !== 'xm' && kind !== (linkGroup(l) === 'karaoke' ? 'karaoke' : 'orig');
+      if (titleChanged) renameLink(s.id, l.id, n);
+      if (kindChanged) setLinkKind(s.id, l.id, kind);
+      if ((titleChanged || kindChanged) && isLoaded(l)) mpSetTitle(titleChanged ? n : (l.title || ''), kind === 'karaoke' ? 'Karaoke' : 'Original');
+      draw();
+    };
+    const m = openModal({ title: 'Verknüpfung bearbeiten', body, buttons: [{ label: 'Abbrechen' }, { label: 'Speichern', primary: true, fn: save }] });
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); m.close(); } });
+    setTimeout(() => { inp.focus(); inp.select(); }, 30);
   }
 
   async function searchSuggestions() {
@@ -5449,25 +5460,87 @@ function openRecorder(song) {
     fileBackings.forEach(fb => backingSel.append(h('option', { value: 'file:' + fb.id, text: '🎵 Backing-Track (Datei): ' + fb.name })));
     ytBackingLinks.forEach(l => backingSel.append(h('option', { value: l.id, text: '▶ ' + (l.title || 'YouTube') + ' (' + linkKindLabel(l) + ')' })));
     backingSel.value = backingMode;
-    backingSel.addEventListener('change', () => { backingMode = backingSel.value; if (backingMode === 'none') stopMiniPlayer(); else startBackingPlayback(); });
+    backingSel.addEventListener('change', () => {
+      backingMode = backingSel.value; stopMiniPlayer();
+      if (backingMode !== 'none' && (rcRate !== 1 || rcSemi !== 0)) loadBacking(true);       // gewählte Einstellungen gleich anwenden (pausiert)
+      rcRender();
+    });
   }
-  const backingRow = hasBackingChoice ? h('div', { class: 'sub', style: 'display:flex; align-items:center; gap:6px; flex-wrap:wrap;' },
-    h('span', { text: '🎧 Mitspielen mit:' }), backingSel,
-    h('span', { text: '(läuft im Mini-Player unten rechts – bleibt auch nach dem Schliessen aktiv)' })) : null;
-
-  function startBackingPlayback() {
-    const fb = backingMode.startsWith('file:') ? fileBackings.find(x => 'file:' + x.id === backingMode) : null;
+  // Tempo/Tonhöhe des Backings (ab v2.26.0): vor dem Start einstellbar; nichts spielt, bis die Aufnahme läuft
+  // (oder «Vorhören» gedrückt wird). Technik wie im Mini-Player (🎚): Tempo ohne Tonhöhenänderung,
+  // Tonart nur bei Audio-Dateien (YouTube kennt nur das Tempo).
+  let rcRate = 1, rcSemi = 0;
+  const backingItem = () => backingMode.startsWith('file:') ? fileBackings.find(x => 'file:' + x.id === backingMode) : null;
+  const backingId = () => backingMode === 'none' ? null : (backingMode.startsWith('file:') ? backingMode.slice(5) : backingMode);
+  const isBackingLoaded = () => !!backingId() && mpCurrentId() === backingId();
+  const keyBusy = () => isBackingLoaded() && /umgerechnet/.test(PR.msg || '');
+  async function loadBacking(paused) {
+    const mode = backingMode;
+    if (mode === 'none') return false;
+    if (isBackingLoaded()) return true;
+    const fb = backingItem();
     if (fb) {
-      loadAudioBlob(fb).then(blob => playAudioBlobInMiniPlayer(fb, blob)).catch(() => {});
-    } else if (backingMode !== 'none') {
-      const link = ytBackingLinks.find(l => l.id === backingMode);
-      if (link) startMiniPlayerLink(link);
+      let blob; try { blob = await loadAudioBlob(fb); } catch (e) { toast('Backing-Track konnte nicht geladen werden: ' + e.message); return false; }
+      if (backingMode !== mode || !api.el.isConnected) return false;
+      const a = playAudioBlobInMiniPlayer(fb, blob);
+      if (paused) a.pause();
+    } else {
+      const link = ytBackingLinks.find(l => l.id === mode);
+      if (!link) return false;
+      startMiniPlayerLink(link, { paused });
     }
+    PR.rate = rcRate; prApplyRate();
+    if (fb && rcSemi) prSetKey(rcSemi);
+    return true;
+  }
+  async function adjust(kind, dir) {
+    if (backingMode === 'none') return;
+    if (kind === 'rate') rcRate = clamp(Math.round((rcRate + dir * 0.05) * 100) / 100, 0.5, 1.5);
+    else if (kind === 'key') rcSemi = clamp(rcSemi + dir, -6, 6);
+    else if (kind === 'rate0') rcRate = 1;
+    else if (kind === 'key0') rcSemi = 0;
+    if (!(await loadBacking(true))) { rcRender(); return; }
+    if (kind.startsWith('rate')) { PR.rate = rcRate; prApplyRate(); rcRate = PR.rate; }
+    else if (backingItem()) prSetKey(rcSemi);
+    rcRender();
+  }
+  const rcEl = h('div', { class: 'sub', style: 'display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:6px;' });
+  const rcNote = h('div', { class: 'sub', style: 'min-height:1.2em; margin-top:2px; color:var(--muted,#6b6257);' });
+  let rcSig = '';
+  function rcRender() {
+    if (!hasBackingChoice) return;
+    if (isBackingLoaded()) { rcRate = PR.rate; rcSemi = PR.semi; }
+    const none = backingMode === 'none', isFile = !!backingItem();
+    const b = (text, title, fn, dis) => h('button', { class: 'more', text, title, disabled: dis || null, onclick: fn });
+    const st = isBackingLoaded() ? mpState() : null, playing = !!(st && st.playing);
+    const note = none ? '' : (/umgerechnet/.test(PR.msg || '') && isBackingLoaded() ? PR.msg : (!isFile ? 'Tonhöhe lässt sich nur bei Backing-Track-Dateien ändern (nicht bei YouTube).' : (PR.msg && isBackingLoaded() ? PR.msg : '')));
+    startBtn.disabled = keyBusy() || null;
+    rcNote.textContent = note;
+    const sig = [none, isFile, rcRate, rcSemi, playing].join('|');
+    if (sig === rcSig) return;
+    rcSig = sig;
+    rcEl.replaceChildren(
+      h('span', { text: 'Tempo' }), b('−', 'Langsamer', () => adjust('rate', -1), none), h('b', { text: Math.round(rcRate * 100) + ' %' }), b('+', 'Schneller', () => adjust('rate', 1), none),
+      rcRate !== 1 ? b('↺', 'Originaltempo', () => adjust('rate0'), none) : null,
+      h('span', { text: 'Tonhöhe', style: 'margin-left:10px;' }), b('−', 'Einen Halbton tiefer', () => adjust('key', -1), none || !isFile || rcSemi <= -6), h('b', { text: (rcSemi > 0 ? '+' : '') + rcSemi + ' HT' }), b('+', 'Einen Halbton höher', () => adjust('key', 1), none || !isFile || rcSemi >= 6),
+      rcSemi !== 0 ? b('↺', 'Originaltonhöhe', () => adjust('key0'), none) : null,
+      b(playing ? '❚❚ Pause' : '▶ Vorhören', 'Backing zum Ausprobieren abspielen', async () => { if (isBackingLoaded()) mpToggle(); else await loadBacking(false); setTimeout(rcRender, 200); }, none));
+
+  }
+  const rcIv = setInterval(() => { if (!api.el.isConnected) { clearInterval(rcIv); return; } rcRender(); }, 500);
+  const backingRow = hasBackingChoice ? h('div', {},
+    h('div', { class: 'sub', style: 'display:flex; align-items:center; gap:6px; flex-wrap:wrap;' },
+      h('span', { text: '🎧 Mitspielen mit:' }), backingSel,
+      h('span', { text: '(startet erst mit der Aufnahme; läuft im Mini-Player unten rechts)' })),
+    rcEl, rcNote) : null;
+
+  // Start der Aufnahme: bereits (pausiert) geladenes Backing von vorne starten, sonst laden und abspielen
+  async function startBackingPlayback() {
+    if (backingMode === 'none') return;
+    if (isBackingLoaded()) { mpSeek(0); mpResume(); return; }
+    await loadBacking(false);
   }
   function pauseBackingPlayback() { mpPause(); }
-  // Vorhören: sobald eine Mitspiel-Option gewählt ist, direkt im Mini-Player starten
-  // (wie bisher schon beim Öffnen der Ansicht), statt erst beim Aufnahmestart.
-  if (backingMode !== 'none') startBackingPlayback();
 
   const body = h('div', { class: 'recorder' },
     statusEl,
@@ -5575,7 +5648,8 @@ function openRecorder(song) {
 
   let starting = false, previewUrl = null, unsaved = false;
   async function start() {
-    if (starting || recording) return;                      // ab v2.8.5: Doppelklick erzeugt keinen zweiten Mikrofon-Stream
+    if (starting || recording) return;
+    if (keyBusy()) { toast('Tonhöhe wird noch umgerechnet – einen Moment …'); return; }                      // ab v2.8.5: Doppelklick erzeugt keinen zweiten Mikrofon-Stream
     starting = true;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
     catch (e) { starting = false; statusEl.textContent = 'Mikrofonzugriff verweigert oder nicht verfügbar.'; statusEl.style.display = 'block'; return; }
@@ -5652,6 +5726,7 @@ function openRecorder(song) {
 
   const api = openModal({ title: '🔴 Neue Aufnahme – «' + song.n + '»', body, wide: true, buttons: [{ label: 'Schliessen' }] });
   api.onClose = cleanup;
+  rcRender();
   api.beforeClose = () => {
     if (recording || starting) return confirm('Die Aufnahme läuft noch. Abbrechen und verwerfen?');
     if (unsaved) return confirm('Die Aufnahme ist noch nicht gespeichert. Verwerfen?');

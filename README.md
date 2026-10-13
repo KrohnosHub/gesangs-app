@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.26.0 – Verknüpfungen bearbeiten, Aufnahme mit Tempo/Tonhöhe (13.10.2026)
+- Verknüpfungen: Der Knopf «→ Kategorie» ist weg. Der Bearbeiten-Knopf (✎) öffnet einen Dialog für Name und Kategorie (Original / Karaoke; x-minus nur Name).
+- Neue Aufnahme: Das gewählte Backing startet nicht mehr beim Öffnen oder Auswählen, sondern mit dem Start der Aufnahme. Mit «▶ Vorhören» lässt es sich vorher unabhängig abspielen.
+- Tempo (50–150 %, ohne Tonhöhenänderung) und Tonhöhe (±6 Halbtöne, nur Backing-Track-Dateien) lassen sich vor dem Start einstellen; während der Umrechnung ist «Aufnahme starten» kurz gesperrt.
+- Neuer Test (tests/06).
+
 ### v2.25.0 – Zeichnen auf beiden Seiten der Doppelseite (07.10.2026)
 - Die Zwei-Seiten-Ansicht bleibt auch im Zeichenmodus bestehen: Stift, Marker, Radierer, Text, Symbole und Auswahl funktionieren auf der linken und der rechten Seite.
 - Die Seite unter Stift/Finger wird zur aktiven Seite (dezenter blauer Rahmen); Rückgängig, Seitennotizen und Auswahl folgen ihr.
