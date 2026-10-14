@@ -25,7 +25,7 @@ module.exports = async () => {
     });
     await test('Doppelseite: rechte Seite bleibt nach Auftrittsmodus, Blättern und Grössenänderung sichtbar (nicht weiss)', async () => {
       const dark = pg => pg.evaluate(() => { const c = $('baseCanvas2'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0 && d[i] < 128) n++; return n; });
-      for (const D of [{ width: 1280, height: 800 }, { width: 800, height: 1100 }]) {
+      for (const D of [{ width: 1280, height: 800 }, { width: 820, height: 560 }]) {
         const pg = await open(b, D, { logs: false });
         await pg.evaluate(async () => {
           const { PDFDocument, StandardFonts } = await loadPdfLib(); const d = await PDFDocument.create(); const f = await d.embedFont(StandardFonts.Helvetica);

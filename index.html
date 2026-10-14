@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-P1clc5LUJ/+6KF97eTqP/WHCxMRakpzOLE0oF64irDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-oCMwaWK5qazTirOuZqlAwOOyoZ2FJdmbB7Qb4GN0g18=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-P1clc5LUJ/+6KF97eTqP/WHCxMRakpzOLE0oF64irDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-oCMwaWK5qazTirOuZqlAwOOyoZ2FJdmbB7Qb4GN0g18=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -543,6 +543,7 @@
   body.spread-on #canvasStack{background:transparent; box-shadow:none;}
   body.spread-on #baseCanvas, body.spread-on #baseCanvas2{background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.18);}
   body.perf.spread-on #baseCanvas, body.perf.spread-on #baseCanvas2{box-shadow:none;}
+  #spreadBtn.portrait-off, #perfSpread.portrait-off{opacity:.55; border-style:dashed;}
   #spreadBtn.on, #perfSpread.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
   body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); column-count:2; column-gap:64px;}
   body.perf.spread-text #textSheet{width:min(1500px, 97vw); height:calc(100% - 24px); margin:12px auto; align-self:stretch; padding:22px 3.5vw;
@@ -884,7 +885,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.40.0';
+const APP_VERSION = '2.41.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2835,10 +2836,12 @@ function targetPixelWidth() {
   return Math.max(px, 100);
 }
 const spreadGap = () => perf ? 6 : 14;
-const spreadOn = () => spreadPref && sheetKind !== 'text' && totalPages > 1;
+// Zwei Seiten nur, wenn sie lesbar bleiben: schmales Hochformat (Handy, Tablet hochkant) bleibt bei einer Seite (ab v2.41.0)
+const spreadAllowed = () => !(innerWidth < 900 && innerHeight > innerWidth);
+const spreadOn = () => spreadPref && spreadAllowed() && sheetKind !== 'text' && totalPages > 1;
 const curP = () => currentPage + (spreadShown && pageOff && currentPage + 1 <= totalPages ? 1 : 0);   // Seite, auf die gezeichnet wird
 const activeInk = () => curP() > currentPage ? inkCanvas2 : inkCanvas;
-const textSpread = () => spreadPref && sheetKind === 'text';
+const textSpread = () => spreadPref && spreadAllowed() && sheetKind === 'text';
 const textSpreadPaged = () => perf && textSpread();
 const spreadStart = (p) => p - ((p - 1) % 2);
 const baseCanvas2 = $('baseCanvas2'), inkCanvas2 = $('inkCanvas2');
@@ -2924,7 +2927,8 @@ function refreshSpread(force) {
   const sp = spreadOn(), tx = textSpread();
   document.body.classList.toggle('spread-on', sp);
   document.body.classList.toggle('spread-text', tx);
-  ['spreadBtn', 'perfSpread'].forEach(id => $(id).classList.toggle('on', spreadPref));
+  ['spreadBtn', 'perfSpread'].forEach(id => { const b = $(id); b.classList.toggle('on', spreadPref && spreadAllowed()); b.classList.toggle('portrait-off', spreadPref && !spreadAllowed()); });
+  $('spreadBtn').title = spreadAllowed() ? 'Zwei Seiten nebeneinander (Zeichnen: automatisch eine Seite)' : 'Zwei Seiten nebeneinander – im Hochformat aus, Gerät ins Querformat drehen';
   if (!ready) { spreadShown = sp; return; }
   if (sheetKind === 'text') { spreadShown = false; textPageSync(); updatePageNav(); return; }
   if (sp === spreadShown && !force) return;
@@ -2937,13 +2941,14 @@ function refreshSpread(force) {
   scheduleRender(20);
 }
 function setSpread(on) {
+  if (on && !spreadAllowed()) toast('Zwei Seiten gibt es im Querformat – Gerät drehen. Die Einstellung ist gemerkt.', 2600);
   spreadPref = on; lsSet('gapp_spread', on ? '1' : '0');
   if (ready && on && sheetKind !== 'text' && totalPages < 2) toast('Dieses Blatt hat nur eine Seite.', 1800);
   refreshSpread(true); if (perf) updatePerfPage();
 }
 $('spreadBtn').addEventListener('click', () => setSpread(!spreadPref));
 $('perfSpread').addEventListener('click', () => { setSpread(!spreadPref); setPerfBar(true); });
-window.addEventListener('resize', () => { if (ready && sheetKind === 'text') textPageSync(); });
+window.addEventListener('resize', () => { refreshSpread(false); if (ready && sheetKind === 'text') textPageSync(); });
 
 function commitCanvas(off) {
   [baseCanvas, inkCanvas].forEach(c => { c.width = off.width; c.height = off.height; });

@@ -5,8 +5,8 @@ module.exports = async () => {
   const b = await launch();
   const load = async (pg) => { await pg.evaluate(() => [...document.querySelectorAll('.name')].find(e => e.textContent === 'Sound of Silence').click()); await pg.waitForTimeout(1500); };
   try {
-    await test('Doppelseite: beide Seiten standardmässig vollständig sichtbar (PC, Tablet quer/hoch, Handy)', async () => {
-      for (const D of [{ width: 1280, height: 800 }, { width: 1024, height: 700 }, { width: 800, height: 1200 }, { width: 390, height: 780 }, { width: 780, height: 390 }]) {
+    await test('Doppelseite: beide Seiten standardmässig vollständig sichtbar (PC, Tablet quer, Handy quer)', async () => {
+      for (const D of [{ width: 1280, height: 800 }, { width: 1024, height: 700 }, { width: 1180, height: 820 }, { width: 780, height: 390 }]) {
         const pg = await open(b, D, { logs: false }); await load(pg);
         await pg.click('#spreadBtn'); await pg.waitForTimeout(1500);
         const m = await pg.evaluate(() => { const w = $('canvasWrap').getBoundingClientRect(), a = $('baseCanvas').getBoundingClientRect(), c = $('baseCanvas2').getBoundingClientRect();
@@ -19,6 +19,17 @@ module.exports = async () => {
         eq(await pg.evaluate(() => $('zoomLabel').textContent), '100%');
         eq(pg.errs, []); await pg.context().close();
       }
+    });
+    await test('Hochformat (Handy, Tablet hochkant): Doppelseite automatisch aus, Einstellung bleibt, beim Drehen wieder an', async () => {
+      const pg = await open(b, { width: 800, height: 1200 }, { logs: false }); await load(pg);
+      await pg.click('#spreadBtn'); await pg.waitForTimeout(1200);
+      const st = () => pg.evaluate(() => ({ on: document.body.classList.contains('spread-on'), pref: spreadPref, off: $('spreadBtn').classList.contains('portrait-off'), lbl: $('zoomLabel').textContent }));
+      eq(await st(), { on: false, pref: true, off: true, lbl: '100%' });
+      await pg.setViewportSize({ width: 1200, height: 800 }); await pg.waitForTimeout(1500);
+      const q = await st(); eq([q.on, q.off], [true, false]);
+      await pg.setViewportSize({ width: 390, height: 780 }); await pg.waitForTimeout(1500);
+      eq((await st()).on, false);
+      eq(pg.errs, []); await pg.context().close();
     });
     await test('Kopfbereich: Song-Leiste und Blatt-Reiter in einer Zeile (PC), Kopfzeile kompakt', async () => {
       const pg = await open(b, { width: 1280, height: 800 }, { logs: false }); await load(pg);
