@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.40.0 – Dunkelmodus: Diagramme
+- Diagramme in Einsingen, Pitch-Analyse, Verlauf und Stimmumfang haben im Dunkelmodus dunklen Grund und helle Linien/Beschriftungen (CSS-Variablen `--cv-*`, Akzentfarbe folgt der Palette). Notenblatt-Papier und Textblatt bleiben absichtlich hell.
+
 ### v2.38.0 – Setliste im Auftrittsmodus: Sprungmenü
 - Im Auftrittsmodus aus einer Setliste: Knopf «♫ Setliste» in der Leiste springt direkt zu jedem Lied; die Seitenanzeige nennt zusätzlich das nächste Lied.
 

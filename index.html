@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-vty82WUfz37C2cbhdqH45/pGa39k1RWc3jjDG03DQw8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-P1clc5LUJ/+6KF97eTqP/WHCxMRakpzOLE0oF64irDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-vty82WUfz37C2cbhdqH45/pGa39k1RWc3jjDG03DQw8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-P1clc5LUJ/+6KF97eTqP/WHCxMRakpzOLE0oF64irDU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -66,18 +66,19 @@
     --gold:#c9962b; --gold-ink:#2b1c00; --hdr-bg:#7a2e3a; --hdr-ink:#ffffff;
     --stage:#d9d2c8; --fav:#d49a06; --card-shadow:0 1px 2px rgba(40,20,25,.07);
     --danger:#b3452f; --ok:#3f7a52; --warn:#9c6a12; --banner-bg:#fff3cd; --banner-ink:#6b4a00; --banner-bd:#e0c96a;
+    --cv-bg:#ffffff; --cv-ink:0,0,0; --cv-blue:#2471a3; --cv-red:#c0392b;
   }
   html[data-pal="petrol"]{ --accent:#1f6f78; --accent-light:#dcecee; --gold:#e3a93d; --hdr-bg:#1f6f78; }
   html[data-mode="dark"]{ color-scheme:dark; --bg:#131113; --panel:#1c191b; --panel-2:#232022; --border:#38323a; --text:#ece6e7; --muted:#a79ca0;
       --accent:#d98593; --accent-ink:#2a0b12; --accent-light:#3a2227; --gold:#d9a93f; --gold-ink:#2b1c00; --hdr-bg:#4b1a24; --hdr-ink:#ffffff;
       --stage:#0d0b0c; --fav:#e0b030; --card-shadow:0 1px 2px rgba(0,0,0,.5);
-      --danger:#e88a74; --ok:#78b88a; --warn:#d9a441; --banner-bg:#3b3015; --banner-ink:#f1d98a; --banner-bd:#6b5a22; }
+      --danger:#e88a74; --ok:#78b88a; --warn:#d9a441; --banner-bg:#3b3015; --banner-ink:#f1d98a; --banner-bd:#6b5a22; --cv-bg:#1d181a; --cv-ink:255,255,255; --cv-blue:#6ab4e6; --cv-red:#ee7b69; }
   html[data-mode="dark"][data-pal="petrol"]{ --accent:#5fb7c1; --accent-ink:#06272b; --accent-light:#183238; --gold:#e3a93d; --hdr-bg:#0f3a40; }
   @media (prefers-color-scheme: dark){
     html[data-mode="auto"]{ color-scheme:dark; --bg:#131113; --panel:#1c191b; --panel-2:#232022; --border:#38323a; --text:#ece6e7; --muted:#a79ca0;
       --accent:#d98593; --accent-ink:#2a0b12; --accent-light:#3a2227; --gold:#d9a93f; --gold-ink:#2b1c00; --hdr-bg:#4b1a24; --hdr-ink:#ffffff;
       --stage:#0d0b0c; --fav:#e0b030; --card-shadow:0 1px 2px rgba(0,0,0,.5);
-      --danger:#e88a74; --ok:#78b88a; --warn:#d9a441; --banner-bg:#3b3015; --banner-ink:#f1d98a; --banner-bd:#6b5a22; }
+      --danger:#e88a74; --ok:#78b88a; --warn:#d9a441; --banner-bg:#3b3015; --banner-ink:#f1d98a; --banner-bd:#6b5a22; --cv-bg:#1d181a; --cv-ink:255,255,255; --cv-blue:#6ab4e6; --cv-red:#ee7b69; }
     html[data-mode="auto"][data-pal="petrol"]{ --accent:#5fb7c1; --accent-ink:#06272b; --accent-light:#183238; --gold:#e3a93d; --hdr-bg:#0f3a40; }
   }
   *{box-sizing:border-box;}
@@ -460,12 +461,12 @@
   .pa-box{flex:1 1 110px; border:1px solid var(--border); border-radius:8px; padding:6px 8px; background:var(--panel);}
   .pa-box .v{font-size:17px; font-weight:700;} .pa-box .l{font-size:11px; color:var(--muted);}
   .pa-box.good .v{color:var(--ok);} .pa-box.ok .v{color:var(--warn);} .pa-box.bad .v{color:var(--danger);}
-  .pa-wrap{display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff;}
+  .pa-wrap{display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--cv-bg);}
   .pa-axis{flex:none; width:44px; height:260px; border-right:1px solid var(--border);}
   .pa-scroll{flex:1; overflow-x:auto; overflow-y:hidden;}
   .pa-canvas{display:block; height:260px; cursor:crosshair;}
-  .pa-cursor{position:absolute; top:0; bottom:0; width:2px; background:rgba(0,0,0,.55); pointer-events:none;}
-  .pa-progress{width:100%; height:auto; border:1px solid var(--border); border-radius:8px; background:#fff; margin:6px 0;}
+  .pa-cursor{position:absolute; top:0; bottom:0; width:2px; background:rgba(var(--cv-ink),.55); pointer-events:none;}
+  .pa-progress{width:100%; height:auto; border:1px solid var(--border); border-radius:8px; background:var(--cv-bg); margin:6px 0;}
   .pa-trend{font-weight:600; margin:4px 0;}
   .pa-table{font-size:12px;}
   .pa-row{display:grid; grid-template-columns:minmax(90px,2fr) 1fr 1fr 1fr 1.6fr 1.2fr; gap:6px; padding:6px 4px; border-bottom:1px solid var(--border); cursor:pointer;}
@@ -478,7 +479,7 @@
   .wu-form{display:flex; flex-wrap:wrap; gap:8px;}
   .wu-f{display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--muted);}
   .wu-f select, .wu-f input{font-size:13px;}
-  .wu-canvas{width:100%; height:auto; border:1px solid var(--border); border-radius:8px; background:#fff;}
+  .wu-canvas{width:100%; height:auto; border:1px solid var(--border); border-radius:8px; background:var(--cv-bg);}
   .wu-results{margin-top:6px; max-height:220px; overflow:auto;}
   .wu-dots{display:flex; gap:3px; flex-wrap:wrap; margin-left:auto;}
   .wu-dot{font-size:12px; line-height:1;} .wu-dot.good{color:var(--ok);} .wu-dot.hit{color:var(--warn);} .wu-dot.miss{color:var(--danger);} .wu-dot.none{color:#bbb;}
@@ -883,7 +884,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.38.0';
+const APP_VERSION = '2.40.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -5857,7 +5858,7 @@ function openRecorder(song) {
     cctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let m = Math.ceil(LO); m <= HI; m++) {
       const y = yv(m), pc = ((m % 12) + 12) % 12, isC = pc === 0, white = [0, 2, 4, 5, 7, 9, 11].includes(pc);
-      cctx.strokeStyle = isC ? 'rgba(0,0,0,.22)' : (white ? 'rgba(0,0,0,.07)' : 'rgba(0,0,0,.03)');
+      cctx.strokeStyle = isC ? cvA(.22) : (white ? cvA(.07) : cvA(.05));
       cctx.lineWidth = 1; cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(canvas.width, y); cctx.stroke();
     }
     const now = pitchHist.length ? pitchHist[pitchHist.length - 1].t : 0;
@@ -8339,6 +8340,11 @@ async function takeStats(songId, item, onProgress) {
   return { res, mel, st };
 }
 const tendText = (b) => Math.abs(b) < 6 ? 'ausgeglichen' : (b < 0 ? 'eher zu tief (' + b + ' ct)' : 'eher zu hoch (+' + b + ' ct)');
+// Farben für Diagramme (Canvas) folgen Palette und Hell/Dunkel (ab v2.40.0) – CSS-Variablen --cv-*
+const cvVar = (n, d) => (getComputedStyle(document.documentElement).getPropertyValue(n) || '').trim() || d;
+const cvA = (a) => 'rgba(' + cvVar('--cv-ink', '0,0,0') + ',' + a + ')';
+const cvAcc = (a) => { const c = cvVar('--accent', '#7a2e3a'); if (a == null || !/^#[0-9a-f]{6}$/i.test(c)) return c; const n = parseInt(c.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; };
+const cvBlue = () => cvVar('--cv-blue', '#2471a3'), cvRed = () => cvVar('--cv-red', '#c0392b');
 const devColor = (c) => Math.abs(c) <= 25 ? '#2e8b57' : Math.abs(c) <= 50 ? '#e08a00' : '#c0392b';
 
 // Persönliche Bestaufnahme pro Song (ab v2.12.0): die Aufnahme mit dem höchsten Score (Melodie-Treffer
@@ -8393,14 +8399,14 @@ function openPitchAnalysis(songId, itemId) {
     cv.width = Math.max(560, Math.ceil(dur * PX) + 20);
     const cx = cv.getContext('2d'), ax = axis.getContext('2d');
     cx.clearRect(0, 0, cv.width, cv.height); ax.clearRect(0, 0, axis.width, axis.height);
-    ax.font = '10px system-ui'; ax.fillStyle = '#777'; ax.textAlign = 'right'; ax.textBaseline = 'middle';
+    ax.font = '10px system-ui'; ax.fillStyle = cvA(.6); ax.textAlign = 'right'; ax.textBaseline = 'middle';
     for (let m = Math.ceil(lo); m <= hi; m++) {
       const y = yOf(m), isC = m % 12 === 0, white = [0, 2, 4, 5, 7, 9, 11].includes(((m % 12) + 12) % 12);
-      cx.strokeStyle = isC ? 'rgba(0,0,0,.28)' : (white ? 'rgba(0,0,0,.08)' : 'rgba(0,0,0,.04)'); cx.lineWidth = 1;
+      cx.strokeStyle = isC ? cvA(.28) : (white ? cvA(.08) : cvA(.05)); cx.lineWidth = 1;
       cx.beginPath(); cx.moveTo(0, y); cx.lineTo(cv.width, y); cx.stroke();
       if (white) ax.fillText(midiName(m), axis.width - 4, y);
     }
-    cx.fillStyle = '#999'; cx.font = '10px system-ui';
+    cx.fillStyle = cvA(.45); cx.font = '10px system-ui';
     for (let t = 0; t <= dur; t += 5) { cx.fillRect(t * PX, cv.height - 6, 1, 6); if (t % 10 === 0) cx.fillText(fmtTime(t), t * PX + 2, cv.height - 8); }
     if (mel) {
       cx.fillStyle = 'rgba(120,120,120,.35)';
@@ -8496,10 +8502,10 @@ function openProgress(songId) {
 function drawProgress(cv, rows) {
   const cx = cv.getContext('2d'), W = cv.width, H = cv.height, L = 36, R = 12, T = 12, B = 28;
   cx.clearRect(0, 0, W, H);
-  cx.font = '10px system-ui'; cx.fillStyle = '#777'; cx.textAlign = 'right'; cx.textBaseline = 'middle';
+  cx.font = '10px system-ui'; cx.fillStyle = cvA(.6); cx.textAlign = 'right'; cx.textBaseline = 'middle';
   for (let p = 0; p <= 100; p += 25) {
     const y = T + (100 - p) / 100 * (H - T - B);
-    cx.strokeStyle = 'rgba(0,0,0,.1)'; cx.beginPath(); cx.moveTo(L, y); cx.lineTo(W - R, y); cx.stroke();
+    cx.strokeStyle = cvA(.1); cx.beginPath(); cx.moveTo(L, y); cx.lineTo(W - R, y); cx.stroke();
     cx.fillText(p + ' %', L - 4, y);
   }
   if (!rows.length) return;
@@ -8512,11 +8518,11 @@ function drawProgress(cv, rows) {
     cx.beginPath(); pts.forEach((p, i) => (i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1]))); cx.stroke();
     pts.forEach(p => { cx.beginPath(); cx.arc(p[0], p[1], 4, 0, Math.PI * 2); cx.fill(); });
   };
-  line('acc', '#6b4f3b'); line('ra', '#2471a3');
-  cx.textAlign = 'center'; cx.textBaseline = 'top'; cx.fillStyle = '#777';
+  line('acc', cvAcc()); line('ra', cvBlue());
+  cx.textAlign = 'center'; cx.textBaseline = 'top'; cx.fillStyle = cvA(.6);
   rows.forEach((r, i) => cx.fillText(new Date(r.item.u0 || r.item.u).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), xOf(i), H - B + 6));
-  cx.textAlign = 'left'; cx.fillStyle = '#6b4f3b'; cx.fillText('● Treffsicherheit', L + 4, 0);
-  if (rows.some(r => r.st.ra != null)) { cx.fillStyle = '#2471a3'; cx.fillText('● Melodie', L + 110, 0); }
+  cx.textAlign = 'left'; cx.fillStyle = cvAcc(); cx.fillText('● Treffsicherheit', L + 4, 0);
+  if (rows.some(r => r.st.ra != null)) { cx.fillStyle = cvBlue(); cx.fillText('● Melodie', L + 110, 0); }
 }
 
 
@@ -9218,14 +9224,14 @@ function openWarmup() {
     const r = run.cur, lo = r.base - 3, hi = r.base + 15;
     const yOf = (m) => 6 + (hi - m) / (hi - lo) * (H - 12);
     const t0 = r.vT, span = r.len * run.beat, xOf = (t) => (t - t0) / span * W;
-    for (let m = lo; m <= hi; m++) { cx.strokeStyle = m % 12 === r.base % 12 ? 'rgba(0,0,0,.2)' : 'rgba(0,0,0,.05)'; cx.beginPath(); cx.moveTo(0, yOf(m)); cx.lineTo(W, yOf(m)); cx.stroke(); }
+    for (let m = lo; m <= hi; m++) { cx.strokeStyle = m % 12 === r.base % 12 ? cvA(.2) : cvA(.06); cx.beginPath(); cx.moveTo(0, yOf(m)); cx.lineTo(W, yOf(m)); cx.stroke(); }
     const colors = { good: '#2e8b57', hit: '#e08a00', miss: '#c0392b', none: '#bbb' };
     r.targets.forEach((tg, i) => {
       const res = r.eval && r.eval.notes[i];
-      cx.fillStyle = res ? colors[res.r] : 'rgba(107,79,59,.25)';
+      cx.fillStyle = res ? colors[res.r] : cvAcc(.3);
       cx.fillRect(xOf(t0 + tg.b * run.beat) + 1, yOf(tg.m) - 5, tg.d * run.beat / span * W - 2, 10);
     });
-    cx.strokeStyle = '#2471a3'; cx.lineWidth = 2.5; cx.beginPath();
+    cx.strokeStyle = cvBlue(); cx.lineWidth = 2.5; cx.beginPath();
     let on = false;
     run.samples.forEach(s => {
       if (s.t < t0 || s.t > t0 + span || s.m == null) { on = false; return; }
@@ -9235,8 +9241,8 @@ function openWarmup() {
       if (!on) { cx.moveTo(x, y); on = true; } else cx.lineTo(x, y);
     });
     cx.stroke();
-    if (run.ctx) { const x = xOf(run.ctx.currentTime); if (x >= 0 && x <= W) { cx.fillStyle = 'rgba(0,0,0,.35)'; cx.fillRect(x, 0, 1.5, H); } }
-    cx.fillStyle = '#555'; cx.font = '12px system-ui'; cx.fillText(r.phase, 6, 14);
+    if (run.ctx) { const x = xOf(run.ctx.currentTime); if (x >= 0 && x <= W) { cx.fillStyle = cvA(.4); cx.fillRect(x, 0, 1.5, H); } }
+    cx.fillStyle = cvA(.7); cx.font = '12px system-ui'; cx.fillText(r.phase, 6, 14);
   }
   function showResult(r) {
     const ev = r.eval, row = h('div', { class: 'pick-row', style: 'cursor:default; flex-wrap:wrap;' },
@@ -10012,17 +10018,17 @@ function drawVoiceRangeChart(cv, rows, comfort) {
   cx.font = '10px system-ui'; cx.textAlign = 'right'; cx.textBaseline = 'middle';
   for (let m = Math.ceil(lo / 3) * 3; m <= hi; m += 3) {
     const y = yOf(m);
-    cx.strokeStyle = 'rgba(0,0,0,.08)'; cx.beginPath(); cx.moveTo(L, y); cx.lineTo(W - R, y); cx.stroke();
-    cx.fillStyle = '#777'; cx.fillText(midiName(m), L - 4, y);
+    cx.strokeStyle = cvA(.08); cx.beginPath(); cx.moveTo(L, y); cx.lineTo(W - R, y); cx.stroke();
+    cx.fillStyle = cvA(.6); cx.fillText(midiName(m), L - 4, y);
   }
-  if (comfort) { cx.fillStyle = 'rgba(107,79,59,.10)'; cx.fillRect(L, yOf(comfort.hi), W - L - R, yOf(comfort.lo) - yOf(comfort.hi)); }
-  rows.forEach((r, i) => { const x = xOf(i); cx.strokeStyle = '#6b4f3b'; cx.lineWidth = 3; cx.beginPath(); cx.moveTo(x, yOf(r.lo)); cx.lineTo(x, yOf(r.hi)); cx.stroke(); });
+  if (comfort) { cx.fillStyle = cvAcc(.14); cx.fillRect(L, yOf(comfort.hi), W - L - R, yOf(comfort.lo) - yOf(comfort.hi)); }
+  rows.forEach((r, i) => { const x = xOf(i); cx.strokeStyle = cvAcc(); cx.lineWidth = 3; cx.beginPath(); cx.moveTo(x, yOf(r.lo)); cx.lineTo(x, yOf(r.hi)); cx.stroke(); });
   const lineKey = (key, color) => {
     cx.strokeStyle = color; cx.lineWidth = 1.5;
     cx.beginPath(); rows.forEach((r, i) => { const p = [xOf(i), yOf(r[key])]; i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1]); }); cx.stroke();
   };
-  lineKey('hi', '#2471a3'); lineKey('lo', '#c0392b');
-  cx.textAlign = 'center'; cx.textBaseline = 'top'; cx.fillStyle = '#777';
+  lineKey('hi', cvBlue()); lineKey('lo', cvRed());
+  cx.textAlign = 'center'; cx.textBaseline = 'top'; cx.fillStyle = cvA(.6);
   const step = Math.max(1, Math.ceil(rows.length / 8));
   rows.forEach((r, i) => { if (i % step === 0 || i === rows.length - 1) cx.fillText(new Date(r.t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), xOf(i), H - B + 6); });
 }

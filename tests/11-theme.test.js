@@ -20,6 +20,18 @@ module.exports = async () => {
         eq(pg.errs, []); await pg.context().close();
       }
     });
+    await test('Diagramme (Einsingen/Pitch): Hintergrund und Linienfarben folgen Hell/Dunkel', async () => {
+      const res = {};
+      for (const mode of ['light', 'dark']) {
+        const pg = await open(b, { width: 1280, height: 760 }, { logs: false, init: `localStorage.setItem('gapp_mode','${mode}');` });
+        await pg.evaluate(() => openWarmup()); await pg.waitForTimeout(500);
+        res[mode] = await pg.evaluate(() => ({ bg: getComputedStyle(document.querySelector('.wu-canvas')).backgroundColor, ink: cvA(.5), blue: cvBlue(), acc: cvAcc(.3) }));
+        eq(pg.errs, []); await pg.context().close();
+      }
+      eq(res.light.bg, 'rgb(255, 255, 255)'); eq(res.light.ink, 'rgba(0,0,0,.5)'.replace(',.5', ',0.5'));
+      ok(res.dark.bg !== 'rgb(255, 255, 255)' && lum(res.dark.bg) < .05, 'dunkler Diagrammgrund ' + res.dark.bg);
+      eq(res.dark.ink, 'rgba(255,255,255,0.5)'); ok(res.dark.blue !== res.light.blue, 'Blau heller im Dunkeln'); ok(/^rgba\(/.test(res.dark.acc), 'Akzent mit Transparenz');
+    });
     await test('Einstellungen: Palette/Modus umschalten wirkt sofort, bleibt nach Neustart, Auto folgt dem Gerät', async () => {
       const pg = await open(b, { width: 1280, height: 760 }, { logs: false });
       const st = () => pg.evaluate(() => ({ pal: document.documentElement.dataset.pal, mode: document.documentElement.dataset.mode, hdr: getComputedStyle(document.querySelector('header')).backgroundColor, meta: document.querySelector('meta[name="theme-color"]').content }));
