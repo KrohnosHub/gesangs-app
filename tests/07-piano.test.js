@@ -15,13 +15,13 @@ module.exports = async () => {
       eq(await pg.evaluate(() => [window.__n.slice(-1)[0], document.querySelector('#pianoPanel .pk-name').textContent]), [60, 'C4 · 261.6 Hz']);
       const r = await pg.evaluate(() => { const r = document.querySelector('#pianoPanel .pk-b[data-m="61"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + 10]; });
       await pg.mouse.click(r[0], r[1]); await pg.waitForTimeout(100); eq(await pg.evaluate(() => window.__n.slice(-1)[0]), 61);
-      eq(await pg.evaluate(() => window.__d.slice(-1)[0]), 1.5);            // Standarddauer 1,5 s
-      await pg.evaluate(() => { const i = document.querySelector('#pianoPanel .pk-opts input'); i.value = '3'; i.dispatchEvent(new Event('input')); });
-      await pg.click('#pianoPanel .pk-w[data-m="62"]'); eq(await pg.evaluate(() => window.__d.slice(-1)[0]), 3);
-      await pg.click('#pianoPanel .pk-opts button');                         // Haltemodus: lange Dauer, Ausklingen beim Loslassen
-      await pg.click('#pianoPanel .pk-w[data-m="64"]'); eq(await pg.evaluate(() => window.__d.slice(-1)[0]), 30);
-      ok(await pg.evaluate(() => PK.cfg.hold && document.querySelector('#pianoPanel .pk-opts input').disabled), 'Regler im Haltemodus gesperrt');
-      await pg.click('#pianoPanel .pk-opts button');
+      // Dynamische Dauer: kurzes Antippen = Mindestdauer (1,5 s), langes Drücken = so lange wie gedrückt
+      let d = await pg.evaluate(() => PK.last.relAt - PK.last.t0); ok(d >= 1400 && d <= 1700, 'Antippen: ' + d);
+      const r2 = await pg.evaluate(() => { const r = document.querySelector('#pianoPanel .pk-w[data-m="64"]').getBoundingClientRect(); return [r.left + r.width / 2, r.bottom - 8]; });
+      await pg.mouse.move(r2[0], r2[1]); await pg.mouse.down(); await pg.waitForTimeout(2400); await pg.mouse.up(); await pg.waitForTimeout(100);
+      d = await pg.evaluate(() => PK.last.relAt - PK.last.t0); ok(d >= 2300 && d <= 2800, 'Halten: ' + d);
+      await pg.evaluate(() => { const i = document.querySelector('#pianoPanel .pk-opts input'); i.value = '0.2'; i.dispatchEvent(new Event('input')); });
+      await pg.click('#pianoPanel .pk-w[data-m="62"]'); d = await pg.evaluate(() => PK.last.relAt - PK.last.t0); ok(d <= 400, 'kurze Mindestdauer: ' + d);
       await pg.evaluate(() => { const i = document.querySelector('#pianoPanel .pk-opts input'); i.value = '1.5'; i.dispatchEvent(new Event('input')); });
       await pg.keyboard.press('y'); await pg.keyboard.press('q'); await pg.waitForTimeout(100);
       eq(await pg.evaluate(() => window.__n.slice(-2)), [48, 60]);
