@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-iPm5bTgA312+cPT7psbXypexWbamhmtfZiI0WR9npS0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-625rKQAIqOaFKu0fPqtJI8L0pr5osF1VsE/bZKsimSo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-iPm5bTgA312+cPT7psbXypexWbamhmtfZiI0WR9npS0=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-625rKQAIqOaFKu0fPqtJI8L0pr5osF1VsE/bZKsimSo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -452,7 +452,11 @@
   #pianoPanel .pk-head{display:flex; align-items:center; gap:6px; padding:5px 8px; flex-wrap:wrap; font-size:13px;}
   #pianoPanel .pk-head button{padding:3px 9px; min-height:30px;}
   #pianoPanel .pk-name{flex:1; min-width:90px; font-weight:600; text-align:center; color:var(--accent); white-space:nowrap;}
-  #pianoPanel.min .pk-board{display:none;}
+  #pianoPanel .pk-opts{display:flex; align-items:center; gap:8px; padding:0 8px 4px; font-size:12px;}
+  #pianoPanel .pk-opts button{padding:2px 9px; min-height:28px;}
+  #pianoPanel .pk-opts input{flex:1; max-width:260px; min-width:70px;}
+  #pianoPanel .pk-opts button.on{background:var(--accent); color:#fff;}
+  #pianoPanel.min .pk-board, #pianoPanel.min .pk-opts{display:none;}
   .pk-board{position:relative; height:124px; margin:0 8px 8px; display:flex; user-select:none; -webkit-user-select:none; touch-action:none; background:#222; border-radius:0 0 6px 6px; padding:0 1px 1px;}
   .pk-w{flex:1; position:relative; background:#fdfcfa; border:1px solid #888; border-top:0; border-radius:0 0 5px 5px; display:flex; align-items:flex-end; justify-content:center; font-size:11px; color:#666; padding-bottom:4px; box-sizing:border-box;}
   .pk-w.on{background:#e8c9a0;}
@@ -795,7 +799,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.27.0';
+const APP_VERSION = '2.28.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -8557,8 +8561,8 @@ async function playRefMelody(songId, onEnd) {
 // Klang = gewählter Instrumentklang der App (synthNote). Tasten per Maus/Touch (mehrstimmig, Darüberwischen)
 // oder Computertastatur (untere Reihe Y X C V B N M = ab linkem C, obere Reihe Q W E R T Z U I = eine Oktave höher).
 // ---------------------------------------------------------------
-const PK = { el: null, board: null, nameEl: null, open: false, min: false, ctx: null, ptr: new Map(), keyNote: new Map(), cfg: { start: 48, oct: 2 } };
-try { const c = JSON.parse(lsGet('gapp_piano') || 'null'); if (c && c.start >= 24 && c.start <= 84 && c.oct >= 1 && c.oct <= 3) PK.cfg = { start: c.start - c.start % 12, oct: c.oct }; } catch (e) {}
+const PK = { el: null, board: null, nameEl: null, open: false, min: false, ctx: null, ptr: new Map(), keyNote: new Map(), cfg: { start: 48, oct: 2, dur: 1.5, hold: false } };
+try { const c = JSON.parse(lsGet('gapp_piano') || 'null'); if (c && c.start >= 24 && c.start <= 84 && c.oct >= 1 && c.oct <= 3) PK.cfg = { start: c.start - c.start % 12, oct: c.oct, dur: c.dur >= 0.3 && c.dur <= 6 ? c.dur : 1.5, hold: !!c.hold }; } catch (e) {}
 const NOTE_DE = ['C', 'Cis', 'D', 'Es', 'E', 'F', 'Fis', 'G', 'As', 'A', 'B', 'H'];
 const pkName = (m) => NOTE_DE[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
 const PK_LOWER = { y: 0, x: 2, c: 4, v: 5, b: 7, n: 9, m: 11, s: 1, d: 3, g: 6, h: 8, j: 10 };
@@ -8571,12 +8575,23 @@ function pkNoteForKey(k) {                       // Computertastatur → MIDI-No
 }
 function pkSave() { lsSet('gapp_piano', JSON.stringify(PK.cfg)); }
 function pkPlay(m) {
+  let hd = null;
   try {
     if (!PK.ctx) PK.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (PK.ctx.state === 'suspended') PK.ctx.resume().catch(() => {});
-    synthNote(PK.ctx, m, PK.ctx.currentTime + 0.005, 2.4, 0.3);
+    const ctx = PK.ctx; if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    const t = ctx.currentTime + 0.005;
+    if (PK.cfg.hold) { const ng = ctx.createGain(); ng.connect(ctx.destination); synthNote(ctx, m, t, 30, 0.3, ng); hd = { ng, ctx }; }   // Haltemodus: klingt bis zum Loslassen
+    else synthNote(ctx, m, t, PK.cfg.dur, 0.3);
   } catch (e) {}
   if (PK.nameEl) PK.nameEl.textContent = pkName(m) + ' · ' + (Math.round(midiHz(m) * 10) / 10) + ' Hz';
+  return hd;
+}
+function pkRelease(hd) {
+  if (!hd) return;
+  try {
+    const now = hd.ctx.currentTime; hd.ng.gain.cancelScheduledValues(now); hd.ng.gain.setValueAtTime(hd.ng.gain.value, now); hd.ng.gain.setTargetAtTime(0.0001, now, 0.07);
+    setTimeout(() => { try { hd.ng.disconnect(); const bm = _buses.get(hd.ctx); if (bm) bm.delete(hd.ng); } catch (e) {} }, 1500);
+  } catch (e) {}
 }
 function pkMark(m, on) { const k = PK.board && PK.board.querySelector('[data-m="' + m + '"]'); if (k) k.classList.toggle('on', on); }
 function pkBuild() {
@@ -8599,23 +8614,31 @@ function pkBuildPanel() {
   const shift = (d) => { PK.cfg.start = clamp(PK.cfg.start + d * 12, 24, 84 - 12 * PK.cfg.oct + 12); pkSave(); pkBuild(); };
   const octs = (d) => { PK.cfg.oct = clamp(PK.cfg.oct + d, 1, matchMedia('(max-width:800px)').matches ? 2 : 3); PK.cfg.start = clamp(PK.cfg.start, 24, 84 - 12 * PK.cfg.oct + 12); pkSave(); pkBuild(); };
   const board = PK.board = h('div', { class: 'pk-board' });
+  const holdBtn = h('button', { text: '∞ Halten', title: 'Haltemodus: Der Ton klingt, solange die Taste gedrückt ist' });
+  const durIn = h('input', { type: 'range', min: '0.3', max: '6', step: '0.1', value: String(PK.cfg.dur), title: 'Wie lange ein Ton klingt (ohne Haltemodus)' });
+  const durLbl = h('span', { class: 'sub', style: 'min-width:34px;' });
+  const optRender = () => { holdBtn.classList.toggle('on', PK.cfg.hold); durIn.disabled = PK.cfg.hold; durLbl.textContent = PK.cfg.hold ? '∞' : PK.cfg.dur.toFixed(1) + ' s'; };
+  holdBtn.addEventListener('click', () => { PK.cfg.hold = !PK.cfg.hold; pkSave(); optRender(); });
+  durIn.addEventListener('input', () => { PK.cfg.dur = parseFloat(durIn.value) || 1.5; pkSave(); optRender(); });
+  optRender();
   const minBtn = btn('▾', 'Nur Leiste anzeigen', () => { PK.min = !PK.min; PK.el.classList.toggle('min', PK.min); minBtn.textContent = PK.min ? '▴' : '▾'; pkLayout(); });
   PK.el = h('div', { id: 'pianoPanel' },
     h('div', { class: 'pk-head' }, h('b', { text: '🎹' }), hd, btn('◀', 'Eine Oktave tiefer', () => shift(-1)), btn('▶', 'Eine Oktave höher', () => shift(1)), btn('−', 'Weniger Oktaven', () => octs(-1)), btn('+', 'Mehr Oktaven', () => octs(1)), nameEl, minBtn, btn('✕', 'Schliessen (Taste P)', () => pianoToggle(false))),
+    h('div', { class: 'pk-opts' }, holdBtn, h('span', { class: 'sub', text: 'Dauer' }), durIn, durLbl),
     board);
   document.body.append(PK.el);
   board.addEventListener('pointerdown', (e) => {
     const m = pkKeyAt(e.clientX, e.clientY); if (m == null) return;
     e.preventDefault(); try { board.setPointerCapture(e.pointerId); } catch (er) {}
-    PK.ptr.set(e.pointerId, m); pkMark(m, true); pkPlay(m);
+    PK.ptr.set(e.pointerId, { m, hd: pkPlay(m) }); pkMark(m, true);
   });
   board.addEventListener('pointermove', (e) => {
     if (!PK.ptr.has(e.pointerId)) return;
     const m = pkKeyAt(e.clientX, e.clientY), old = PK.ptr.get(e.pointerId);
-    if (m == null || m === old) return;
-    pkMark(old, false); PK.ptr.set(e.pointerId, m); pkMark(m, true); pkPlay(m);
+    if (m == null || m === old.m) return;
+    pkMark(old.m, false); pkRelease(old.hd); PK.ptr.set(e.pointerId, { m, hd: pkPlay(m) }); pkMark(m, true);
   });
-  const up = (e) => { const old = PK.ptr.get(e.pointerId); if (old != null) { pkMark(old, false); PK.ptr.delete(e.pointerId); } };
+  const up = (e) => { const old = PK.ptr.get(e.pointerId); if (old != null) { pkMark(old.m, false); pkRelease(old.hd); PK.ptr.delete(e.pointerId); } };
   board.addEventListener('pointerup', up); board.addEventListener('pointercancel', up);
   pkBuild();
 }
@@ -8625,7 +8648,7 @@ function pianoToggle(force) {
   PK.open = force == null ? !PK.open : !!force;
   PK.el.classList.toggle('show', PK.open);
   pkLayout();
-  if (!PK.open) { PK.ptr.forEach((m) => pkMark(m, false)); PK.ptr.clear(); PK.keyNote.forEach((m) => pkMark(m, false)); PK.keyNote.clear(); }
+  if (!PK.open) { PK.ptr.forEach((o) => { pkMark(o.m, false); pkRelease(o.hd); }); PK.ptr.clear(); PK.keyNote.forEach((o) => { pkMark(o.m, false); pkRelease(o.hd); }); PK.keyNote.clear(); }
 }
 window.addEventListener('resize', () => { if (PK.open) pkLayout(); });
 $('pianoBtn').addEventListener('click', () => pianoToggle());
@@ -8638,9 +8661,9 @@ window.addEventListener('keydown', (e) => {
   if (!PK.open || e.repeat) return;
   const m = pkNoteForKey(e.key); if (m == null) return;
   e.preventDefault(); e.stopPropagation();
-  PK.keyNote.set(e.key.toLowerCase(), m); pkMark(m, true); pkPlay(m);
+  PK.keyNote.set(e.key.toLowerCase(), { m, hd: pkPlay(m) }); pkMark(m, true);
 }, true);
-window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(), m = PK.keyNote.get(k); if (m != null) { pkMark(m, false); PK.keyNote.delete(k); } }, true);
+window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(), o = PK.keyNote.get(k); if (o) { pkMark(o.m, false); pkRelease(o.hd); PK.keyNote.delete(k); } }, true);
 
 // --- Abschnitt in «Aufnahmen & Backing-Tracks» ---------------------------------------------
 function refSection(songId, redraw) {
