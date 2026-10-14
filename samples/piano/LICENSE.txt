@@ -1,0 +1,5 @@
+Klaviersamples: "Salamander Grand Piano V3" von Alexander Holm
+Quelle: https://archive.org/details/SalamanderGrandPianoV3
+Lizenz: Creative Commons Attribution 3.0 Unported (CC BY 3.0) - https://creativecommons.org/licenses/by/3.0/
+Verwendet: 21 Samples (C2 bis C7, im Abstand von Terzen) als MP3-Fassung aus dem Repository Tonejs/audio (github.com/Tonejs/audio);
+die uebrigen Toene werden per Tonhoehenverschiebung (Wiedergabegeschwindigkeit) erzeugt. Aenderungen: Auswahl, MP3-Kodierung (durch Tone.js), Tonhoehenverschiebung.

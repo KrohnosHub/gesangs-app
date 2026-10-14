@@ -1,6 +1,6 @@
 // Service Worker der Gesangs-App – hält Programm und pdf.js offline bereit.
 // Blätter und Notizen selbst liegen in IndexedDB (nicht hier).
-const VERSION = '2.29.1-aeacd3d6';
+const VERSION = '2.30.0-691d3ce4';
 const CACHE = 'gesangs-app-' + VERSION;
 // Vendor-Bibliotheken (pdf.js, Fonts, Wasm, Icons; ~4.7 MB) ändern sich praktisch nie zwischen
 // App-Versionen. Eigener Cache, dessen Name sich NICHT bei jedem Versions-Bump ändert, sondern
@@ -89,7 +89,7 @@ self.addEventListener('fetch', (e) => {
     })());
     return;
   }
-  const isVendor = /\/(vendor|icons)\//.test(url.pathname);
+  const isVendor = /\/(vendor|icons|samples)\//.test(url.pathname);
   e.respondWith((async () => {
     const c = await caches.open(isVendor ? VENDOR_CACHE : CACHE);
     const hit = await c.match(req, { ignoreSearch: true });

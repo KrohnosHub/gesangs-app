@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-UZZXbSENgX4uX748CCnoeR3TvSb3bgjhwmP+eDTS32A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-IUwEYjB8jiT6B8O4fjkqgqFY0poui5k7rEO89vZnhOU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-UZZXbSENgX4uX748CCnoeR3TvSb3bgjhwmP+eDTS32A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-IUwEYjB8jiT6B8O4fjkqgqFY0poui5k7rEO89vZnhOU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -800,7 +800,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.29.1';
+const APP_VERSION = '2.30.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -8467,6 +8467,28 @@ function pianoBus(ctx, out) {                    // gemeinsamer Ausgang je Ziel:
   inp.connect(out); inp.connect(conv); conv.connect(wet); wet.connect(out);
   m.set(out, inp); return inp;
 }
+// Klaviersamples (ab v2.30.0): «Salamander Grand Piano V3» (Alexander Holm, CC BY 3.0; siehe samples/piano/LICENSE.txt),
+// 21 Aufnahmen C2–C7 im Terzabstand, die übrigen Töne per Wiedergabegeschwindigkeit. Wird bei Bedarf einmal geladen
+// (~1,5 MB, danach offline im Cache); bis dahin und ohne Netz klingt weiterhin das synthetische Klaviermodell.
+const PIANO_SMP = { buf: new Map(), gain: new Map(), state: 0 };      // state: 0 offen, 1 lädt, 2 bereit, -1 fehlgeschlagen
+const PIANO_SMP_LIST = (() => { const o = []; for (let oc = 2; oc <= 6; oc++) [['C', 0], ['Ds', 3], ['Fs', 6], ['A', 9]].forEach(([n, p]) => o.push([n + oc, 12 * (oc + 1) + p])); o.push(['C7', 96]); return o; })();
+async function loadPianoSamples() {
+  if (PIANO_SMP.state) return;
+  PIANO_SMP.state = 1;
+  try {
+    const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext, dc = new AC(2, 1, 44100);
+    await Promise.all(PIANO_SMP_LIST.map(async ([n, m]) => {
+      const r = await fetch('samples/piano/' + n + '.mp3'); if (!r.ok) throw new Error(n);
+      const ab = await dc.decodeAudioData(await r.arrayBuffer()); PIANO_SMP.buf.set(m, ab);
+      const d = ab.getChannelData(0), n1 = Math.min(d.length, ab.sampleRate); let pk = 1e-6, e = 0;       // Lautstärke angleichen: RMS der ersten Sekunde ≈ Synthesemodell
+      for (let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i]));
+      for (let i = 0; i < n1; i++) e += d[i] * d[i];
+      PIANO_SMP.gain.set(m, Math.min(0.14 / Math.max(1e-4, Math.sqrt(e / n1)), 0.95 / pk));
+    }));
+    PIANO_SMP.state = 2;
+  } catch (e) { PIANO_SMP.state = -1; PIANO_SMP.buf.clear(); PIANO_SMP.gain.clear(); }
+}
+setTimeout(() => { if (instrument === 'piano') loadPianoSamples(); }, 4000);
 function synthNote(ctx, midi, t0, dur, vol = 0.22, dest = null, inst = instrument) {
   const f = midiHz(midi), end = t0 + Math.max(0.08, dur), g = ctx.createGain(), out = dest || ctx.destination;
   const rel = (tau) => { g.gain.setTargetAtTime(0.0001, end, tau); };
@@ -8476,6 +8498,14 @@ function synthNote(ctx, midi, t0, dur, vol = 0.22, dest = null, inst = instrumen
     const src = ctx.createBufferSource(); src.buffer = buf;
     g.gain.setValueAtTime(vol * 2.2, t0); rel(0.07);
     src.connect(g); g.connect(out); src.start(t0); src.stop(end + 0.5);
+    return;
+  }
+  if (inst === 'piano' && !PIANO_SMP.state) loadPianoSamples();
+  if (inst === 'piano' && PIANO_SMP.state === 2) {
+    let sm = 60, bd = 999; PIANO_SMP.buf.forEach((b, k) => { const d = Math.abs(midi - k); if (d < bd) { bd = d; sm = k; } });
+    const src = ctx.createBufferSource(); src.buffer = PIANO_SMP.buf.get(sm); src.playbackRate.value = Math.pow(2, (midi - sm) / 12);
+    g.gain.setValueAtTime((vol / 0.3) * PIANO_SMP.gain.get(sm), t0); rel(0.16);
+    src.connect(g); g.connect(out); src.start(t0); src.stop(end + 1.5);
     return;
   }
   if (inst === 'piano') {
@@ -8630,7 +8660,7 @@ function pkBuildPanel() {
   const minBtn = btn('▾', 'Nur Leiste anzeigen', () => { PK.min = !PK.min; PK.el.classList.toggle('min', PK.min); minBtn.textContent = PK.min ? '▴' : '▾'; pkLayout(); });
   PK.el = h('div', { id: 'pianoPanel' },
     h('div', { class: 'pk-head' }, h('b', { text: '🎹' }), hd, btn('◀', 'Eine Oktave tiefer', () => shift(-1)), btn('▶', 'Eine Oktave höher', () => shift(1)), btn('−', 'Weniger Oktaven', () => octs(-1)), btn('+', 'Mehr Oktaven', () => octs(1)), nameEl, minBtn, btn('✕', 'Schliessen (Taste P)', () => pianoToggle(false))),
-    h('div', { class: 'pk-opts' }, h('span', { class: 'sub', text: 'Mindestdauer' }), durIn, durLbl, h('span', { class: 'sub pk-hint', text: 'Taste halten = Ton hält' })),
+    h('div', { class: 'pk-opts' }, h('span', { class: 'sub', text: 'Mindestdauer' }), durIn, durLbl, h('span', { class: 'sub pk-hint', text: 'Klang: Salamander Grand Piano, A. Holm (CC BY 3.0)', title: 'Klaviersamples «Salamander Grand Piano V3» von Alexander Holm, Lizenz CC BY 3.0 (siehe samples/piano/LICENSE.txt)' })),
     board);
   document.body.append(PK.el);
   board.addEventListener('pointerdown', (e) => {

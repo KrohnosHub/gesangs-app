@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.30.0 – Echte Klaviersamples (14.10.2026)
+- Der Klavierklang (Klaviatur, Einsingen, Referenzmelodie) nutzt jetzt Aufnahmen eines Konzertflügels: «Salamander Grand Piano V3» von Alexander Holm, Lizenz **CC BY 3.0** (siehe `samples/piano/LICENSE.txt`). 21 Samples (C2–C7, im Terzabstand, ca. 1,5 MB, MP3-Fassung aus dem Repository Tonejs/audio); Zwischentöne per Tonhöhenverschiebung, Lautstärke angeglichen.
+- Die Samples werden beim ersten Gebrauch (bzw. kurz nach dem Start) einmal geladen und bleiben offline im Cache. Bis dahin oder ohne Netz klingt weiterhin das synthetische Klaviermodell.
+- Quellenangabe im Klaviatur-Panel. Neuer Test für Laden und Verwendung der Samples.
+
 ### v2.29.1 – Klaviatur: schwarze Tasten, weicherer Klavierklang (14.10.2026)
 - Schwarze Tasten sind jetzt proportional zur Tastenbreite (bei 3 Oktaven berührten sie sich).
 - Klavierklang: kürzeres Ausklingen, Klang wird nach dem Anschlag weicher (Tiefpass fährt zu), geringere Schwebung – weniger «Cembalo/E-Piano». Gilt auch fürs Einsingen. Weiterhin synthetisch; echte Samples bleiben als Option im Backlog.

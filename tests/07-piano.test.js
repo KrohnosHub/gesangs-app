@@ -35,6 +35,16 @@ module.exports = async () => {
       eq(await vis(), true);
       eq(pg.errs, []); await pg.context().close();
     });
+    await test('Klaviersamples: laden, Töne aller Lagen werden aus Samples gespielt, Lizenzdatei vorhanden', async () => {
+      const pg = await open(b, { width: 1280, height: 800 }, { logs: false });
+      await pg.keyboard.press('p'); await pg.click('#pianoPanel .pk-w[data-m="60"]');
+      await pg.waitForFunction(() => PIANO_SMP.state === 2, null, { timeout: 20000 });
+      eq(await pg.evaluate(() => [PIANO_SMP.buf.size, [...PIANO_SMP.buf.keys()].sort((a, b) => a - b)[0], Math.max(...PIANO_SMP.buf.keys())]), [21, 36, 96]);
+      const used = await pg.evaluate(() => { let n = 0; const c = new AudioContext(), o = c.createBufferSource.bind(c); c.createBufferSource = () => { n++; return o(); }; [30, 48, 61, 72, 100].forEach(m => synthNote(c, m, c.currentTime, 0.5)); return n; });
+      eq(used, 5);                                                // jeder Ton über Sample (nicht über das Synthesemodell)
+      eq((await (await pg.request.get(pg.url().replace(/index\.html.*/, '') + 'samples/piano/LICENSE.txt')).text()).includes('CC BY 3.0'), true);
+      eq(pg.errs, []); await pg.context().close();
+    });
     await test('Klaviatur: im Auftrittsmodus und über einem Dialog benutzbar; Mini-Player rückt hoch', async () => {
       const pg = await open(b, { width: 1280, height: 800 }, { logs: false });
       await pg.evaluate(() => [...document.querySelectorAll('.name')].find(e => e.textContent === 'Sound of Silence').click()); await pg.waitForTimeout(1200);
