@@ -1,0 +1,45 @@
+// Doppelseite einpassen, einklappbare Kopfzeile, kompakte Kopfbereiche (v2.33.0)
+const { launch, open } = require('./fixture.js');
+module.exports = async () => {
+  const { test, eq, ok } = T;
+  const b = await launch();
+  const load = async (pg) => { await pg.evaluate(() => [...document.querySelectorAll('.name')].find(e => e.textContent === 'Sound of Silence').click()); await pg.waitForTimeout(1500); };
+  try {
+    await test('Doppelseite: beide Seiten standardmässig vollständig sichtbar (PC, Tablet quer/hoch, Handy)', async () => {
+      for (const D of [{ width: 1280, height: 800 }, { width: 1024, height: 700 }, { width: 800, height: 1200 }, { width: 390, height: 780 }, { width: 780, height: 390 }]) {
+        const pg = await open(b, D, { logs: false }); await load(pg);
+        await pg.click('#spreadBtn'); await pg.waitForTimeout(1500);
+        const m = await pg.evaluate(() => { const w = $('canvasWrap').getBoundingClientRect(), a = $('baseCanvas').getBoundingClientRect(), c = $('baseCanvas2').getBoundingClientRect();
+          return { top: a.top - w.top, bottom: w.bottom - a.bottom, left: a.left - w.left, right: w.right - c.right, lbl: $('zoomLabel').textContent, sx: $('canvasWrap').scrollWidth - $('canvasWrap').clientWidth, sy: $('canvasWrap').scrollHeight - $('canvasWrap').clientHeight }; });
+        const tag = JSON.stringify(D) + ' ' + JSON.stringify(m);
+        ok(m.top >= -1 && m.bottom >= -1 && m.left >= -1 && m.right >= -1, 'passt nicht ins Fenster: ' + tag);
+        ok(m.sx <= 1, 'horizontaler Scroll: ' + tag);
+        // wieder Einzelseite → Breite
+        await pg.click('#spreadBtn'); await pg.waitForTimeout(800);
+        eq(await pg.evaluate(() => $('zoomLabel').textContent), '100%');
+        eq(pg.errs, []); await pg.context().close();
+      }
+    });
+    await test('Kopfbereich: Song-Leiste und Blatt-Reiter in einer Zeile (PC), Kopfzeile kompakt', async () => {
+      const pg = await open(b, { width: 1280, height: 800 }, { logs: false }); await load(pg);
+      const m = await pg.evaluate(() => ({ sb: $('songBar').getBoundingClientRect().top, st: $('sheetTabs').getBoundingClientRect().top, hh: document.querySelector('header').offsetHeight, tr: $('topRow').offsetHeight }));
+      ok(Math.abs(m.sb - m.st) < 3, 'eine Zeile ' + JSON.stringify(m)); ok(m.hh <= 46, 'Header ' + m.hh);
+      await pg.context().close();
+    });
+    await test('Kopfbereich einklappen: Knopf, Platzgewinn, merkt sich den Zustand, nur mit offenem Blatt', async () => {
+      const pg = await open(b, { width: 1280, height: 800 }, { logs: false }); await load(pg);
+      await pg.click('#spreadBtn'); await pg.waitForTimeout(1200);
+      const g = () => pg.evaluate(() => ({ h: $('canvasWrap').clientHeight, hv: getComputedStyle(document.querySelector('header')).display, tv: getComputedStyle($('topRow')).display, lbl: $('zoomLabel').textContent, ph: Math.round($('baseCanvas').getBoundingClientRect().height) }));
+      const a = await g(); eq([a.hv, a.tv], ['flex', 'flex']);
+      await pg.click('#topToggle'); await pg.waitForTimeout(1500);
+      const c = await g(); eq([c.hv, c.tv], ['none', 'none']); ok(c.h > a.h + 70, 'Platz: ' + a.h + ' → ' + c.h); ok(c.ph > a.ph, 'Blatt grösser: ' + a.ph + ' → ' + c.ph);
+      await pg.reload(); await pg.waitForTimeout(1200);
+      eq(await pg.evaluate(() => document.body.classList.contains('hdr-off')), false);   // ohne offenes Blatt nie ausgeblendet
+      eq(await pg.evaluate(() => getComputedStyle(document.querySelector('header')).display), 'flex');
+      await load(pg); eq(await pg.evaluate(() => document.body.classList.contains('hdr-off')), true);
+      await pg.click('#topToggle'); await pg.waitForTimeout(500);
+      eq(await pg.evaluate(() => getComputedStyle(document.querySelector('header')).display), 'flex');
+      eq(pg.errs, []); await pg.context().close();
+    });
+  } finally { await b.close(); }
+};

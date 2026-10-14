@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-AfosrPpJuzmgHXVI83st3irVV25hPbl2V6dOEed/FqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-w2esmNFvkt7A6XFIFAD8WuevDHZonYsJsd0LagoC6uY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-AfosrPpJuzmgHXVI83st3irVV25hPbl2V6dOEed/FqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-w2esmNFvkt7A6XFIFAD8WuevDHZonYsJsd0LagoC6uY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -71,10 +71,12 @@
     -webkit-text-size-adjust:100%;
   }
   header{
-    display:flex; align-items:center; gap:10px; padding:8px 12px; padding-top:max(8px, env(safe-area-inset-top));
+    display:flex; align-items:center; gap:8px; padding:4px 12px; padding-top:max(4px, env(safe-area-inset-top));
     background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0; z-index:20;
   }
   header h1 small.hdr-artist{display:block; font-size:11px; font-weight:400; color:var(--muted); line-height:1.1; overflow:hidden; text-overflow:ellipsis;}
+  header button.icon{width:34px; height:34px; padding:6px;}
+  header #authBtn{padding:6px 12px;}
   header h1{font-size:16px; margin:0; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
   button, select, textarea, input[type=search], input[type=text], input[type=password]{
     font:inherit; border:1px solid var(--border); background:var(--panel); color:var(--text);
@@ -165,12 +167,17 @@
   #pageNav, #zoomNav{display:flex; align-items:center; gap:5px; font-size:13px; color:var(--muted);}
   #zoomLabel{min-width:40px; text-align:center;}
   #stampBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:#f5f1ea; border-bottom:1px solid var(--border);}
+  /* Song-Leiste und Blatt-Reiter teilen sich eine Zeile (ab v2.33.0) */
+  #topRow{display:flex; align-items:center; flex-shrink:0; background:var(--panel); border-bottom:1px solid var(--border); min-width:0;}
+  #topRow.empty{display:none;}
+  #topRow #songBar{flex:0 1 auto; min-width:0; border-bottom:0;}
+  #topRow #sheetTabs{flex:1 1 0; min-width:0; border-bottom:0; border-left:1px solid var(--border); padding-left:10px;}
   #sheetTabs{display:none; gap:6px; padding:6px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
-  #sheetTabs button{flex:none; padding:5px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg); color:var(--muted); font-size:13px;}
+  #sheetTabs button{flex:none; padding:4px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg); color:var(--muted); font-size:13px;}
   #sheetTabs button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
   #sheetTabs button.tab-edit{padding:5px 8px; margin-left:-4px;}
   #sheetTabs button.tab-add{border-style:dashed; color:var(--accent);}
-  #songBar{display:none; align-items:center; gap:5px; padding:6px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  #songBar{display:none; align-items:center; gap:5px; padding:5px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
   #songBar button{flex:none; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; white-space:nowrap;}
   #songBar button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
   #songBar button.danger{color:var(--danger); border-color:var(--danger);}
@@ -249,7 +256,7 @@
   }
   @media (max-width: 600px){
     #status:not(.error){display:none;}
-    header{gap:6px; padding:6px 8px; padding-top:max(6px, env(safe-area-inset-top));}
+    header{gap:6px; padding:4px 8px; padding-top:max(4px, env(safe-area-inset-top));}
     header h1{font-size:14px;}
     #authBtn{padding:6px 10px; font-size:13px;}
     #syncState{font-size:11px; padding:2px 7px;}
@@ -259,7 +266,7 @@
   svg.ic{width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.2em; flex:none;}
   #sidebar .lbl-t, #sbPracticePane .lbl-t{display:inline !important;}
   @media (max-width: 600px) and (orientation: portrait){
-    #mainViewer > #songBar{order:0;} #mainViewer > #sheetTabs{order:1;} #mainViewer > #canvasArea{order:2;}
+    #mainViewer > #topRow{order:0;} #mainViewer > #canvasArea{order:2;}
     #mainViewer > #notesPanel{order:3;} #mainViewer > #stampBar, #mainViewer > #txtSymBar{order:4;}
     #mainViewer > #toolbar{order:5; border-top:1px solid var(--border); border-bottom:0; padding-bottom:max(6px, env(safe-area-inset-bottom)); flex-wrap:wrap; overflow:visible;}
     #toolbar #pageNav{display:none;}
@@ -345,7 +352,11 @@
     #toolbar select{max-width:118px; padding-left:6px; padding-right:4px;}
   }
   @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(240px, calc(100vw - 12px));} }
-  #perfBtn{padding:8px 12px; flex-shrink:0;}
+  #perfBtn{padding:6px 12px; flex-shrink:0;}
+  body.hdr-off > header, body.hdr-off #topRow{display:none !important;}
+  #topToggle.on{background:var(--accent-light); border-color:var(--accent);}
+  @media (max-width: 599px){ #topRow{flex-wrap:wrap;} #topRow #sheetTabs:not(.single){flex:1 1 100%; border-left:0; border-top:1px solid var(--border); padding-left:8px;} }
+  @media (max-width: 599px){ #sheetTabs.single .tab, #sheetTabs.single .tab-edit{display:none;} }
   @media (min-width: 480px){ #perfBtn .lbl-t{display:inline;} }
   @media (max-width: 600px){ #authBtn{display:none;} }
 
@@ -386,7 +397,7 @@
   body.mode-text #toolbar > .sep, body.mode-text #perfLayers, body.mode-text #perfBri, body.mode-text #perfBar span:has(+ #perfBri){display:none !important;}
 
   /* ---------- Auftrittsmodus ---------- */
-  body.perf header, body.perf #sidebar, body.perf #toolbar, body.perf #notesPanel, body.perf #stampBar, body.perf #selBar, body.perf #sheetTabs, body.perf #songBar{display:none !important;}
+  body.perf header, body.perf #sidebar, body.perf #toolbar, body.perf #notesPanel, body.perf #stampBar, body.perf #selBar, body.perf #sheetTabs, body.perf #songBar, body.perf #topRow{display:none !important;}
   body.perf #canvasWrap{padding:0; background:#000; overflow:hidden;}
   body.perf.mode-text #canvasWrap{overflow:auto;}
   body.perf #canvasStack{box-shadow:none;}
@@ -620,8 +631,7 @@
     </div>
 
     <div id="mainViewer" style="display:none; flex:1; flex-direction:column; min-height:0;">
-      <div id="songBar" style="display:none;"></div>
-      <div id="sheetTabs" style="display:none;"></div>
+      <div id="topRow" class="empty"><div id="songBar" style="display:none;"></div><div id="sheetTabs" style="display:none;"></div></div>
       <div id="toolbar">
         <button id="txtFmtBtn" class="tool txt-tool" title="Schrift, Grösse, Zeilenabstand, Ausrichtung">Aa Format ▾</button>
         <button id="txtBold" class="tool txt-tool" title="Fett (Strg+B)"><b>F</b></button>
@@ -669,6 +679,7 @@
           <button id="nextPage" class="icon">›</button>
         </div>
         <button id="spreadBtn" class="icon" title="Zwei Seiten nebeneinander (Zeichnen: automatisch eine Seite)">▯▯</button>
+        <button id="topToggle" class="icon" title="Kopfzeile und Song-Leiste ausblenden / einblenden (mehr Platz fürs Blatt)">⌃</button>
         <div style="flex:1"></div>
         <button id="toolMoreBtn" class="tool" title="Ebenen, Helligkeit, Finger-Modus, Bildschirm an, Seite leeren">⋯ Mehr</button>
         <button id="exportBtn" title="Als PDF mit Annotationen exportieren">⤓ PDF</button>
@@ -803,7 +814,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.32.1';
+const APP_VERSION = '2.33.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2173,13 +2184,18 @@ function renderSongBar() {
   const el = $('songBar');
   if (!el) return;
   const raw = currentSongId ? lib.songs[currentSongId] : null;
-  if (!raw || raw.d) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  if (!raw || raw.d) { el.style.display = 'none'; el.innerHTML = ''; syncTopRow(); return; }
   const s = { id: currentSongId, ...raw };
   el.style.display = 'flex'; el.innerHTML = '';
   songActionItems(s).filter(it => it.primary).forEach(it => {
     el.append(setIconLabel(h('button', { class: it.on ? 'on' : '', title: it.title || it.short, onclick: it.fn }), it.short));
   });
   el.append(setIconLabel(h('button', { title: 'Weitere Song-Aktionen: umbenennen, verschieben, Tags, Setliste, Blätter, Offline, löschen', onclick: () => songMoreMenu(s) }), '⋯ Mehr'));
+  syncTopRow();
+}
+function syncTopRow() {
+  const r = $('topRow'); if (!r) return;
+  r.classList.toggle('empty', $('songBar').style.display === 'none' && $('sheetTabs').style.display === 'none');
 }
 
 function renameSong(id) {
@@ -2435,8 +2451,8 @@ function renderSheetTabs() {
   const el = $('sheetTabs');
   const sheets = currentSongId ? songSheets(currentSongId) : [];
   if (!el) return;
-  if (!currentSongId || !sheets.length || !lib.songs[currentSongId] || lib.songs[currentSongId].d) { el.style.display = 'none'; el.innerHTML = ''; return; }
-  el.style.display = 'flex'; el.innerHTML = '';
+  if (!currentSongId || !sheets.length || !lib.songs[currentSongId] || lib.songs[currentSongId].d) { el.style.display = 'none'; el.innerHTML = ''; syncTopRow(); return; }
+  el.style.display = 'flex'; el.innerHTML = ''; el.classList.toggle('single', sheets.length < 2);
   const sid = currentSongId;
   sheets.forEach(f => {
     const on = !!(currentFile && currentFile.id === f.id);
@@ -2444,6 +2460,7 @@ function renderSheetTabs() {
     if (on) el.append(h('button', { class: 'tab-edit', text: '✎', title: 'Blatt «' + f.name + '» umbenennen', onclick: () => renameFile(f) }));
   });
   el.append(h('button', { class: 'tab-add', text: '＋ Blatt', title: 'Weiteres Blatt (Datei oder Scan) zu diesem Song hinzufügen', onclick: () => manageSheets({ id: sid, ...lib.songs[sid] }) }));
+  syncTopRow();
 }
 
 // --- Verdrahtung -------------------------------------------------------------
@@ -2678,12 +2695,12 @@ async function openFile(f, opts = {}) {
 // ---------------------------------------------------------------
 // Layout / Rendering
 // ---------------------------------------------------------------
-function fitWidth() {
+function fitWidth(mode = fitMode) {
   const cw = canvasWrap.clientWidth, ch = canvasWrap.clientHeight, pad = perf ? 0 : 32;
   let w = cw - pad;
   if (spreadOn()) w = (w - spreadGap()) / 2;
-  if (fitMode === 'page') w = Math.min(w, (ch - pad) / pageAspect);
-  return Math.max(200, Math.min(w, perf ? 4000 : 1400));
+  if (mode === 'page') w = Math.min(w, (ch - pad) / Math.max(pageAspect, aspect2 && spreadOn() ? aspect2 : 0));
+  return Math.max(spreadOn() ? 60 : 200, Math.min(w, perf ? 4000 : 1400));
 }
 function applyCssSize() {
   const w = Math.round(fitWidth() * zoom), h_ = Math.round(w * pageAspect);
@@ -2691,6 +2708,7 @@ function applyCssSize() {
   stack.style.width = (sp ? 2 * w + gap : w) + 'px'; stack.style.height = (sp ? Math.max(h_, h2) : h_) + 'px';
   [baseCanvas, inkCanvas].forEach(c => { c.style.width = w + 'px'; c.style.height = h_ + 'px'; });
   [baseCanvas2, inkCanvas2].forEach(c => { c.style.width = w + 'px'; c.style.height = h2 + 'px'; c.style.left = (w + gap) + 'px'; });
+  updateZoomLabel();
 }
 function targetPixelWidth() {
   // Ab v2.9.0: auf Geräten mit Grob-Zeigern (i. d. R. Handy/Tablet) deutlich kleineres Speicherbudget --
@@ -2800,6 +2818,7 @@ function refreshSpread(force) {
   if (sheetKind === 'text') { spreadShown = false; textPageSync(); updatePageNav(); return; }
   if (sp === spreadShown && !force) return;
   spreadShown = sp; pageOff = 0; selId = null;
+  fitMode = (perf || sp) ? 'page' : 'width'; zoom = 1;   // Doppelseite: standardmässig beide Seiten vollständig im Fenster
   if (sp) currentPage = spreadStart(currentPage); else hideSecond();
   markActive();
   updatePageNav(); bindNotes(); applyCssSize();
@@ -2986,7 +3005,8 @@ canvasWrap.addEventListener('scroll', () => {
 });
 
 // --- Zoom ------------------------------------------------------------
-function updateZoomLabel() { $('zoomLabel').textContent = Math.round(zoom * 100) + '%'; }
+// Anzeige relativ zur Seitenbreite (100 % = Seite(n) füllen die Breite); bei Einpassen auf die Höhe entsprechend weniger
+function updateZoomLabel() { const f0 = fitWidth('width'); $('zoomLabel').textContent = Math.round((f0 > 0 ? fitWidth() * zoom / f0 : zoom) * 100) + '%'; }
 function setZoom(z) {
   zoom = clamp(z, MIN_ZOOM, MAX_ZOOM);
   applyCssSize(); updateZoomLabel(); scheduleRender(250);
@@ -3005,6 +3025,7 @@ function zoomAt(z, cx, cy) {
 function wrapCenter() { const r = canvasWrap.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }
 $('zoomIn').addEventListener('click', () => { if (ready) zoomAt(zoom * 1.25, ...wrapCenter()); });
 $('zoomOut').addEventListener('click', () => { if (ready) zoomAt(zoom / 1.25, ...wrapCenter()); });
+$('zoomFit').title = 'Einpassen (Doppelseite: beide Seiten ganz, sonst Seitenbreite)';
 $('zoomFit').addEventListener('click', () => { if (!ready) return; setZoom(1); canvasWrap.scrollLeft = 0; });
 canvasWrap.addEventListener('wheel', (e) => {
   if (!e.ctrlKey || !ready || perf) return;
@@ -4089,6 +4110,17 @@ async function afterSignIn() {
   updateAuthBtn(); clearAuthStatusIfStale(); updateSyncState();
   await syncAll(true);
 }
+// Kopfzeile + Song-Leiste einklappen (ab v2.33.0); nur wirksam, solange ein Blatt offen ist (sonst gäbe es keinen Knopf zum Zurückholen)
+let hdrOff = lsGet('gapp_hdroff') === '1';
+function applyHdr() {
+  const on = hdrOff && mainViewerEl.style.display !== 'none' && !!currentFile;
+  if (document.body.classList.contains('hdr-off') === on) { $('topToggle').classList.toggle('on', hdrOff); return; }
+  document.body.classList.toggle('hdr-off', on); $('topToggle').classList.toggle('on', hdrOff);
+  $('topToggle').textContent = hdrOff ? '⌄' : '⌃';
+  if (ready) { applyCssSize(); scheduleRender(150); }
+}
+$('topToggle').addEventListener('click', () => { hdrOff = !hdrOff; lsSet('gapp_hdroff', hdrOff ? '1' : '0'); applyHdr(); });
+new MutationObserver(applyHdr).observe(mainViewerEl, { attributes: true, attributeFilter: ['style'] });
 let sbAutoOpened = false;
 function showShell() {
   signedOutEl.style.display = 'none';
@@ -4207,7 +4239,7 @@ function enterPerf() {
 function exitPerf() {
   if (!perf) return;
   perf = false; document.body.classList.remove('perf');
-  fitMode = 'width'; zoom = 1; prefetched = null; hidePerfHint();
+  fitMode = spreadOn() ? 'page' : 'width'; zoom = 1; prefetched = null; hidePerfHint();
   refreshSpread();
   setPerfBar(false);
   try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}

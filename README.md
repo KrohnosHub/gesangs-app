@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.33.0 – Doppelseite einpassen, Kopfbereich einklappbar und kompakter (14.10.2026)
+- Doppelseite: standardmässig sind beide Seiten vollständig im Fenster (auf Breite **und** Höhe eingepasst, passt sich PC/Tablet/Handy und Drehen an). Die Zoom-Anzeige bezieht sich auf die Seitenbreite (z. B. 64 %–81 % am PC); «⤢» stellt die Einpassung wieder her. Mindestbreite pro Seite für kleine Fenster gesenkt.
+- Neuer Knopf «⌃/⌄» in der Werkzeugleiste: blendet Kopfzeile und Song-Leiste/Blatt-Reiter aus und ein (Zustand wird gemerkt; nur bei geöffnetem Blatt wirksam, damit der Knopf immer erreichbar bleibt).
+- Kompakter: Song-Leiste und Blatt-Reiter teilen sich eine Zeile (Handy: bei mehreren Blättern zwei Zeilen, bei nur einem Blatt wird der Reiter ausgeblendet); Kopfzeile niedriger (≈ 43 statt 55 px).
+
 ### v2.32.1 – Fix: rechte Seite der Doppelseite wurde weiss (14.10.2026)
 - Die rechte Seite blieb weiss, wenn ihr Canvas neu aufgebaut wurde (Auftrittsmodus, Verlassen, Grössenänderung), weil das Grundbild nur bei geändertem Inhalt neu gezeichnet wurde; jetzt immer nach dem Neuaufbau.
 - Schlägt das Rendern der rechten Seite fehl (z. B. Speichermangel auf Handy/Tablet), wird bis zu zweimal automatisch neu versucht.
