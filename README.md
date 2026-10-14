@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.38.0 – Setliste im Auftrittsmodus: Sprungmenü
+- Im Auftrittsmodus aus einer Setliste: Knopf «♫ Setliste» in der Leiste springt direkt zu jedem Lied; die Seitenanzeige nennt zusätzlich das nächste Lied.
+
 ### v2.37.0 – Zuletzt geöffneten Song beim Start laden
 - Neue Einstellung (⚙, pro Gerät, Standard: aus): «Beim Start zuletzt geöffneten Song laden». Öffnet das zuletzt angezeigte Blatt direkt statt der leeren Übersicht; ist es offline nicht verfügbar oder der Song gelöscht, startet die App wie gewohnt.
 

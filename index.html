@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-XnG8yWNCf4alv8YwUZyV3WR5ctS7FX1z/qLkCMRujDw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-vty82WUfz37C2cbhdqH45/pGa39k1RWc3jjDG03DQw8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-XnG8yWNCf4alv8YwUZyV3WR5ctS7FX1z/qLkCMRujDw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-vty82WUfz37C2cbhdqH45/pGa39k1RWc3jjDG03DQw8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -839,6 +839,7 @@
     <button id="perfExit">✕ Beenden</button>
     <span class="ttl" id="perfTitle"></span>
     <span style="font-size:12px;">☀</span><input type="range" id="perfBri" min="40" max="200" value="100" title="Helligkeit">
+    <button id="perfSetBtn" title="Zu einem anderen Lied der Setliste springen" style="display:none;">♫ Setliste</button>
     <button id="perfLayers">▤</button>
     <button id="perfNotesBtn" title="Gesangsnotizen zu diesem Blatt ein-/ausblenden">📝 Notizen</button>
     <button id="perfScroll" class="perf-txt" title="Automatisch scrollen (Start/Pause)">▶ Scroll</button>
@@ -882,7 +883,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.37.0';
+const APP_VERSION = '2.38.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -4323,7 +4324,12 @@ function updatePerfPage() {
   if (!perf) { $('perfNotes').classList.remove('show'); if (document.body.classList.contains('pn-on')) perfNotesSpace(false); return; }
   renderPerfNotes(); updatePerfZones();
   let t = pageLabelText();
-  if (perfCtx && lib.setlists[perfCtx.setId]) t += ` · Lied ${perfCtx.idx + 1}/${lib.setlists[perfCtx.setId].it.length}`;
+  const inSet = !!(perfCtx && lib.setlists[perfCtx.setId]);
+  $('perfSetBtn').style.display = inSet ? '' : 'none';
+  if (inSet) {
+    t += ` · Lied ${perfCtx.idx + 1}/${lib.setlists[perfCtx.setId].it.length}`;
+    const nx = songStepTarget(1); if (nx >= 0) { const ns = lib.songs[lib.setlists[perfCtx.setId].it[nx]]; if (ns) t += ' · weiter: ' + ns.n; }
+  }
   const pl = mpTimeLabel();
   if (pl) t += ' · ♫ ' + pl;
   $('perfPage').textContent = t;
@@ -4443,6 +4449,18 @@ async function perfPrev() {
   else if (currentPage > 1) { await goPage(currentPage - 1); pzFlash('l'); return; }
   if (await stepSong(-1, 'last')) { pzFlash('l'); if (textSpreadPaged()) setTimeout(() => tsGo(tsCount() - 1), 80); }
 }
+function perfSetJump() {
+  if (!perfCtx || !lib.setlists[perfCtx.setId]) return;
+  const sl = lib.setlists[perfCtx.setId], setId = perfCtx.setId;
+  menuSheet('♫ ' + sl.n, sl.it.map((sid, i) => {
+    const song = lib.songs[sid], ok = !!(song && primarySheet(sid));
+    return { label: (i === perfCtx.idx ? '▶ ' : '') + (i + 1) + '. ' + (song ? song.n : '(nicht mehr vorhanden)') + (ok ? '' : ' – kein Blatt verfügbar'), fn: async () => {
+      if (!ok || i === perfCtx.idx) return;
+      perfCtx = { setId, idx: i }; await openFile(primarySheet(sid)); setPerfBar(true);
+    } };
+  }));
+}
+$('perfSetBtn').addEventListener('click', (e) => { e.stopPropagation(); perfSetJump(); });
 async function startSetlist(setId) {
   const s = lib.setlists[setId];
   const i = s.it.findIndex(sid => lib.songs[sid] && primarySheet(sid));
