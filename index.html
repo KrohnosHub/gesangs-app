@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-d1wDFZQSpAMH29bHlIix0UAPTk09E8p3jXVHgXGGtW4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-jpDoikROR1uIVofCdWIcCAKdtCBOBF20UA0+UROT5Ho=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-d1wDFZQSpAMH29bHlIix0UAPTk09E8p3jXVHgXGGtW4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-jpDoikROR1uIVofCdWIcCAKdtCBOBF20UA0+UROT5Ho=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -273,7 +273,9 @@
     #sidebar{z-index:40; position:absolute; top:0; bottom:0; left:0; width:min(88vw,340px); transform:translateX(-100%); box-shadow:4px 0 12px rgba(0,0,0,.15);}
     #sidebar.open{transform:translateX(0);}
     #app{position:relative;}
+    body:has(#sidebar.open) #empty{padding-left:calc(min(88vw,340px) + 20px);}
   }
+  @media (max-width: 599px){ #empty{display:none !important;} }
 
   /* ---------- Dialoge ---------- */
   .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; display:flex; align-items:center; justify-content:center; padding:12px;}
@@ -749,7 +751,7 @@
       </div>
     </div>
 
-    <div id="empty" style="display:none;">Wähle in der Songliste (☰ bzw. links) einen Song aus oder lege über «♪ Neuer Song» einen neuen an.</div>
+    <div id="empty" style="display:none;">Wähle in der Songliste einen Song aus oder lege über «♪ Neuer Song» einen neuen an.</div>
   </div>
 </div>
 
@@ -801,7 +803,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.31.0';
+const APP_VERSION = '2.32.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -3108,6 +3110,7 @@ async function trashFile(f, silent) {
     $('renameBtn').style.display = 'none'; $('perfBtn').style.display = 'none';
     mainViewerEl.style.display = 'none';
     emptyEl.style.display = 'flex';
+    if (matchMedia('(max-width: 800px)').matches) sidebar.classList.add('open');
   }
   files = files.filter(x => x.id !== f.id);
   cachedIds.delete(f.id); dirtyIds.delete(f.id); persistDirtyIds(); dropTextDirty(f.id); textConflicts.delete(f.id);
@@ -4079,8 +4082,11 @@ async function afterSignIn() {
   updateAuthBtn(); clearAuthStatusIfStale(); updateSyncState();
   await syncAll(true);
 }
+let sbAutoOpened = false;
 function showShell() {
   signedOutEl.style.display = 'none';
+  // Handy/Tablet (Seitenleiste als Overlay): beim Start einmalig öffnen, wenn noch kein Blatt offen ist
+  if (!sbAutoOpened) { sbAutoOpened = true; if (!currentFile && matchMedia('(max-width: 800px)').matches) sidebar.classList.add('open'); }
   if (currentFile) { mainViewerEl.style.display = 'flex'; emptyEl.style.display = 'none'; }
   else { mainViewerEl.style.display = 'none'; emptyEl.style.display = 'flex'; }
 }

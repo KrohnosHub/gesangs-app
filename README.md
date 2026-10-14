@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.32.0 – Songliste beim Start offen (Handy/Tablet) (14.10.2026)
+- Auf Handy und Tablet (Seitenleiste als Overlay) öffnet sich die Songliste beim Start automatisch, solange noch kein Blatt offen ist.
+- Hinweis «Wähle in der Songliste …» ohne «(☰ bzw. links)»; auf dem Tablet im verbleibenden Platz rechts neben der Liste, auf dem Handy entfällt er.
+
 ### v2.31.0 – Version sichtbar, Klaviatur-Klang unabhängig, Tablet-Hochformat (14.10.2026)
 - **Version & Build sichtbar:** kleine Versionsanzeige unten in der Seitenleiste (antippen) und Eintrag «ℹ Version & Build» im ⋯-Menü: laufende App-Version, Build im Zwischenspeicher, Service Worker, Zustand der Klaviersamples, gewählte Klänge, «Neu laden».
 - Die Klaviatur spielt standardmässig immer Klavier, unabhängig vom Instrument im Einsingen (dort war am PC vermutlich «Gitarre» gewählt); eigene Klangauswahl im Panel. Die Klang-Info im Panel entfällt (Quellenangabe jetzt im Version-Dialog und in `samples/piano/LICENSE.txt`).
