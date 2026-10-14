@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-rbCHVYqjdDvZPOwi+xCsfajbgkTuvPhnekRrtjP06jc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-UZZXbSENgX4uX748CCnoeR3TvSb3bgjhwmP+eDTS32A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-rbCHVYqjdDvZPOwi+xCsfajbgkTuvPhnekRrtjP06jc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-UZZXbSENgX4uX748CCnoeR3TvSb3bgjhwmP+eDTS32A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -461,7 +461,7 @@
   .pk-board{position:relative; height:124px; margin:0 8px 8px; display:flex; user-select:none; -webkit-user-select:none; touch-action:none; background:#222; border-radius:0 0 6px 6px; padding:0 1px 1px;}
   .pk-w{flex:1; position:relative; background:#fdfcfa; border:1px solid #888; border-top:0; border-radius:0 0 5px 5px; display:flex; align-items:flex-end; justify-content:center; font-size:11px; color:#666; padding-bottom:4px; box-sizing:border-box;}
   .pk-w.on{background:#e8c9a0;}
-  .pk-b{position:absolute; top:0; height:62%; width:6.2%; transform:translateX(-50%); background:#242020; border-radius:0 0 4px 4px; z-index:2;}
+  .pk-b{position:absolute; top:0; height:62%; transform:translateX(-50%); background:#242020; border-radius:0 0 4px 4px; z-index:2;}
   .pk-b.on{background:#8a5a2b;}
   .pk-c{font-weight:700; color:#333;}
   @media (max-width:800px){ .pk-board{height:96px;} #pianoPanel .pk-lbl{display:none;} #pianoPanel .pk-head{flex-wrap:nowrap; gap:4px; padding:5px 6px;} #pianoPanel .pk-head > .sub{display:none;} #pianoPanel .pk-head button{padding:3px 7px;} #pianoPanel .pk-name{min-width:0; font-size:12px; overflow:hidden; text-overflow:ellipsis;} }
@@ -800,7 +800,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.29.0';
+const APP_VERSION = '2.29.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -8482,15 +8482,15 @@ function synthNote(ctx, midi, t0, dur, vol = 0.22, dest = null, inst = instrumen
     // Additives Klaviermodell: unharmonische Teiltöne (Saitensteifigkeit), je Teilton eigenes Abklingen (Obertöne kürzer),
     // zwei leicht verstimmte Saiten (Schwebung), Hammer-Anschlag (kurzes Rauschen) und ein wenig Raum.
     const B = 0.00006 * Math.pow(2, (midi - 60) / 15), nP = Math.max(4, Math.min(16, Math.floor(7500 / f)));
-    const tau1 = Math.max(0.6, Math.min(3.2, 3.4 - (midi - 36) / 22));
+    const tau1 = Math.max(0.5, Math.min(2.2, 2.6 - (midi - 36) / 26));   // v2.29.1: kürzeres Ausklingen (klang gehalten zu «Cembalo»)
     const bus = pianoBus(ctx, out);
     g.gain.value = 1; g.gain.setTargetAtTime(0, end, 0.11); g.connect(bus);
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.min(9000, 2500 + f * 6); lp.Q.value = 0.3; lp.connect(g);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(9000, 3500 + f * 8), t0); lp.frequency.setTargetAtTime(Math.min(4500, 900 + f * 3), t0, 0.35); lp.Q.value = 0.3; lp.connect(g);   // Klang wird nach dem Anschlag weicher (Hammer), nicht gleichbleibend hell wie ein Cembalo
     for (let n = 1; n <= nP; n++) {
       const fn = n * f * Math.sqrt(1 + B * n * n); if (fn > 11000) break;
       const amp = vol * 1.45 * Math.abs(Math.sin(n * Math.PI * 0.13) + 0.15) / Math.pow(n, 1.05);
       const tn = tau1 / (1 + 0.55 * (n - 1));
-      const strings = n <= 4 ? [-1.3, 1.3] : [0];
+      const strings = n <= 4 ? [-0.8, 0.8] : [0];
       strings.forEach(det => {
         const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = fn; o.detune.value = det;
         const a0 = amp / strings.length;
@@ -8610,7 +8610,7 @@ function pkBuild() {
     const note = i === nW - 1 ? start + oct * 12 : start + Math.floor(i / 7) * 12 + whites[i % 7];
     board.append(h('div', { class: 'pk-w' + (note % 12 === 0 ? ' pk-c' : ''), 'data-m': note }, h('span', { class: 'pk-lbl', text: note % 12 === 0 ? pkName(note) : NOTE_DE[note % 12] })));
     const bk = blackAfter[note % 12];
-    if (bk != null && i < nW - 1) board.append(h('div', { class: 'pk-b', 'data-m': note + 1, style: 'left:' + ((i + 1) * 100 / nW) + '%' }));
+    if (bk != null && i < nW - 1) board.append(h('div', { class: 'pk-b', 'data-m': note + 1, style: 'left:' + ((i + 1) * 100 / nW) + '%; width:' + (62 / nW) + '%' }));
   }
   PK.hd.textContent = pkName(start) + ' – ' + pkName(start + oct * 12);
 }

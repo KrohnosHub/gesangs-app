@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.29.1 – Klaviatur: schwarze Tasten, weicherer Klavierklang (14.10.2026)
+- Schwarze Tasten sind jetzt proportional zur Tastenbreite (bei 3 Oktaven berührten sie sich).
+- Klavierklang: kürzeres Ausklingen, Klang wird nach dem Anschlag weicher (Tiefpass fährt zu), geringere Schwebung – weniger «Cembalo/E-Piano». Gilt auch fürs Einsingen. Weiterhin synthetisch; echte Samples bleiben als Option im Backlog.
+
 ### v2.29.0 – Klaviatur: Tondauer folgt dem Tastendruck (14.10.2026)
 - Der Ton klingt, solange die Taste gedrückt ist (Maus, Finger, Computertaste), mindestens aber die «Mindestdauer» (Standard 1,5 s, Regler 0,2–6 s); danach klingt er kurz aus. Der Schalter «∞ Halten» aus v2.28.0 entfällt, weil das nun immer gilt.
 
