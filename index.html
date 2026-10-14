@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-w2esmNFvkt7A6XFIFAD8WuevDHZonYsJsd0LagoC6uY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-uMqoXj8JOlYkn67PKyKkixEZAqP+PEE5OkU0HOad5VU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-w2esmNFvkt7A6XFIFAD8WuevDHZonYsJsd0LagoC6uY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-uMqoXj8JOlYkn67PKyKkixEZAqP+PEE5OkU0HOad5VU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -181,6 +181,11 @@
   #songBar button{flex:none; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; white-space:nowrap;}
   #songBar button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
   #songBar button.danger{color:var(--danger); border-color:var(--danger);}
+  #songBar button.quick-more{padding:6px 4px; min-width:20px; margin-left:-6px; border-left:0; border-radius:0 8px 8px 0; color:var(--muted);}
+  #songBar button.quick{position:relative;}
+  #songBar button.quick:has(+ .quick-more){border-radius:8px 0 0 8px;}
+  #favBtn.fav-on{color:#d49a06;}
+  #favBtn.fav-on svg{fill:currentColor;}
   #songBar .sep{width:1px; height:22px; background:var(--border); margin:0 2px; flex:none;}
   #stampBar.show{display:flex;}
   #stampBar.text-only .stamp-btn{display:none;}
@@ -553,6 +558,7 @@
   <button id="sidebarToggle" class="icon" title="Liste">☰</button>
   <h1 id="currentTitle">Gesangs-App – Lyric-Blätter</h1>
   <button id="renameBtn" class="icon" title="Song umbenennen" style="display:none;">✎</button>
+  <button id="favBtn" class="icon" title="Als Favorit markieren" style="display:none;">☆</button>
   <button id="perfBtn" title="Auftritts-/Übungsmodus: Vollbild ohne Werkzeuge, Umblättern per Tipp an den Rand" style="display:none;"><span>▶</span><span class="lbl-t"> Auftritt</span></button>
   <button id="pianoBtn" class="icon" title="Klaviatur ein-/ausblenden (Taste P)">🎹</button>
   <span id="syncState" title="Synchronisierung – antippen zum Synchronisieren">…</span>
@@ -814,7 +820,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.33.0';
+const APP_VERSION = '2.34.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -947,6 +953,8 @@ const SVG_ICONS = {
   '📓': '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h7M9 12h7M3 7h3M3 12h3M3 17h3"/>',
   '📤': '<path d="M12 15V4M7 8l5-5 5 5M5 14v6h14v-6"/>',
   '▶': '<path d="M7 4l13 8-13 8z"/>',
+  '🎤': '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/>',
+  '🎧': '<path d="M4 16v-4a8 8 0 0116 0v4"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>',
   '❚❚': '<path d="M8 4v16M16 4v16"/>',
   '✋': '<path d="M8 12V5a1.5 1.5 0 013 0v6m0-7a1.5 1.5 0 013 0v7m0-5a1.5 1.5 0 013 0v8a7 7 0 01-7 7h-1a6 6 0 01-5-3l-2-4a1.5 1.5 0 012.4-1.6L8 15"/>',
   '☼': '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
@@ -2157,8 +2165,11 @@ function songActionItems(s) {
   const sheets = songSheets(s.id);
   const offline = sheets.length && sheets.every(f => cachedIds.has(f.id));
   const nOpen = openTasks(s.id).length;
+  const qo = quickLink(s.id, 'orig'), qk = quickLink(s.id, 'kar');
   return [
-    { primary: true, short: (s.fv ? '★' : '☆') + ' Favorit', on: !!s.fv, title: s.fv ? 'Favorit entfernen' : 'Als Favorit markieren', label: s.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
+    ...(qo ? [{ primary: true, quick: 'orig', short: '🎤 Original', title: 'Schnellstart Original: «' + (qo.title || '') + '» (' + linkSourceLabel(qo) + ') – antippen = abspielen/pausieren, lang drücken = andere Version', label: '🎤 Original abspielen (Schnellstart)', fn: () => quickPlay(s, 'orig') }] : []),
+    ...(qk ? [{ primary: true, quick: 'kar', short: '🎧 Karaoke', title: 'Schnellstart Karaoke: «' + (qk.title || '') + '» (' + linkSourceLabel(qk) + ') – antippen = abspielen/pausieren, lang drücken = andere Version', label: '🎧 Karaoke abspielen (Schnellstart)', fn: () => quickPlay(s, 'kar') }] : []),
+    { primary: false, short: (s.fv ? '★' : '☆') + ' Favorit', on: !!s.fv, title: s.fv ? 'Favorit entfernen' : 'Als Favorit markieren', label: s.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
     { primary: true, short: '🎙 Aufnahmen' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : ''), title: 'Aufnahmen, Backing-Tracks und Referenzmelodie', label: '🎙 Aufnahmen & Backing-Tracks' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : '') + ' …', fn: () => manageAudio(s) },
     { primary: true, short: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : ''), title: 'Spotify-/YouTube-Verknüpfungen', label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
     { primary: true, short: '📓 Journal' + (nOpen ? ` (${nOpen})` : ''), on: nOpen > 0, title: 'Übungsjournal: Lehrer-Aufgaben und Übungsnotizen', label: '📓 Übungsjournal' + (nOpen ? ` (${nOpen} offen)` : '') + ' …', fn: () => openJournal(s.id) },
@@ -2188,10 +2199,21 @@ function renderSongBar() {
   const s = { id: currentSongId, ...raw };
   el.style.display = 'flex'; el.innerHTML = '';
   songActionItems(s).filter(it => it.primary).forEach(it => {
-    el.append(setIconLabel(h('button', { class: it.on ? 'on' : '', title: it.title || it.short, onclick: it.fn }), it.short));
+    const btn = setIconLabel(h('button', { class: it.on ? 'on' : '', title: it.title || it.short, onclick: it.fn }), it.short);
+    if (it.quick) {          // Schnellstart: lang drücken / Rechtsklick = andere Version wählen
+      btn.dataset.quick = it.quick; btn.classList.add('quick');
+      let t = null, long = false;
+      btn.addEventListener('pointerdown', () => { long = false; clearTimeout(t); t = setTimeout(() => { long = true; quickChoose(s, it.quick); }, 550); });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, () => clearTimeout(t)));
+      btn.addEventListener('click', (e) => { if (long) { e.stopImmediatePropagation(); e.preventDefault(); long = false; } }, true);
+      btn.addEventListener('contextmenu', (e) => { e.preventDefault(); quickChoose(s, it.quick); });
+    }
+    el.append(btn);
+    if (it.quick && qlCands(s.id, it.quick).length > 1) el.append(h('button', { class: 'quick-more', text: '▾', title: 'Andere Version wählen', onclick: () => quickChoose(s, it.quick) }));
   });
+  updateQuickBtns();
   el.append(setIconLabel(h('button', { title: 'Weitere Song-Aktionen: umbenennen, verschieben, Tags, Setliste, Blätter, Offline, löschen', onclick: () => songMoreMenu(s) }), '⋯ Mehr'));
-  syncTopRow();
+  syncTopRow(); updateHeaderFav();
 }
 function syncTopRow() {
   const r = $('topRow'); if (!r) return;
@@ -3121,6 +3143,8 @@ async function renameFile(f) {
   renderSidebar();
   setStatus('Umbenannt', 'ok');
 }
+$('favBtn').addEventListener('click', () => { if (currentSongId) sTouch(currentSongId, x => { x.fv = x.fv ? 0 : 1; }); });
+mp.listeners.add(() => { try { updateQuickBtns(); } catch (e) {} });
 $('renameBtn').addEventListener('click', () => { if (currentSongId) renameSong(currentSongId); else if (currentFile) renameFile(currentFile); });
 
 async function trashFile(f, silent) {
@@ -3135,7 +3159,7 @@ async function trashFile(f, silent) {
     await syncChain;
     closeCurrent();
     currentTitleEl.textContent = 'Gesangs-App – Lyric-Blätter';
-    $('renameBtn').style.display = 'none'; $('perfBtn').style.display = 'none';
+    $('renameBtn').style.display = 'none'; $('perfBtn').style.display = 'none'; $('favBtn').style.display = 'none';
     mainViewerEl.style.display = 'none';
     emptyEl.style.display = 'flex';
     if (matchMedia('(max-width: 800px)').matches) sidebar.classList.add('open');
@@ -5141,6 +5165,47 @@ const linkIcon = (l) => l.type === 'yt' ? '▶' : l.type === 'xm' ? '🎚' : '�
 const linkSourceLabel = (l) => l.type === 'yt' ? 'YouTube' : l.type === 'xm' ? 'x-minus.pro' : 'Spotify';
 const linkGroup = (l) => l.type === 'xm' ? 'xm' : l.kind === 'karaoke' ? 'karaoke' : 'orig';   // 'manual' (Altbestand) fällt unter Original
 const playableLink = (l) => l.type === 'yt' || l.type === 'sp';
+// --- Schnellstart (ab v2.34.0): je Song ein Standard-Link für Original und Karaoke (s.pin = { orig, kar }) ---
+const QL_KEY = 'gapp_qlast';
+function qlLast() { try { return JSON.parse(lsGet(QL_KEY) || '{}') || {}; } catch (e) { return {}; } }
+const qlCands = (songId, grp) => songLinks(songId).filter(l => playableLink(l) && linkGroup(l) === (grp === 'kar' ? 'karaoke' : 'orig'));   // x-minus (nur extern) nie
+function quickLink(songId, grp) {
+  const c = qlCands(songId, grp); if (!c.length) return null;
+  const sg = lib.songs[songId], pid = sg && sg.pin && sg.pin[grp];
+  return c.find(x => x.id === pid) || c.find(x => x.id === (qlLast()[songId] || {})[grp]) || c[0];      // angeheftet → zuletzt gespielt (nur dieses Gerät) → erste
+}
+function pinnedLink(songId, grp) { const sg = lib.songs[songId], pid = sg && sg.pin && sg.pin[grp]; return pid ? qlCands(songId, grp).find(x => x.id === pid) || null : null; }
+function setPin(songId, grp, linkId) {
+  sTouch(songId, x => { x.pin = Object.assign({}, x.pin); if (linkId) x.pin[grp] = linkId; else delete x.pin[grp]; if (!Object.keys(x.pin).length) delete x.pin; });
+}
+function qlRemember(songId, grp, linkId) { const m = qlLast(); m[songId] = Object.assign({}, m[songId], { [grp]: linkId }); lsSet(QL_KEY, JSON.stringify(m)); }
+function quickPlay(s, grp) {
+  const l = quickLink(s.id, grp); if (!l) return;
+  qlRemember(s.id, grp, l.id); playLinkInMiniPlayer(l);
+}
+function quickChoose(s, grp) {
+  const c = qlCands(s.id, grp), cur = quickLink(s.id, grp);
+  if (!c.length) return;
+  menuSheet((grp === 'kar' ? 'Karaoke' : 'Original') + ' – Schnellstart wählen', c.map(l => ({
+    label: (cur && l.id === cur.id ? '📌 ' : '▶ ') + (l.title || l.url) + ' (' + linkSourceLabel(l) + ')',
+    fn: () => { setPin(s.id, grp, l.id); qlRemember(s.id, grp, l.id); startMiniPlayerLink(l); toast('Als Schnellstart gemerkt.', 1500); }
+  })));
+}
+function updateQuickBtns() {
+  document.querySelectorAll('#songBar button.quick').forEach(b => {
+    const l = currentSongId ? quickLink(currentSongId, b.dataset.quick) : null;
+    const on = !!(l && mp.kind === 'link' && mp.link && mp.link.id === l.id);
+    b.classList.toggle('on', on);
+  });
+}
+function updateHeaderFav() {
+  const b = $('favBtn'); if (!b) return;
+  const sg = currentSongId ? lib.songs[currentSongId] : null;
+  b.style.display = sg && !sg.d ? '' : 'none';
+  if (!sg) return;
+  b.textContent = ''; b.append(svgIcon(sg.fv ? '★' : '☆')); b.classList.toggle('fav-on', !!sg.fv);
+  b.title = sg.fv ? 'Favorit entfernen' : 'Als Favorit markieren';
+}
 const linkKindLabel = (l) => linkGroup(l) === 'karaoke' ? 'Karaoke' : 'Original';
 
 // --- Groben Bezug zum Songnamen prüfen, bevor ein Suchtreffer automatisch übernommen wird
@@ -5221,8 +5286,12 @@ function manageLinks(s) {
       h('span', { class: 'type-icon', text: linkIcon(l) }),
       h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => (playableLink(l) ? playLinkInMiniPlayer(l) : openExternal(l.url)) },
         h('div', { class: 'name', text: l.title || l.url }),
-        h('div', { class: 'sub' }, h('span', { text: linkSourceLabel(l) }), h('span', { class: 'mp-time', 'data-mpid': l.id, text: isLoaded(l) ? mpTimeLabel() : '' }))),
+        h('div', { class: 'sub' }, h('span', { text: linkSourceLabel(l) + (playableLink(l) && (pinnedLink(s.id, linkGroup(l) === 'karaoke' ? 'kar' : 'orig') || {}).id === l.id ? ' · 📌 Schnellstart' : '') }), h('span', { class: 'mp-time', 'data-mpid': l.id, text: isLoaded(l) ? mpTimeLabel() : '' }))),
       playableLink(l) ? h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }) : null,
+      playableLink(l) ? (() => {
+        const grp = linkGroup(l) === 'karaoke' ? 'kar' : 'orig', pin = pinnedLink(s.id, grp), on = !!(pin && pin.id === l.id);
+        return h('button', { class: 'more', text: '📌', style: 'opacity:' + (on ? 1 : .3) + ';', title: on ? 'Ist der Schnellstart für ' + linkKindLabel(l) + ' – antippen zum Aufheben' : 'Als Schnellstart für ' + linkKindLabel(l) + ' festlegen (Knopf auf der Hauptseite)', onclick: (e) => { e.stopPropagation(); setPin(s.id, grp, on ? null : l.id); draw(); } });
+      })() : null,
       isLoaded(l) ? h('button', { class: 'more', text: '■', title: 'Stoppen', onclick: (e) => { e.stopPropagation(); stopMiniPlayer(); } }) : null,
       h('button', { class: 'more', text: '↗', title: 'Extern öffnen', onclick: (e) => { e.stopPropagation(); openExternal(l.url); } }),
       h('button', { class: 'more', text: '✎', title: 'Bearbeiten (Name und Kategorie)', onclick: (e) => { e.stopPropagation(); editLink(l); } }),
@@ -5513,12 +5582,13 @@ function openRecorder(song) {
   const fileBackings = songAudio(song.id, 'backing');
   const ytBackingLinks = songLinks(song.id).filter(l => l.type === 'yt');
   const hasBackingChoice = !!(fileBackings.length || ytBackingLinks.length);
-  // Vorauswahl: bevorzugt eine verlinkte Karaoke-Version, sonst die erste Datei, sonst irgendeinen YouTube-Link
+  // Vorauswahl (ab v2.34.0): abgelegter Backing-Track (Datei) gewinnt immer; sonst nur die Karaoke-Version
+  // (Schnellstart bzw. erste YouTube-Karaoke-Verknüpfung); ein Original wird nie automatisch vorgeschlagen.
   let backingMode = 'none';
-  const karaokeLink = ytBackingLinks.find(l => l.kind === 'karaoke');
-  if (karaokeLink) backingMode = karaokeLink.id;
-  else if (fileBackings.length) backingMode = 'file:' + fileBackings[0].id;
-  else if (ytBackingLinks.length) backingMode = ytBackingLinks[0].id;
+  const qk = quickLink(song.id, 'kar');
+  const karaokeLink = (qk && qk.type === 'yt') ? qk : ytBackingLinks.find(l => linkGroup(l) === 'karaoke');
+  if (fileBackings.length) backingMode = 'file:' + fileBackings[0].id;
+  else if (karaokeLink) backingMode = karaokeLink.id;
 
   // Läuft im gemeinsamen Mini-Player (02_core.js) statt eingebettet im Dialog, damit die
   // Wiedergabe auch nach dem Schliessen dieser Ansicht oder im Vollbildmodus weiterläuft.

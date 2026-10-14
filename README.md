@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.34.0 – Schnellstart Original/Karaoke (14.10.2026)
+- Neue Knöpfe «Original» und «Karaoke» in der Song-Leiste: ein Tipp startet bzw. pausiert die jeweilige Verknüpfung im Mini-Player. Lang drücken (Handy) / Rechtsklick (PC) / kleiner ▾-Pfeil = andere Version wählen; die Wahl wird als Schnellstart gemerkt. Anheften auch über 📌 in «Verknüpfungen».
+- Ohne Anheften: zuletzt gespielte (dieses Gerät), sonst erste abspielbare Verknüpfung der Gruppe. x-minus (nur extern) kommt nie als Schnellstart in Frage.
+- Aufnahmen → «Mitspielen mit»: abgelegter Backing-Track gewinnt immer; sonst die Karaoke-Verknüpfung (Schnellstart); ein Original wird nicht mehr automatisch vorgeschlagen.
+- Favorit-Stern wandert in die Kopfzeile neben den Titel (steht zusätzlich unter «⋯ Mehr» und in der Liste).
+
 ### v2.33.0 – Doppelseite einpassen, Kopfbereich einklappbar und kompakter (14.10.2026)
 - Doppelseite: standardmässig sind beide Seiten vollständig im Fenster (auf Breite **und** Höhe eingepasst, passt sich PC/Tablet/Handy und Drehen an). Die Zoom-Anzeige bezieht sich auf die Seitenbreite (z. B. 64 %–81 % am PC); «⤢» stellt die Einpassung wieder her. Mindestbreite pro Seite für kleine Fenster gesenkt.
 - Neuer Knopf «⌃/⌄» in der Werkzeugleiste: blendet Kopfzeile und Song-Leiste/Blatt-Reiter aus und ein (Zustand wird gemerkt; nur bei geöffnetem Blatt wirksam, damit der Knopf immer erreichbar bleibt).
