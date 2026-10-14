@@ -10,7 +10,7 @@ module.exports = async () => {
       const vis = () => pg.evaluate(() => { const e = document.getElementById('pianoPanel'); return !!e && getComputedStyle(e).display !== 'none'; });
       eq(await vis(), false);
       await pg.keyboard.press('p'); await pg.waitForTimeout(200); eq(await vis(), true);
-      eq(await pg.evaluate(() => document.querySelectorAll('#pianoPanel .pk-w').length), 15);
+      eq(await pg.evaluate(() => document.querySelectorAll('#pianoPanel .pk-w').length), 22);
       await pg.click('#pianoPanel .pk-w[data-m="60"]'); await pg.waitForTimeout(100);
       eq(await pg.evaluate(() => [window.__n.slice(-1)[0], document.querySelector('#pianoPanel .pk-name').textContent]), [60, 'C4 · 261.6 Hz']);
       const r = await pg.evaluate(() => { const r = document.querySelector('#pianoPanel .pk-b[data-m="61"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + 10]; });
@@ -43,6 +43,25 @@ module.exports = async () => {
       const used = await pg.evaluate(() => { let n = 0; const c = new AudioContext(), o = c.createBufferSource.bind(c); c.createBufferSource = () => { n++; return o(); }; [30, 48, 61, 72, 100].forEach(m => synthNote(c, m, c.currentTime, 0.5)); return n; });
       eq(used, 5);                                                // jeder Ton über Sample (nicht über das Synthesemodell)
       eq((await (await pg.request.get(pg.url().replace(/index\.html.*/, '') + 'samples/piano/LICENSE.txt')).text()).includes('CC BY 3.0'), true);
+      eq(pg.errs, []); await pg.context().close();
+    });
+    await test('Klaviatur klingt unabhängig vom globalen Instrument nach Klavier; Version & Build sichtbar', async () => {
+      const pg = await open(b, { width: 1280, height: 800 }, { logs: false });
+      await pg.evaluate(() => { instrument = 'guitar'; window.__i = []; const o = window.synthNote; window.synthNote = (c, m, t, d, v, de, inst) => { window.__i.push(inst); return o(c, m, t, d, v, de, inst); }; });
+      await pg.keyboard.press('p'); await pg.click('#pianoPanel .pk-w[data-m="60"]');
+      eq(await pg.evaluate(() => window.__i.slice(-1)[0]), 'piano');
+      await pg.selectOption('#pianoPanel select', 'organ'); await pg.click('#pianoPanel .pk-w[data-m="62"]');
+      eq(await pg.evaluate(() => window.__i.slice(-1)[0]), 'organ');
+      eq(await pg.evaluate(() => document.getElementById('verLine').textContent), 'v' + await pg.evaluate(() => APP_VERSION));
+      eq(await pg.evaluate(() => /Salamander/.test(document.getElementById('pianoPanel').textContent)), false);       // keine Klang-Info im Panel
+      await pg.click('#verLine'); await pg.waitForTimeout(300);
+      ok(await pg.evaluate(() => { const m = document.querySelector('.modal'); return m && m.textContent.includes('App-Version') && m.textContent.includes('v' + APP_VERSION) && m.textContent.includes('Build'); }), 'Version-Dialog');
+      eq(pg.errs, []); await pg.context().close();
+    });
+    await test('Klaviatur: Tablet im Hochformat – 3 Oktaven möglich, Tasten beschriftet', async () => {
+      const pg = await open(b, { width: 820, height: 1180 }, { logs: false });
+      await pg.keyboard.press('p'); await pg.waitForTimeout(200);
+      eq(await pg.evaluate(() => [document.querySelectorAll('#pianoPanel .pk-w').length, getComputedStyle(document.querySelector('#pianoPanel .pk-lbl')).display !== 'none']), [22, true]);
       eq(pg.errs, []); await pg.context().close();
     });
     await test('Klaviatur: im Auftrittsmodus und über einem Dialog benutzbar; Mini-Player rückt hoch', async () => {

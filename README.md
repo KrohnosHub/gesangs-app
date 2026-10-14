@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.31.0 – Version sichtbar, Klaviatur-Klang unabhängig, Tablet-Hochformat (14.10.2026)
+- **Version & Build sichtbar:** kleine Versionsanzeige unten in der Seitenleiste (antippen) und Eintrag «ℹ Version & Build» im ⋯-Menü: laufende App-Version, Build im Zwischenspeicher, Service Worker, Zustand der Klaviersamples, gewählte Klänge, «Neu laden».
+- Die Klaviatur spielt standardmässig immer Klavier, unabhängig vom Instrument im Einsingen (dort war am PC vermutlich «Gitarre» gewählt); eigene Klangauswahl im Panel. Die Klang-Info im Panel entfällt (Quellenangabe jetzt im Version-Dialog und in `samples/piano/LICENSE.txt`).
+- Tablet im Hochformat (ab 600 px Breite): bis zu 3 Oktaven, Tasten beschriftet, etwas höhere Tasten. Standard bei neuen Geräten ab 600 px: 3 Oktaven.
+
 ### v2.30.0 – Echte Klaviersamples (14.10.2026)
 - Der Klavierklang (Klaviatur, Einsingen, Referenzmelodie) nutzt jetzt Aufnahmen eines Konzertflügels: «Salamander Grand Piano V3» von Alexander Holm, Lizenz **CC BY 3.0** (siehe `samples/piano/LICENSE.txt`). 21 Samples (C2–C7, im Terzabstand, ca. 1,5 MB, MP3-Fassung aus dem Repository Tonejs/audio); Zwischentöne per Tonhöhenverschiebung, Lautstärke angeglichen.
 - Die Samples werden beim ersten Gebrauch (bzw. kurz nach dem Start) einmal geladen und bleiben offline im Cache. Bis dahin oder ohne Netz klingt weiterhin das synthetische Klaviermodell.

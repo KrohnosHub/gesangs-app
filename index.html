@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-IUwEYjB8jiT6B8O4fjkqgqFY0poui5k7rEO89vZnhOU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-d1wDFZQSpAMH29bHlIix0UAPTk09E8p3jXVHgXGGtW4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-IUwEYjB8jiT6B8O4fjkqgqFY0poui5k7rEO89vZnhOU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-d1wDFZQSpAMH29bHlIix0UAPTk09E8p3jXVHgXGGtW4=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -455,8 +455,6 @@
   #pianoPanel .pk-opts{display:flex; align-items:center; gap:8px; padding:0 8px 4px; font-size:12px;}
   #pianoPanel .pk-opts button{padding:2px 9px; min-height:28px;}
   #pianoPanel .pk-opts input{flex:1; max-width:260px; min-width:70px;}
-  #pianoPanel .pk-hint{margin-left:auto; color:var(--muted);}
-  @media (max-width:800px){ #pianoPanel .pk-hint{display:none;} }
   #pianoPanel.min .pk-board, #pianoPanel.min .pk-opts{display:none;}
   .pk-board{position:relative; height:124px; margin:0 8px 8px; display:flex; user-select:none; -webkit-user-select:none; touch-action:none; background:#222; border-radius:0 0 6px 6px; padding:0 1px 1px;}
   .pk-w{flex:1; position:relative; background:#fdfcfa; border:1px solid #888; border-top:0; border-radius:0 0 5px 5px; display:flex; align-items:flex-end; justify-content:center; font-size:11px; color:#666; padding-bottom:4px; box-sizing:border-box;}
@@ -464,7 +462,9 @@
   .pk-b{position:absolute; top:0; height:62%; transform:translateX(-50%); background:#242020; border-radius:0 0 4px 4px; z-index:2;}
   .pk-b.on{background:#8a5a2b;}
   .pk-c{font-weight:700; color:#333;}
-  @media (max-width:800px){ .pk-board{height:96px;} #pianoPanel .pk-lbl{display:none;} #pianoPanel .pk-head{flex-wrap:nowrap; gap:4px; padding:5px 6px;} #pianoPanel .pk-head > .sub{display:none;} #pianoPanel .pk-head button{padding:3px 7px;} #pianoPanel .pk-name{min-width:0; font-size:12px; overflow:hidden; text-overflow:ellipsis;} }
+  @media (max-width:800px){ .pk-board{height:110px;} #pianoPanel .pk-head{flex-wrap:nowrap; gap:4px; padding:5px 6px;} #pianoPanel .pk-head > .sub{display:none;} #pianoPanel .pk-head button{padding:3px 7px;} #pianoPanel .pk-name{min-width:0; font-size:12px; overflow:hidden; text-overflow:ellipsis;} }
+  @media (max-width:599px){ .pk-board{height:96px;} #pianoPanel .pk-lbl{display:none;} }
+  #verLine{text-align:center; font-size:11px; color:var(--muted); padding:0 8px 6px; cursor:pointer;}
   body.piano-open #miniPlayer, body.piano-open #metroChip{bottom:calc(var(--pianoH, 0px) + 10px);}
   #metroChip{position:fixed; left:10px; bottom:10px; z-index:90; display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--border); border-radius:999px; padding:4px 6px 4px 12px; box-shadow:0 4px 16px rgba(0,0,0,.25); font-size:13px;}
   #metroChip .mb{font-weight:700; cursor:pointer; font-variant-numeric:tabular-nums;}
@@ -581,6 +581,7 @@
         <button id="settingsBtn" title="Einstellungen (u. a. Spotify-Zugang)">⚙ Einstellungen</button>
         <button id="moreMenuBtn" title="Backup, Offline-Speicher, Kurzanleitung">⋯ Mehr</button>
       </div>
+      <div id="verLine" title="Version und Build anzeigen"></div>
       <div id="sbLegacy" style="display:none;">
         <button id="scanBtn">📷 Scan</button>
         <button id="newFolderBtn" title="Neuer Ordner">📁＋</button>
@@ -800,7 +801,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.30.0';
+const APP_VERSION = '2.31.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -6050,6 +6051,7 @@ $('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
   { label: '♻ Aus Drive-Sicherung (täglich automatisch) …', fn: () => driveRestoreDialog() },
   { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() },
   { label: '🎹 Klaviatur (Taste P)', fn: () => pianoToggle() },
+  { label: 'ℹ Version & Build', fn: () => aboutDialog() },
   { label: '❓ Kurzanleitung', fn: () => showTour() },
   { label: '🐞 Fehlerprotokoll …', fn: () => errLogDialog() }
 ]));
@@ -8592,8 +8594,8 @@ async function playRefMelody(songId, onEnd) {
 // Klang = gewählter Instrumentklang der App (synthNote). Tasten per Maus/Touch (mehrstimmig, Darüberwischen)
 // oder Computertastatur (untere Reihe Y X C V B N M = ab linkem C, obere Reihe Q W E R T Z U I = eine Oktave höher).
 // ---------------------------------------------------------------
-const PK = { el: null, board: null, nameEl: null, open: false, min: false, ctx: null, ptr: new Map(), keyNote: new Map(), cfg: { start: 48, oct: 2, dur: 1.5, hold: false } };
-try { const c = JSON.parse(lsGet('gapp_piano') || 'null'); if (c && c.start >= 24 && c.start <= 84 && c.oct >= 1 && c.oct <= 3) PK.cfg = { start: c.start - c.start % 12, oct: c.oct, dur: c.dur >= 0.3 && c.dur <= 6 ? c.dur : 1.5, hold: false }; } catch (e) {}
+const PK = { el: null, board: null, nameEl: null, open: false, min: false, ctx: null, ptr: new Map(), keyNote: new Map(), cfg: { start: 48, oct: matchMedia('(max-width:599px)').matches ? 2 : 3, dur: 1.5, inst: 'piano' } };
+try { const c = JSON.parse(lsGet('gapp_piano') || 'null'); if (c && c.start >= 24 && c.start <= 84 && c.oct >= 1 && c.oct <= 3) PK.cfg = { start: c.start - c.start % 12, oct: c.oct, dur: c.dur >= 0.2 && c.dur <= 6 ? c.dur : 1.5, inst: INSTRUMENTS[c.inst] ? c.inst : 'piano' }; } catch (e) {}
 const NOTE_DE = ['C', 'Cis', 'D', 'Es', 'E', 'F', 'Fis', 'G', 'As', 'A', 'B', 'H'];
 const pkName = (m) => NOTE_DE[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
 const PK_LOWER = { y: 0, x: 2, c: 4, v: 5, b: 7, n: 9, m: 11, s: 1, d: 3, g: 6, h: 8, j: 10 };
@@ -8613,7 +8615,7 @@ function pkPlay(m) {
     if (!PK.ctx) PK.ctx = new (window.AudioContext || window.webkitAudioContext)();
     const ctx = PK.ctx; if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     const ng = ctx.createGain(); ng.connect(ctx.destination);
-    synthNote(ctx, m, ctx.currentTime + 0.005, 30, 0.3, ng);
+    synthNote(ctx, m, ctx.currentTime + 0.005, 30, 0.3, ng, PK.cfg.inst || 'piano');
     hd = { ng, ctx, t0: Date.now(), relAt: 0 };
     PK.last = hd;
   } catch (e) {}
@@ -8650,17 +8652,21 @@ function pkBuildPanel() {
   const nameEl = PK.nameEl = h('span', { class: 'pk-name', text: '–' });
   const btn = (text, title, fn) => h('button', { text, title, onclick: fn });
   const shift = (d) => { PK.cfg.start = clamp(PK.cfg.start + d * 12, 24, 84 - 12 * PK.cfg.oct + 12); pkSave(); pkBuild(); };
-  const octs = (d) => { PK.cfg.oct = clamp(PK.cfg.oct + d, 1, matchMedia('(max-width:800px)').matches ? 2 : 3); PK.cfg.start = clamp(PK.cfg.start, 24, 84 - 12 * PK.cfg.oct + 12); pkSave(); pkBuild(); };
+  const octs = (d) => { PK.cfg.oct = clamp(PK.cfg.oct + d, 1, matchMedia('(max-width:599px)').matches ? 2 : 3); PK.cfg.start = clamp(PK.cfg.start, 24, 84 - 12 * PK.cfg.oct + 12); pkSave(); pkBuild(); };
   const board = PK.board = h('div', { class: 'pk-board' });
   const durIn = h('input', { type: 'range', min: '0.2', max: '6', step: '0.1', value: String(PK.cfg.dur), title: 'Mindestdauer eines Tons – gedrückt halten verlängert ihn beliebig' });
   const durLbl = h('span', { class: 'sub', style: 'min-width:34px;' });
+  const instSel = h('select', { title: 'Klang der Klaviatur (unabhängig vom Einsingen)', style: 'margin-left:auto; font-size:12px; padding:2px 4px;' });
+  Object.entries(INSTRUMENTS).forEach(([k, v]) => instSel.append(h('option', { value: k, text: v })));
+  instSel.value = PK.cfg.inst || 'piano';
+  instSel.addEventListener('change', () => { PK.cfg.inst = instSel.value; pkSave(); });
   const optRender = () => { durLbl.textContent = PK.cfg.dur.toFixed(1) + ' s'; };
   durIn.addEventListener('input', () => { PK.cfg.dur = parseFloat(durIn.value) || 1.5; pkSave(); optRender(); });
   optRender();
   const minBtn = btn('▾', 'Nur Leiste anzeigen', () => { PK.min = !PK.min; PK.el.classList.toggle('min', PK.min); minBtn.textContent = PK.min ? '▴' : '▾'; pkLayout(); });
   PK.el = h('div', { id: 'pianoPanel' },
     h('div', { class: 'pk-head' }, h('b', { text: '🎹' }), hd, btn('◀', 'Eine Oktave tiefer', () => shift(-1)), btn('▶', 'Eine Oktave höher', () => shift(1)), btn('−', 'Weniger Oktaven', () => octs(-1)), btn('+', 'Mehr Oktaven', () => octs(1)), nameEl, minBtn, btn('✕', 'Schliessen (Taste P)', () => pianoToggle(false))),
-    h('div', { class: 'pk-opts' }, h('span', { class: 'sub', text: 'Mindestdauer' }), durIn, durLbl, h('span', { class: 'sub pk-hint', text: 'Klang: Salamander Grand Piano, A. Holm (CC BY 3.0)', title: 'Klaviersamples «Salamander Grand Piano V3» von Alexander Holm, Lizenz CC BY 3.0 (siehe samples/piano/LICENSE.txt)' })),
+    h('div', { class: 'pk-opts' }, h('span', { class: 'sub', text: 'Mindestdauer' }), durIn, durLbl, instSel),
     board);
   document.body.append(PK.el);
   board.addEventListener('pointerdown', (e) => {
@@ -8700,6 +8706,24 @@ window.addEventListener('keydown', (e) => {
   PK.keyNote.set(e.key.toLowerCase(), { m, hd: pkPlay(m) }); pkMark(m, true);
 }, true);
 window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(), o = PK.keyNote.get(k); if (o) { pkMark(o.m, false); pkRelease(o.hd); PK.keyNote.delete(k); } }, true);
+
+
+// --- Version & Build sichtbar machen (ab v2.31.0): welche App-Version läuft, welche im Zwischenspeicher liegt ---
+async function aboutDialog() {
+  const rows = h('div', { style: 'display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-size:14px;' });
+  const add = (k, v) => rows.append(h('b', { text: k }), h('span', { text: v, style: 'word-break:break-word;' }));
+  add('App-Version', 'v' + APP_VERSION + ' (läuft gerade)');
+  let caches_ = [], ctrl = 'kein Service Worker';
+  try { caches_ = (await caches.keys()).filter(k => /^gesangs-app-\d/.test(k)).map(k => k.replace('gesangs-app-', '')); } catch (e) {}
+  try { if (navigator.serviceWorker && navigator.serviceWorker.controller) ctrl = 'aktiv'; } catch (e) {}
+  add('Build (Zwischenspeicher)', caches_.length ? caches_.join(', ') : '–'); add('Service Worker', ctrl);
+  add('Klaviersamples', PIANO_SMP.state === 2 ? 'geladen (' + PIANO_SMP.buf.size + ')' : PIANO_SMP.state === 1 ? 'lädt …' : PIANO_SMP.state === -1 ? 'nicht verfügbar (Synthese-Klang)' : 'noch nicht geladen');
+  add('Klang (Einsingen/Melodie)', INSTRUMENTS[instrument] || instrument); add('Klang (Klaviatur)', INSTRUMENTS[PK.cfg.inst] || 'Klavier');
+  add('Klaviersamples', '«Salamander Grand Piano V3» von Alexander Holm, CC BY 3.0');
+  const hint = h('div', { class: 'sub', style: 'margin-top:10px;', text: 'Stimmen Version und Build nicht mit der erwarteten überein, hilft «Neu laden» (holt die neueste Version vom Server).' });
+  openModal({ title: 'Version & Build', body: [rows, hint], buttons: [{ label: 'Neu laden', fn: async () => { try { for (const r of await navigator.serviceWorker.getRegistrations()) await r.update(); } catch (e) {} location.reload(); return false; } }, { label: 'Schliessen', primary: true }] });
+}
+(function () { const el = $('verLine'); if (el) { el.textContent = 'v' + APP_VERSION; el.addEventListener('click', () => aboutDialog()); } })();
 
 // --- Abschnitt in «Aufnahmen & Backing-Tracks» ---------------------------------------------
 function refSection(songId, redraw) {
