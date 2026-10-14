@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-mode="auto" data-pal="bordeaux">
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-uMqoXj8JOlYkn67PKyKkixEZAqP+PEE5OkU0HOad5VU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-fpGoCUBn+ZpVAKRLcg7imvBKgD2cR/mnBKw+zjdHAKw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-uMqoXj8JOlYkn67PKyKkixEZAqP+PEE5OkU0HOad5VU=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-fpGoCUBn+ZpVAKRLcg7imvBKgD2cR/mnBKw+zjdHAKw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-<meta name="theme-color" content="#6b4f3b">
+<meta name="theme-color" content="#7a2e3a">
+<meta name="color-scheme" content="light dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
@@ -21,6 +22,7 @@
      KONFIGURATION – hier deine eigenen Werte eintragen
      ============================================================ -->
 <script>
+  try { const d = document.documentElement, p = localStorage.getItem('gapp_pal'), m = localStorage.getItem('gapp_mode'); if (p === 'bordeaux' || p === 'petrol') d.dataset.pal = p; if (m === 'light' || m === 'dark' || m === 'auto') d.dataset.mode = m; } catch (e) {}
   const CONFIG = {
     // Aus Google Cloud Console → APIs & Dienste → Anmeldedaten → OAuth-Client-ID (Typ "Webanwendung")
     CLIENT_ID: '159994249880-flb4nhh2aq51tspov0d7nv787hir84e5.apps.googleusercontent.com',
@@ -59,8 +61,24 @@
 
 <style>
   :root{
-    --bg:#faf9f7; --panel:#ffffff; --border:#e2ddd6; --text:#2a2622; --muted:#8a8178;
-    --accent:#6b4f3b; --accent-light:#ede6dd; --danger:#b3452f; --ok:#4a7a58; --warn:#b07a1a;
+    --bg:#f6f3ee; --panel:#ffffff; --panel-2:#f9f5f2; --border:#e4dcd6; --text:#2a2326; --muted:#6e6366;
+    --accent:#7a2e3a; --accent-ink:#ffffff; --accent-light:#f4e6e8;
+    --gold:#c9962b; --gold-ink:#2b1c00; --hdr-bg:#7a2e3a; --hdr-ink:#ffffff;
+    --stage:#d9d2c8; --fav:#d49a06; --card-shadow:0 1px 2px rgba(40,20,25,.07);
+    --danger:#b3452f; --ok:#3f7a52; --warn:#9c6a12; --banner-bg:#fff3cd; --banner-ink:#6b4a00; --banner-bd:#e0c96a;
+  }
+  html[data-pal="petrol"]{ --accent:#1f6f78; --accent-light:#dcecee; --gold:#e3a93d; --hdr-bg:#1f6f78; }
+  html[data-mode="dark"]{ color-scheme:dark; --bg:#131113; --panel:#1c191b; --panel-2:#232022; --border:#38323a; --text:#ece6e7; --muted:#a79ca0;
+      --accent:#d98593; --accent-ink:#2a0b12; --accent-light:#3a2227; --gold:#d9a93f; --gold-ink:#2b1c00; --hdr-bg:#4b1a24; --hdr-ink:#ffffff;
+      --stage:#0d0b0c; --fav:#e0b030; --card-shadow:0 1px 2px rgba(0,0,0,.5);
+      --danger:#e88a74; --ok:#78b88a; --warn:#d9a441; --banner-bg:#3b3015; --banner-ink:#f1d98a; --banner-bd:#6b5a22; }
+  html[data-mode="dark"][data-pal="petrol"]{ --accent:#5fb7c1; --accent-ink:#06272b; --accent-light:#183238; --gold:#e3a93d; --hdr-bg:#0f3a40; }
+  @media (prefers-color-scheme: dark){
+    html[data-mode="auto"]{ color-scheme:dark; --bg:#131113; --panel:#1c191b; --panel-2:#232022; --border:#38323a; --text:#ece6e7; --muted:#a79ca0;
+      --accent:#d98593; --accent-ink:#2a0b12; --accent-light:#3a2227; --gold:#d9a93f; --gold-ink:#2b1c00; --hdr-bg:#4b1a24; --hdr-ink:#ffffff;
+      --stage:#0d0b0c; --fav:#e0b030; --card-shadow:0 1px 2px rgba(0,0,0,.5);
+      --danger:#e88a74; --ok:#78b88a; --warn:#d9a441; --banner-bg:#3b3015; --banner-ink:#f1d98a; --banner-bd:#6b5a22; }
+    html[data-mode="auto"][data-pal="petrol"]{ --accent:#5fb7c1; --accent-ink:#06272b; --accent-light:#183238; --gold:#e3a93d; --hdr-bg:#0f3a40; }
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -85,7 +103,7 @@
   button{cursor:pointer;}
   button:active{background:var(--accent-light);}
   button:disabled{opacity:.4; cursor:default;}
-  button.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  button.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
   button.icon{padding:8px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   button.on{background:var(--accent-light); border-color:var(--accent);}
   #status{font-size:12px; color:var(--muted); max-width:36vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right;}
@@ -96,7 +114,7 @@
   #syncState.warn{color:var(--warn); border-color:var(--warn);}
   #syncState.ok{color:var(--ok);}
 
-  #authBanner{display:none; align-items:center; gap:10px; padding:6px 12px; background:#fff3cd; color:#6b4a00; border-bottom:1px solid #e0c96a; font-size:13px; flex-shrink:0; z-index:19;}
+  #authBanner{display:none; align-items:center; gap:10px; padding:6px 12px; background:var(--banner-bg); color:var(--banner-ink); border-bottom:1px solid var(--banner-bd); font-size:13px; flex-shrink:0; z-index:19;}
   #authBanner span{flex:1; min-width:0;}
   #authBanner button{padding:5px 12px; flex-shrink:0;}
   #app{flex:1; display:flex; min-height:0; position:relative;}
@@ -131,8 +149,8 @@
   #fileList, #setlistList{flex:1; overflow-y:auto; padding:4px 6px; min-height:0;}
   .file-item{display:flex; align-items:center; gap:6px; padding:8px 6px; border-radius:8px; cursor:pointer; font-size:14px;}
   .file-item:hover, .file-item.active{background:var(--accent-light);}
-  .file-item .fav{border:none; background:none; padding:2px 4px; font-size:16px; color:#c8bfb4; line-height:1;}
-  .file-item .fav.on{color:#d49a06;}
+  .file-item .fav{border:none; background:none; padding:2px 4px; font-size:16px; color:var(--muted); opacity:.55; line-height:1;}
+  .file-item .fav.on{color:var(--fav); opacity:1;}
   .file-item .mid{flex:1; min-width:0;}
   .file-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .file-item .artist{font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:-1px;}
@@ -166,7 +184,7 @@
   #widthRange{width:70px;}
   #pageNav, #zoomNav{display:flex; align-items:center; gap:5px; font-size:13px; color:var(--muted);}
   #zoomLabel{min-width:40px; text-align:center;}
-  #stampBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:#f5f1ea; border-bottom:1px solid var(--border);}
+  #stampBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:var(--panel-2); border-bottom:1px solid var(--border);}
   /* Song-Leiste und Blatt-Reiter teilen sich eine Zeile (ab v2.33.0) */
   #topRow{display:flex; align-items:center; flex-shrink:0; background:var(--panel); border-bottom:1px solid var(--border); min-width:0;}
   #topRow.empty{display:none;}
@@ -174,22 +192,22 @@
   #topRow #sheetTabs{flex:1 1 0; min-width:0; border-bottom:0; border-left:1px solid var(--border); padding-left:10px;}
   #sheetTabs{display:none; gap:6px; padding:6px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
   #sheetTabs button{flex:none; padding:4px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg); color:var(--muted); font-size:13px;}
-  #sheetTabs button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+  #sheetTabs button.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
   #sheetTabs button.tab-edit{padding:5px 8px; margin-left:-4px;}
   #sheetTabs button.tab-add{border-style:dashed; color:var(--accent);}
   #songBar{display:none; align-items:center; gap:5px; padding:5px 8px; background:var(--panel); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch;}
   #songBar button{flex:none; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; white-space:nowrap;}
-  #songBar button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+  #songBar button.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
   #songBar button.danger{color:var(--danger); border-color:var(--danger);}
   #songBar button.quick-more{padding:6px 4px; min-width:20px; margin-left:-6px; border-left:0; border-radius:0 8px 8px 0; color:var(--muted);}
   #songBar button.quick{position:relative;}
   #songBar button.quick:has(+ .quick-more){border-radius:8px 0 0 8px;}
-  #favBtn.fav-on{color:#d49a06;}
+  #favBtn.fav-on{color:#ffd45e;}
   #favBtn.fav-on svg{fill:currentColor;}
   #songBar .sep{width:1px; height:22px; background:var(--border); margin:0 2px; flex:none;}
   #stampBar.show{display:flex;}
   #stampBar.text-only .stamp-btn{display:none;}
-  #txtSymBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:#f5f1ea; border-bottom:1px solid var(--border); align-items:center;}
+  #txtSymBar{display:none; flex-wrap:wrap; gap:5px; padding:6px 8px; background:var(--panel-2); border-bottom:1px solid var(--border); align-items:center;}
   body.mode-text #txtSymBar.show{display:flex;}
   body.perf #txtSymBar{display:none !important;}
   #txtSymBar button{padding:5px 9px; font-size:14px; min-width:38px;}
@@ -199,12 +217,12 @@
   #stampBar select{padding:5px 8px; font-size:13px;}
   body.mode-text #stampBar, body.mode-text #selBar, body.mode-text #layerPop, body.mode-text #dispPop{display:none !important;}
   #stampBar button{padding:5px 9px; font-size:14px; min-width:38px;}
-  #stampBar button.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  #stampBar button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
 
   #canvasArea{flex:1; position:relative; display:flex; min-height:0; min-width:0;}
   #canvasWrap{
     flex:1; min-width:0; overflow:auto; position:relative; display:flex;
-    background:#ded7cc; padding:16px; overscroll-behavior:contain;
+    background:var(--stage); padding:16px; overscroll-behavior:contain;
   }
   #canvasStack{position:relative; margin:auto; flex:none; box-shadow:0 2px 10px rgba(0,0,0,.15); background:#fff; touch-action:none;}
   #baseCanvas, #inkCanvas{position:absolute; top:0; left:0;}
@@ -226,7 +244,7 @@
   .popover h4{margin:0 0 8px; font-size:13px;}
   .seg-tabs{display:flex; gap:6px; margin:0 0 10px;}
   .seg-tabs button{flex:1; padding:8px 6px; font-size:13px;}
-  .seg-tabs button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .seg-tabs button.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
   .popover .rowp{display:flex; align-items:center; gap:8px; margin:6px 0; font-size:13px;}
   #txtFmtPop select{flex:1; min-width:0;}
   .popover input[type=range]{flex:1;}
@@ -304,7 +322,7 @@
   .pick-row{display:flex; align-items:center; gap:8px; padding:9px 6px; border-bottom:1px solid var(--border); cursor:pointer;}
   .pick-row:hover{background:var(--accent-light);}
   .chip{display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid var(--border); margin:3px 4px 3px 0; font-size:13px; cursor:pointer; background:var(--panel);}
-  .chip.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .chip.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
   .link-embed{width:100%; margin:2px 0 10px;}
   .link-embed iframe{width:100%; border:0; border-radius:8px; display:block;}
   .link-embed.yt iframe{aspect-ratio:16/9; height:auto;}
@@ -429,13 +447,13 @@
   #sbPractice{display:flex; flex-wrap:wrap; gap:6px; padding:0 8px 8px;}
   #sbPractice button{flex:1; padding:6px 4px; font-size:12px; white-space:nowrap;}
   #sbPractice button.late{color:var(--danger); border-color:var(--danger);}
-  .mp-bar button.mp-prac.on{background:var(--accent); color:#fff;}
+  .mp-bar button.mp-prac.on{background:var(--accent); color:var(--accent-ink);}
   .mp-practice{padding:6px 8px 2px; border-bottom:1px solid var(--border); font-size:12px;}
   .pr-row{display:flex; align-items:center; gap:4px; margin-bottom:4px; flex-wrap:wrap;}
   .pr-row .pr-l{width:46px; color:var(--muted);}
   .pr-row .pr-v{min-width:48px; text-align:center; font-variant-numeric:tabular-nums; font-weight:600;}
   .pr-row button{padding:2px 8px; font-size:12px; min-width:28px;}
-  .pr-row button.on{background:var(--accent); color:#fff;}
+  .pr-row button.on{background:var(--accent); color:var(--accent-ink);}
   .pr-row button:disabled{opacity:.4;}
   .pr-note{font-size:11px; color:var(--muted); padding-bottom:4px;}
   .pa-stats{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0;}
@@ -507,12 +525,12 @@
   .jchip{color:var(--accent);} .jchip.late{color:var(--danger); font-weight:600;}
   @media (max-width: 800px){ .mp-bar button{padding:3px 7px; min-width:30px;} #metroChip{left:auto; right:6px; top:58px; bottom:auto;} .pa-row{grid-template-columns:minmax(80px,2fr) 1fr 1fr; } .pa-row span:nth-child(n+4){display:none;} }
   /* --- v2.8.3: Seitenwechsel unten, Notizen im Auftrittsmodus als eigener Bereich --- */
-  #pageFloat{position:absolute; left:50%; bottom:12px; transform:translateX(-50%); z-index:15; display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.96); border:1px solid var(--border); border-radius:999px; padding:4px; box-shadow:0 3px 14px rgba(0,0,0,.22); font-size:13px;}
+  #pageFloat{position:absolute; left:50%; bottom:12px; transform:translateX(-50%); z-index:15; display:flex; align-items:center; gap:4px; background:var(--panel); opacity:.97; border:1px solid var(--border); border-radius:999px; padding:4px; box-shadow:0 3px 14px rgba(0,0,0,.22); font-size:13px;}
   #pageFloat.hide-sel{display:none !important;}
   #pageFloat{pointer-events:none;} #pageFloat button{pointer-events:auto;}
   #pageFloat button{border-radius:999px; padding:6px 12px; font-size:14px; min-width:40px; white-space:nowrap;}
   #pageFloat button:disabled{opacity:.35;}
-  #pageFloat #pfNext{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
+  #pageFloat #pfNext{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600;}
   #pageFloat #pfNext:disabled{background:var(--panel); color:var(--muted); border-color:var(--border);}
   #pageFloat #pfLabel{padding:0 6px; font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap;}
   #pageFloat.end #pfNext{animation:pfPulse 1.2s ease-in-out 2;}
@@ -524,7 +542,7 @@
   body.spread-on #canvasStack{background:transparent; box-shadow:none;}
   body.spread-on #baseCanvas, body.spread-on #baseCanvas2{background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.18);}
   body.perf.spread-on #baseCanvas, body.perf.spread-on #baseCanvas2{box-shadow:none;}
-  #spreadBtn.on, #perfSpread.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  #spreadBtn.on, #perfSpread.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
   body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); column-count:2; column-gap:64px;}
   body.perf.spread-text #textSheet{width:min(1500px, 97vw); height:calc(100% - 24px); margin:12px auto; align-self:stretch; padding:22px 3.5vw;
     column-count:2; column-gap:7vw; column-fill:auto; overflow:hidden; cursor:default;}
@@ -550,6 +568,50 @@
   body.perf.pn-on #canvasWrap{margin-bottom:var(--pnh, 0px);}
   body.perf.pn-on #perfPage{bottom:calc(var(--pnh, 0px) + 8px);}
   body.perf.pn-on #perfNotes{left:0; right:0; bottom:0; width:auto; max-height:34vh; border-radius:0; box-shadow:0 -2px 12px rgba(0,0,0,.35); padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+
+  /* ---------- Theme (ab v2.35.0): Kopfzeile in Akzentfarbe, Karten-Liste, Segmente ---------- */
+  html{color-scheme:light;} html[data-mode="dark"]{color-scheme:dark;}
+  @media (prefers-color-scheme: dark){ html[data-mode="auto"]{color-scheme:dark;} }
+  header{background:var(--hdr-bg); color:var(--hdr-ink); border-bottom:0; box-shadow:0 1px 6px rgba(0,0,0,.18);}
+  header h1{color:var(--hdr-ink);}
+  header h1 small.hdr-artist{color:rgba(255,255,255,.78);}
+  header button{background:rgba(255,255,255,.13); border-color:rgba(255,255,255,.28); color:var(--hdr-ink);}
+  header button:active{background:rgba(255,255,255,.28);}
+  header button.primary{background:var(--gold); border-color:var(--gold); color:var(--gold-ink); font-weight:600;}
+  header #syncState{color:var(--hdr-ink); border-color:rgba(255,255,255,.4); background:transparent;}
+  header #syncState.warn{color:#ffd98a; border-color:#ffd98a;} header #syncState.ok{color:#b9e8c8; border-color:#b9e8c8;}
+  header #status{color:rgba(255,255,255,.85);} header #status.error{color:#ffc2b4;} header #status.saving, header #status.ok{color:#fff;}
+  #topToggle.on{background:var(--accent-light); border-color:var(--accent);}
+  #sidebar{background:var(--bg);}
+  #sbTabs{background:var(--panel);}
+  #sbTabs button.active{color:var(--accent); border-bottom-width:3px;}
+  #sbFooter{background:var(--panel);}
+  #fileList, #setlistList{padding:6px 8px;}
+  #fileList .file-item, #setlistList .file-item{background:var(--panel); border:1px solid var(--border); border-left:3px solid transparent; border-radius:10px; margin:0 0 6px; padding:9px 8px; box-shadow:var(--card-shadow);}
+  #fileList .file-item:hover, #setlistList .file-item:hover{background:var(--panel); border-color:var(--accent);}
+  #fileList .file-item.active, #setlistList .file-item.active{background:var(--accent-light); border-left-color:var(--accent); border-color:var(--accent);}
+  #fileList .file-item .name{font-weight:600;}
+  #fileList .file-item .artist{font-size:12px;}
+  #fileList .file-item.folder-item{background:var(--accent-light); border-color:transparent; border-left-color:var(--accent);}
+  #fileList .file-item.folder-item .type-icon{color:var(--accent); font-size:17px;}
+  .count-badge{font-size:11px; font-weight:600; min-width:22px; text-align:center; padding:1px 7px; border-radius:999px; background:var(--panel); color:var(--accent); border:1px solid var(--border);}
+  .group-head{position:sticky; top:-6px; z-index:2; margin:0 -8px 4px; padding:8px 12px 3px; background:var(--bg); font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:8px;}
+  .group-head::after{content:''; flex:1; height:1px; background:var(--border);}
+  .tagchip{font-size:11px; padding:1px 8px; background:hsl(var(--h,0) 45% 90%); color:hsl(var(--h,0) 50% 26%);}
+  html[data-mode="dark"] .tagchip{background:hsl(var(--h,0) 28% 24%); color:hsl(var(--h,0) 60% 80%);}
+  @media (prefers-color-scheme: dark){ html[data-mode="auto"] .tagchip{background:hsl(var(--h,0) 28% 24%); color:hsl(var(--h,0) 60% 80%);} }
+  #topRow{background:var(--panel-2);} #songBar, #sheetTabs{background:transparent;}
+  #songBar button.quick{border-color:var(--accent); color:var(--accent); font-weight:600;}
+  #songBar button.quick.on, #songBar button.quick-more.on{color:var(--accent-ink);}
+  #toolbar{background:var(--panel);}
+  #toolbar button[data-tool="view"]{border-radius:8px 0 0 8px; margin-right:-5px;}
+  #toolbar #modeDraw{border-radius:0 8px 8px 0;}
+  #toolbar button[data-tool="view"].on, #toolbar #modeDraw.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  #toolbar button[data-tool="view"], #toolbar #modeDraw{position:relative;}
+  #toolbar button[data-tool="view"].on, #toolbar #modeDraw.on{z-index:1;}
+  .pick-row{border-radius:8px;}
+  .modal{border:1px solid var(--border);}
+  .pal-sw{display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:3px; vertical-align:-1px; border:1px solid rgba(255,255,255,.7); box-shadow:0 0 0 1px rgba(0,0,0,.15);}
 </style>
 </head>
 <body>
@@ -820,7 +882,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.34.0';
+const APP_VERSION = '2.35.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2046,6 +2108,18 @@ function sortSongs(arr, idx) {
   });
 }
 
+// Gruppenköpfe in der Songliste (ab v2.35.0): Buchstabe (Titel), Interpret, oder Zeitraum (zuletzt geöffnet / hinzugefügt)
+function songGroup(s, idx) {
+  if (sortMode === 'artist') return s.ar || 'Ohne Interpret';
+  if (sortMode === 'opened' || sortMode === 'added') {
+    const t = sortMode === 'opened' ? (s.lo || 0) : (Date.parse(songAdded(s, idx)) || 0);
+    if (!t) return sortMode === 'opened' ? 'Noch nie geöffnet' : 'Älter';
+    const d0 = new Date(); d0.setHours(0, 0, 0, 0); const age = (d0.getTime() - t) / 864e5;
+    return t >= d0.getTime() ? 'Heute' : age <= 7 ? 'Diese Woche' : age <= 31 ? 'Dieser Monat' : 'Älter';
+  }
+  const c = s.n.trim().charAt(0).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  return /[A-Z]/.test(c) ? c : '#';
+}
 function songPathLabel(songId) {
   const p = folderPath(effSongFolder(songId));
   return p.length ? p.map(x => x.n).join(' › ') : '';
@@ -2109,7 +2183,11 @@ function renderSheets() {
     childFolders(currentFolder).forEach(fo => list.append(folderItem(fo)));
   }
   sortSongs(arr, filesIdx);
-  arr.forEach(s => list.append(songItem(s, global, filesIdx)));
+  let lastGroup = null;
+  arr.forEach(s => {
+    if (arr.length >= 4) { const g = songGroup(s, filesIdx); if (g !== lastGroup) { lastGroup = g; list.append(h('div', { class: 'group-head', text: g })); } }
+    list.append(songItem(s, global, filesIdx));
+  });
   if (!list.children.length) {
     if (!filesKnown && !global) list.append(h('div', { class: 'empty-note' },
       h('p', { text: 'Deine Songs liegen in Google Drive und sind auf diesem Gerät noch nicht geladen.' }),
@@ -2128,15 +2206,23 @@ function folderItem(fo) {
   const n = aliveSongs().filter(s => effSongFolder(s.id) === fo.id).length + childFolders(fo.id).length;
   return h('div', { class: 'file-item folder-item', onclick: () => { currentFolder = fo.id; renderSidebar(); } },
     h('span', { class: 'type-icon', text: '📁' }),
-    h('div', { class: 'mid' }, h('div', { class: 'name', text: fo.n }), h('div', { class: 'sub', text: n + ' Einträge' })),
+    h('div', { class: 'mid' }, h('div', { class: 'name', text: fo.n })),
+    h('span', { class: 'count-badge', text: String(n), title: n + (n === 1 ? ' Eintrag' : ' Einträge') }),
     h('button', { class: 'more', text: '⋯', title: 'Ordner-Menü', onclick: (e) => { e.stopPropagation(); folderMenu(fo); } }));
 }
 
+const TAG_HUES = [345, 205, 150, 38, 270, 18, 180];
+const tagHue = (t) => { let x = 0; for (const c of String(t)) x = (x * 31 + c.charCodeAt(0)) >>> 0; return TAG_HUES[x % TAG_HUES.length]; };
+function tagChips(s) {          // höchstens 2 sichtbar, Rest als «+n» (Tooltip: alle); Farbe stabil je Tag-Name
+  const tg = s.tg || [], out = tg.slice(0, 2).map(t => h('span', { class: 'tagchip', text: t, style: '--h:' + tagHue(t) }));
+  if (tg.length > 2) out.push(h('span', { class: 'tagchip', text: '+' + (tg.length - 2), title: tg.slice(2).join(', '), style: '--h:0; filter:saturate(0);' }));
+  return out;
+}
 function songItem(s, global, idx) {
   const path = global ? songPathLabel(s.id) : '';
   const sheets = songSheets(s.id, idx);
   const sub = h('div', { class: 'sub' },
-    (s.tg || []).map(t => h('span', { class: 'tagchip', text: t })),
+    tagChips(s),
     sheets.length > 1 ? h('span', { text: '📄 ' + sheets.length + ' Blätter' }) : null,
     (s.links || []).length ? h('span', { text: '🔗 ' + s.links.length }) : null,
     songAudio(s.id, 'take').length ? h('span', { text: '🎤 ' + songAudio(s.id, 'take').length }) : null,
@@ -5023,7 +5109,7 @@ window.addEventListener('online', () => { loadGsi(); });
       if (!hadController || reloading) return;
       const idle = () => pendingCount() === 0 && !document.querySelector('.modal-bg') && !document.body.classList.contains('perf');
       if (idle()) { reloading = true; location.reload(); return; }
-      const t = h('div', { style: 'position:fixed;left:50%;bottom:70px;transform:translateX(-50%);z-index:210;background:#6b4f3b;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;cursor:pointer;max-width:86vw;text-align:center;', text: '⟳ Neue Version – hier antippen zum Aktualisieren' });
+      const t = h('div', { style: 'position:fixed;left:50%;bottom:70px;transform:translateX(-50%);z-index:210;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;font-size:14px;cursor:pointer;max-width:86vw;text-align:center;', text: '⟳ Neue Version – hier antippen zum Aktualisieren' });
       t.addEventListener('click', () => { reloading = true; location.reload(); });
       document.body.append(t);
     });
@@ -5420,8 +5506,33 @@ function manageLinks(s) {
 // muss also pro Gerät einmal eingerichtet werden. Ohne Eintrag bleibt die
 // automatische Spotify-Suche einfach leer, YouTube ist davon unabhängig.
 // ---------------------------------------------------------------
+// Darstellung (ab v2.35.0): Palette (Bordeaux/Petrol) und Modus (Automatisch/Hell/Dunkel), je Gerät gespeichert
+function applyTheme() {
+  const d = document.documentElement;
+  const pal = rawGet('gapp_pal') === 'petrol' ? 'petrol' : 'bordeaux', mm = rawGet('gapp_mode');
+  d.dataset.pal = pal; d.dataset.mode = (mm === 'light' || mm === 'dark') ? mm : 'auto';
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = getComputedStyle(d).getPropertyValue('--hdr-bg').trim() || '#7a2e3a';
+}
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); } catch (e) {}
+function themeControls() {
+  const box = h('div', { class: 'theme-box', style: 'padding:0 6px 10px; border-bottom:1px solid var(--border); margin-bottom:10px;' });
+  const draw = () => {
+    box.innerHTML = '';
+    const pal = document.documentElement.dataset.pal, mode = rawGet('gapp_mode') === 'light' || rawGet('gapp_mode') === 'dark' ? rawGet('gapp_mode') : 'auto';
+    box.append(h('div', { class: 'sub', style: 'font-weight:600; margin-bottom:6px;', text: 'Darstellung (gilt nur für dieses Gerät)' }),
+      h('div', { class: 'seg-tabs' }, ...[['bordeaux', 'Bordeaux', '#7a2e3a', '#c9962b'], ['petrol', 'Petrol', '#1f6f78', '#e3a93d']].map(([k, l, c1, c2]) =>
+        h('button', { class: pal === k ? 'on' : '', 'data-pal': k, onclick: () => { rawSet('gapp_pal', k); applyTheme(); draw(); } },
+          h('span', { class: 'pal-sw', style: 'background:' + c1 }), h('span', { class: 'pal-sw', style: 'background:' + c2 }), ' ' + l))),
+      h('div', { class: 'seg-tabs' }, ...[['auto', 'Automatisch'], ['light', 'Hell'], ['dark', 'Dunkel']].map(([k, l]) =>
+        h('button', { class: mode === k ? 'on' : '', 'data-mode': k, text: l, onclick: () => { rawSet('gapp_mode', k); applyTheme(); draw(); } }))));
+  };
+  draw(); return box;
+}
+applyTheme();
 function openSettingsDialog() {
   const body = h('div');
+  body.append(themeControls());
   body.append(h('div', { class: 'empty-note', style: 'margin-bottom:10px;' },
     'Der Spotify-Zugang (Client-Secret) wird aus Sicherheitsgründen nicht mehr in der App-Datei mitgeliefert, ',
     'sondern nur lokal auf diesem Gerät gespeichert. Client-ID und Client-Secret erhältst du unter ',

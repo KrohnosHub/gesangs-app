@@ -21,6 +21,13 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.35.0 – Neues Erscheinungsbild: Palette Bordeaux/Petrol, Dunkelmodus, Karten-Songliste (14.10.2026)
+- **Palette** wählbar unter ⚙ Einstellungen → Darstellung: «Bordeaux + Altgold» (Standard) oder «Petrol»; **Modus** Automatisch (folgt dem Gerät) / Hell / Dunkel. Wird je Gerät gespeichert. Farben zentral als CSS-Variablen.
+- **Kopfzeile in Akzentfarbe** (Anmelden-Knopf in Gold/Amber), Tab-Leistenfarbe der Browser-/Handyleiste folgt der Palette.
+- **Songliste:** Karten mit Rand/Schatten, aktiver Song mit Akzentbalken, Ordner farblich abgesetzt mit Zähler-Badge, **Gruppenköpfe** (Buchstabe bei Titel, Interpret, Zeiträume bei «Zuletzt geöffnet/hinzugefügt»; ab 4 Songs), farbige **Tag-Chips** (max. 2 sichtbar, Rest als «+n»).
+- Flächen gestuft (Hintergrund / Karten / getönte Leisten), «Lesen/Zeichnen» als Segment-Schalter, Schnellstart-Knöpfe mit Akzentumriss.
+- **Dunkelmodus:** Oberfläche dunkel; das Notenblatt (PDF/Text) bleibt hell wie Papier. Diagramme in Einsingen/Pitch-Anzeigen behalten weissen Hintergrund.
+
 ### v2.34.0 – Schnellstart Original/Karaoke (14.10.2026)
 - Neue Knöpfe «Original» und «Karaoke» in der Song-Leiste: ein Tipp startet bzw. pausiert die jeweilige Verknüpfung im Mini-Player. Lang drücken (Handy) / Rechtsklick (PC) / kleiner ▾-Pfeil = andere Version wählen; die Wahl wird als Schnellstart gemerkt. Anheften auch über 📌 in «Verknüpfungen».
 - Ohne Anheften: zuletzt gespielte (dieses Gerät), sonst erste abspielbare Verknüpfung der Gruppe. x-minus (nur extern) kommt nie als Schnellstart in Frage.
