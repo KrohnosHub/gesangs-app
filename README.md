@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.32.1 – Fix: rechte Seite der Doppelseite wurde weiss (14.10.2026)
+- Die rechte Seite blieb weiss, wenn ihr Canvas neu aufgebaut wurde (Auftrittsmodus, Verlassen, Grössenänderung), weil das Grundbild nur bei geändertem Inhalt neu gezeichnet wurde; jetzt immer nach dem Neuaufbau.
+- Schlägt das Rendern der rechten Seite fehl (z. B. Speichermangel auf Handy/Tablet), wird bis zu zweimal automatisch neu versucht.
+
 ### v2.32.0 – Songliste beim Start offen (Handy/Tablet) (14.10.2026)
 - Auf Handy und Tablet (Seitenleiste als Overlay) öffnet sich die Songliste beim Start automatisch, solange noch kein Blatt offen ist.
 - Hinweis «Wähle in der Songliste …» ohne «(☰ bzw. links)»; auf dem Tablet im verbleibenden Platz rechts neben der Liste, auf dem Handy entfällt er.

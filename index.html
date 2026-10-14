@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-jpDoikROR1uIVofCdWIcCAKdtCBOBF20UA0+UROT5Ho=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-AfosrPpJuzmgHXVI83st3irVV25hPbl2V6dOEed/FqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-jpDoikROR1uIVofCdWIcCAKdtCBOBF20UA0+UROT5Ho=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-Tf+xbo48WfAWLOd40xd/dju+SKQR0sLOxLxmZsjhPbg=' 'sha256-AfosrPpJuzmgHXVI83st3irVV25hPbl2V6dOEed/FqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#6b4f3b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -803,7 +803,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.32.0';
+const APP_VERSION = '2.32.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2714,6 +2714,7 @@ const textSpreadPaged = () => perf && textSpread();
 const spreadStart = (p) => p - ((p - 1) % 2);
 const baseCanvas2 = $('baseCanvas2'), inkCanvas2 = $('inkCanvas2');
 let base2Cache = null, prefetched2 = null, render2Seq = 0, aspect2 = 0;
+let base2Dirty = false, render2Retry = 0;
 function hideSecond() {
   render2Seq++;
   [baseCanvas2, inkCanvas2].forEach(c => { c.style.display = 'none'; });
@@ -2738,12 +2739,17 @@ async function renderSecond() {
       const vp = page.getViewport({ scale: targetPixelWidthFor(aspect) / vp1.width });
       off = document.createElement('canvas'); off.width = Math.ceil(vp.width); off.height = Math.ceil(vp.height);
       await page.render({ canvasContext: off.getContext('2d'), viewport: vp }).promise;
-    } catch (e) { return; }
+    } catch (e) {   // z. B. Speichermangel auf Handy/Tablet: einmal nach kurzer Pause erneut versuchen statt weisse Seite zu lassen
+      if (seq === render2Seq && doc === currentDoc && render2Retry < 2) { render2Retry++; setTimeout(() => { if (seq === render2Seq && doc === currentDoc) renderSecond().catch(() => {}); }, 400); }
+      return;
+    }
     if (seq !== render2Seq || doc !== currentDoc) { freeCanvas(off); return; }
   }
+  render2Retry = 0;
   [baseCanvas2, inkCanvas2].forEach(c => { c.width = off.width; c.height = off.height; c.style.display = 'block'; });
   if (base2Cache && base2Cache !== off) freeCanvas(base2Cache);
   base2Cache = off; aspect2 = aspect;
+  base2Dirty = true;   // Canvas-Grösse gesetzt = Inhalt gelöscht → Grundbild in paintSecond() zwingend neu zeichnen
   applyCssSize(); paintSecond();
 }
 function paintSecond() {
@@ -2767,7 +2773,8 @@ function paintSecond() {
     sec2Valid = true; rebuilt = true;
   }
   const onSide = curP() === P2, liveHl = !!(live && onSide && live.o.hl);
-  if (rebuilt || liveHl || hl2WasLive) {
+  if (rebuilt || liveHl || hl2WasLive || base2Dirty) {
+    base2Dirty = false;
     bc.globalCompositeOperation = 'source-over'; bc.clearRect(0, 0, W, H); bc.drawImage(base2Cache, 0, 0);
     if (hl2Has || liveHl) {
       bc.globalCompositeOperation = 'multiply';
