@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-fpGoCUBn+ZpVAKRLcg7imvBKgD2cR/mnBKw+zjdHAKw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-xF5tiTvlHfL0dDR8W/Vy9xSlib5IuBrVxdmR+FueOlM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-fpGoCUBn+ZpVAKRLcg7imvBKgD2cR/mnBKw+zjdHAKw=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-xF5tiTvlHfL0dDR8W/Vy9xSlib5IuBrVxdmR+FueOlM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -882,7 +882,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.35.0';
+const APP_VERSION = '2.36.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2251,10 +2251,10 @@ function songActionItems(s) {
   const sheets = songSheets(s.id);
   const offline = sheets.length && sheets.every(f => cachedIds.has(f.id));
   const nOpen = openTasks(s.id).length;
-  const qo = quickLink(s.id, 'orig'), qk = quickLink(s.id, 'kar');
+  const qo = quickTarget(s.id, 'orig'), qk = quickTarget(s.id, 'kar');
   return [
-    ...(qo ? [{ primary: true, quick: 'orig', short: '🎤 Original', title: 'Schnellstart Original: «' + (qo.title || '') + '» (' + linkSourceLabel(qo) + ') – antippen = abspielen/pausieren, lang drücken = andere Version', label: '🎤 Original abspielen (Schnellstart)', fn: () => quickPlay(s, 'orig') }] : []),
-    ...(qk ? [{ primary: true, quick: 'kar', short: '🎧 Karaoke', title: 'Schnellstart Karaoke: «' + (qk.title || '') + '» (' + linkSourceLabel(qk) + ') – antippen = abspielen/pausieren, lang drücken = andere Version', label: '🎧 Karaoke abspielen (Schnellstart)', fn: () => quickPlay(s, 'kar') }] : []),
+    ...(qo ? [{ primary: true, quick: 'orig', short: '🎤 Original', title: 'Schnellstart Original: «' + (qo.title || '') + '» (' + qtLabel(qo) + ') – antippen = abspielen/pausieren, lang drücken = andere Version', label: '🎤 Original abspielen (Schnellstart)', fn: () => quickPlay(s, 'orig') }] : []),
+    ...(qk ? [{ primary: true, quick: 'kar', short: '🎧 Karaoke', title: 'Schnellstart Karaoke: «' + (qk.title || '') + '» (' + qtLabel(qk) + ') – antippen = abspielen/pausieren, lang drücken = andere Version', label: '🎧 Karaoke abspielen (Schnellstart)', fn: () => quickPlay(s, 'kar') }] : []),
     { primary: false, short: (s.fv ? '★' : '☆') + ' Favorit', on: !!s.fv, title: s.fv ? 'Favorit entfernen' : 'Als Favorit markieren', label: s.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
     { primary: true, short: '🎙 Aufnahmen' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : ''), title: 'Aufnahmen, Backing-Tracks und Referenzmelodie', label: '🎙 Aufnahmen & Backing-Tracks' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : '') + ' …', fn: () => manageAudio(s) },
     { primary: true, short: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : ''), title: 'Spotify-/YouTube-Verknüpfungen', label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
@@ -2295,7 +2295,7 @@ function renderSongBar() {
       btn.addEventListener('contextmenu', (e) => { e.preventDefault(); quickChoose(s, it.quick); });
     }
     el.append(btn);
-    if (it.quick && qlCands(s.id, it.quick).length > 1) el.append(h('button', { class: 'quick-more', text: '▾', title: 'Andere Version wählen', onclick: () => quickChoose(s, it.quick) }));
+    if (it.quick && (qlCands(s.id, it.quick).length + qlFiles(s.id, it.quick).length) > 1) el.append(h('button', { class: 'quick-more', text: '▾', title: 'Andere Version wählen', onclick: () => quickChoose(s, it.quick) }));
   });
   updateQuickBtns();
   el.append(setIconLabel(h('button', { title: 'Weitere Song-Aktionen: umbenennen, verschieben, Tags, Setliste, Blätter, Offline, löschen', onclick: () => songMoreMenu(s) }), '⋯ Mehr'));
@@ -5260,27 +5260,38 @@ function quickLink(songId, grp) {
   const sg = lib.songs[songId], pid = sg && sg.pin && sg.pin[grp];
   return c.find(x => x.id === pid) || c.find(x => x.id === (qlLast()[songId] || {})[grp]) || c[0];      // angeheftet → zuletzt gespielt (nur dieses Gerät) → erste
 }
+// Karaoke-Schnellstart: abgelegte Backing-Track-Dateien haben Vorrang (wie in Aufnahmen); danach Karaoke-Links
+const qlFiles = (songId, grp) => grp === 'kar' ? songAudio(songId, 'backing').map(a => ({ id: a.id, title: a.name, file: a })) : [];
+function quickTarget(songId, grp) {
+  const files = qlFiles(songId, grp), sg = lib.songs[songId], pid = sg && sg.pin && sg.pin[grp];
+  const all = [...files, ...qlCands(songId, grp)];
+  if (!all.length) return null;
+  const last = (qlLast()[songId] || {})[grp];
+  return all.find(x => x.id === pid) || (files.length ? files.find(x => x.id === last) || files[0] : all.find(x => x.id === last) || all[0]);
+}
+const qtLabel = (t) => t.file ? 'Backing-Track (Datei)' : linkSourceLabel(t);
 function pinnedLink(songId, grp) { const sg = lib.songs[songId], pid = sg && sg.pin && sg.pin[grp]; return pid ? qlCands(songId, grp).find(x => x.id === pid) || null : null; }
 function setPin(songId, grp, linkId) {
   sTouch(songId, x => { x.pin = Object.assign({}, x.pin); if (linkId) x.pin[grp] = linkId; else delete x.pin[grp]; if (!Object.keys(x.pin).length) delete x.pin; });
 }
 function qlRemember(songId, grp, linkId) { const m = qlLast(); m[songId] = Object.assign({}, m[songId], { [grp]: linkId }); lsSet(QL_KEY, JSON.stringify(m)); }
 function quickPlay(s, grp) {
-  const l = quickLink(s.id, grp); if (!l) return;
-  qlRemember(s.id, grp, l.id); playLinkInMiniPlayer(l);
+  const l = quickTarget(s.id, grp); if (!l) return;
+  qlRemember(s.id, grp, l.id);
+  if (l.file) playAudioItemToggle(l.file); else playLinkInMiniPlayer(l);
 }
 function quickChoose(s, grp) {
-  const c = qlCands(s.id, grp), cur = quickLink(s.id, grp);
+  const c = [...qlFiles(s.id, grp), ...qlCands(s.id, grp)], cur = quickTarget(s.id, grp);
   if (!c.length) return;
   menuSheet((grp === 'kar' ? 'Karaoke' : 'Original') + ' – Schnellstart wählen', c.map(l => ({
-    label: (cur && l.id === cur.id ? '📌 ' : '▶ ') + (l.title || l.url) + ' (' + linkSourceLabel(l) + ')',
-    fn: () => { setPin(s.id, grp, l.id); qlRemember(s.id, grp, l.id); startMiniPlayerLink(l); toast('Als Schnellstart gemerkt.', 1500); }
+    label: (cur && l.id === cur.id ? '📌 ' : '▶ ') + (l.title || l.url) + ' (' + qtLabel(l) + ')',
+    fn: () => { setPin(s.id, grp, l.id); qlRemember(s.id, grp, l.id); if (l.file) playAudioItemToggle(l.file); else startMiniPlayerLink(l); toast('Als Schnellstart gemerkt.', 1500); }
   })));
 }
 function updateQuickBtns() {
   document.querySelectorAll('#songBar button.quick').forEach(b => {
-    const l = currentSongId ? quickLink(currentSongId, b.dataset.quick) : null;
-    const on = !!(l && mp.kind === 'link' && mp.link && mp.link.id === l.id);
+    const l = currentSongId ? quickTarget(currentSongId, b.dataset.quick) : null;
+    const on = !!(l && mpCurrentId() === l.id);
     b.classList.toggle('on', on);
   });
 }

@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.36.0 – Backing-Track im Karaoke-Schnellstart
+- Ist ein Backing-Track als Datei abgelegt, erscheint er beim Schnellstart «🎧 Karaoke» (auch wenn kein Karaoke-Link existiert) und hat Vorrang vor Karaoke-Links – wie bei den Aufnahmen. Über ▾ / langes Drücken ist zwischen Backing-Dateien und Links wählbar (📌 merkt die Wahl).
+
 ### v2.35.0 – Neues Erscheinungsbild: Palette Bordeaux/Petrol, Dunkelmodus, Karten-Songliste (14.10.2026)
 - **Palette** wählbar unter ⚙ Einstellungen → Darstellung: «Bordeaux + Altgold» (Standard) oder «Petrol»; **Modus** Automatisch (folgt dem Gerät) / Hell / Dunkel. Wird je Gerät gespeichert. Farben zentral als CSS-Variablen.
 - **Kopfzeile in Akzentfarbe** (Anmelden-Knopf in Gold/Amber), Tab-Leistenfarbe der Browser-/Handyleiste folgt der Palette.

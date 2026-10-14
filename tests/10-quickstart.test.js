@@ -46,6 +46,21 @@ module.exports = async () => {
       eq(await pg.evaluate(() => document.querySelectorAll('#songBar button.quick').length), 0);
       await pg.context().close();
     });
+    await test('Schnellstart: Backing-Track-Datei erscheint bei Karaoke (auch ohne Karaoke-Link), hat Vorrang, wählbar', async () => {
+      const pg = await open(b, D, { logs: false });
+      await setup(pg, [L('o1', 'yt', 'orig', 'Original A'), L('k1', 'yt', 'karaoke', 'Karaoke YT')]);
+      const kar = () => pg.evaluate(() => { const b = document.querySelector('#songBar button.quick[data-quick="kar"]'); return b ? b.title : null; });
+      eq(/Karaoke YT/.test(await kar()), true);
+      await pg.evaluate(() => addAudio('s1', { id: 'bk1', name: 'Mein Backing', kind: 'backing' }));
+      await pg.waitForTimeout(300);
+      eq(/Mein Backing/.test(await kar()), true);                                   // Datei gewinnt
+      eq(await pg.evaluate(() => document.querySelectorAll('#songBar button.quick-more').length), 1);   // mehrere Quellen → ▾
+      await pg.evaluate(() => sTouch('s1', s => { s.links = [{ id: 'o1', type: 'yt', kind: 'orig', mediaId: 'o1', title: 'Original A', url: 'https://x/o1', u: 1 }]; }));
+      await pg.waitForTimeout(300);
+      eq(/Mein Backing/.test(await kar()), true);                                   // nur Backing-Datei, kein Karaoke-Link
+      eq(await pg.evaluate(() => quickTarget('s1', 'orig').id), 'o1');              // Original unberührt
+      eq(pg.errs, []); await pg.context().close();
+    });
     await test('Aufnahmen: Backing-Datei gewinnt; sonst Karaoke (Schnellstart); Original nie automatisch', async () => {
       const pg = await open(b, D, { logs: false });
       await setup(pg, [L('o1', 'yt', 'orig', 'Original A'), L('k1', 'yt', 'karaoke', 'Karaoke 1'), L('k2', 'yt', 'karaoke', 'Karaoke 2')]);
