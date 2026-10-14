@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.37.0 – Zuletzt geöffneten Song beim Start laden
+- Neue Einstellung (⚙, pro Gerät, Standard: aus): «Beim Start zuletzt geöffneten Song laden». Öffnet das zuletzt angezeigte Blatt direkt statt der leeren Übersicht; ist es offline nicht verfügbar oder der Song gelöscht, startet die App wie gewohnt.
+
 ### v2.36.0 – Backing-Track im Karaoke-Schnellstart
 - Ist ein Backing-Track als Datei abgelegt, erscheint er beim Schnellstart «🎧 Karaoke» (auch wenn kein Karaoke-Link existiert) und hat Vorrang vor Karaoke-Links – wie bei den Aufnahmen. Über ▾ / langes Drücken ist zwischen Backing-Dateien und Links wählbar (📌 merkt die Wahl).
 
