@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.43.0 – «Alles offline» und Übersicht «Offline & Sync»
+- «Alles offline speichern» lädt jetzt Blätter **und** Audio (Backing-Tracks, Aufnahmen, Referenzmelodie) – ein gemeinsamer Knopf in ⋯ Mehr, im Song- und im Setlisten-Menü.
+- Zähler getrennt: «Blätter 35/35 · Audio 2/3» (vorher gemischt, z. B. 37/35).
+- Songliste: ● erscheint nur, wenn alle Blätter und alle Audio-Dateien des Songs offline sind (keine Teilzustände).
+- Neu: ⋯ Mehr → «📶 Offline & Sync»: pro Song jede Datei mit Stand «offline» und «in Drive», Gesamtstand und «Fehlende laden»; einzelne Fehler brechen das Laden nicht mehr ab.
+
 ### v2.42.0 – Start mit letztem Song standardmässig an
 - «Beim Start zuletzt geöffneten Song laden» ist jetzt standardmässig eingeschaltet (Einstellungen → abschaltbar, pro Gerät).
 

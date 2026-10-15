@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-F0k84B6fI+FCvJslR46lnE3IChODQ7IZ0SHRpcg6jsg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-oXimDd3JXdSFau8npekTsRoe+oWc+IjkmzCIhHVDl3k=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-F0k84B6fI+FCvJslR46lnE3IChODQ7IZ0SHRpcg6jsg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-oXimDd3JXdSFau8npekTsRoe+oWc+IjkmzCIhHVDl3k=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -885,7 +885,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.42.0';
+const APP_VERSION = '2.43.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2197,7 +2197,7 @@ function renderSheets() {
       h('button', { class: 'primary', text: tokenValid() ? 'Songs laden' : 'Mit Google anmelden', onclick: () => (tokenValid() ? afterSignIn().catch(e => syncFail(e)) : signIn()) })));
     else list.append(h('div', { class: 'empty-note', text: global ? 'Keine Treffer.' : (aliveSongs().length ? 'Dieser Ordner ist leer.' : 'Noch keine Songs. Oben «♪ Neuer Song» anlegen (inkl. automatischer Lyrics-Suche), oder direkt ein Blatt per «+ Blatt» / «📷 Scan» hochladen.') }));
   }
-  $('offlineAllBtn').textContent = `⇩ Alle offline speichern (${cachedIds.size}/${files.length})`;
+  $('offlineAllBtn').textContent = `⇩ Alles offline speichern (${offlineLabel()})`;
   updateTasksBtn();
 }
 function resetFilters() {
@@ -2231,13 +2231,13 @@ function songItem(s, global, idx) {
     songAudio(s.id, 'take').length ? h('span', { text: '🎤 ' + songAudio(s.id, 'take').length }) : null,
     journalChip(s.id),
     path ? h('span', { text: '📁 ' + path }) : null);
-  const offline = sheets.length && sheets.every(f => cachedIds.has(f.id));
+  const offline = songOfflineAll(s.id);
   const hasSub = (s.tg || []).length || sheets.length > 1 || path || (s.links || []).length || songAudio(s.id, 'take').length || openTasks(s.id).length;
   return h('div', { class: 'file-item' + (currentSongId === s.id ? ' active' : ''), onclick: () => openSong(s) },
     h('button', { class: 'fav' + (s.fv ? ' on' : ''), text: s.fv ? '★' : '☆', title: 'Favorit', onclick: (e) => { e.stopPropagation(); sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }); } }),
     h('span', { class: 'type-icon', text: '♪' }),
     h('div', { class: 'mid' }, h('div', { class: 'name', text: s.n }), s.ar ? h('div', { class: 'artist', text: s.ar }) : null, hasSub ? sub : null),
-    offline ? h('span', { class: 'off', title: 'offline verfügbar', text: '●' }) : null,
+    offline ? h('span', { class: 'off', title: 'alles offline verfügbar (Blätter und Audio)', text: '●' }) : null,
     h('button', { class: 'more', text: '⋯', title: 'Menü', onclick: (e) => { e.stopPropagation(); songMenu(s); } }));
 }
 
@@ -2268,7 +2268,7 @@ function songActionItems(s) {
     { label: '🏷 Tags bearbeiten' + ((s.tg || []).length ? ` (${s.tg.length})` : '') + ' …', fn: () => editSongTags(s.id) },
     { label: '♫ Zur Setliste hinzufügen …', fn: () => addToSetlist(s.id) },
     { label: '📄 Blätter verwalten' + (sheets.length > 1 ? ` (${sheets.length})` : '') + ' …', fn: () => manageSheets(s) },
-    { label: offline ? '⇧ Offline-Kopien entfernen' : '⇩ Alle Blätter offline speichern', fn: () => toggleOfflineSong(s) },
+    { label: offline ? '⇧ Offline-Kopien entfernen' : '⇩ Alles offline speichern', fn: () => toggleOfflineSong(s) },
     { label: '🗑 Song in den Papierkorb', fn: () => deleteSong(s), danger: true }
   ];
 }
@@ -2355,11 +2355,11 @@ function editSongTags(id) {
 }
 
 async function toggleOfflineSong(s) {
-  const sheets = songSheets(s.id);
-  if (sheets.length && sheets.every(f => cachedIds.has(f.id))) {
-    for (const f of sheets) { cachedIds.delete(f.id); await safe(IDB.del('blobs', f.id)); }
+  const items = songOfflineItems(s.id);
+  if (songOfflineAll(s.id)) {
+    for (const it of items) { cachedIds.delete(it.id); await safe(IDB.del('blobs', it.id)); }
     renderSidebar(); toast('Offline-Kopien entfernt');
-  } else await cacheMany(sheets);
+  } else await cacheItems(items);
 }
 
 // --- Blätter eines Songs verwalten -----------------------------------
@@ -2541,7 +2541,7 @@ function setMenu(id) {
   const s = lib.setlists[id];
   menuSheet('♫ ' + s.n, [
     { label: '▶ Im Auftrittsmodus starten', fn: () => startSetlist(id) },
-    { label: '⇩ Alle Blätter offline speichern', fn: () => cacheMany(s.it.flatMap(sid => songSheets(sid))) },
+    { label: '⇩ Alles offline speichern', fn: () => cacheItems(s.it.flatMap(sid => songOfflineItems(sid))) },
     { label: '📤 Setliste mit Lehrer teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('set', id) },
     { label: '✎ Umbenennen', fn: () => { const n = (prompt('Neuer Name der Setliste:', s.n) || '').trim(); if (n) setTouch(id, x => { x.n = n; }); } },
     { label: '🗑 Setliste löschen', danger: true, fn: () => { if (confirm('Setliste «' + s.n + '» löschen? (Die Songs bleiben erhalten.)')) { setTouch(id, x => { x.d = 1; }); if (setView === id) setView = null; renderSidebar(); } } }
@@ -2633,21 +2633,85 @@ async function cacheSheet(f) {
   const res = await driveFetch(`${DRIVE_FILES}/${f.id}?alt=media`);
   await storeBlob(f, await res.blob());
 }
-async function cacheMany(list) {
-  let n = 0;
-  for (const f of list) {
-    if (cachedIds.has(f.id)) { n++; continue; }
-    try { setStatus(`Offline speichern … ${n + 1}/${list.length}`, 'saving'); await cacheSheet(f); n++; }
-    catch (e) { fail('Offline speichern fehlgeschlagen: ' + f.name, e); return; }
+// Offline-Umfang (ab v2.43.0): je Song alle Blätter UND alle Audio-Dateien (Aufnahmen, Backing-Tracks, Referenzmelodie)
+function songOfflineItems(sid) {
+  const sg = lib.songs[sid]; if (!sg || sg.d) return [];
+  const items = songSheets(sid).map(f => ({ id: f.id, name: f.name, kind: 'sheet', f })), seen = new Set(items.map(x => x.id));
+  (sg.audio || []).forEach(a => { if (!seen.has(a.id)) { seen.add(a.id); items.push({ id: a.id, name: a.name || 'Audio', kind: a.kind === 'backing' ? 'backing' : 'take', f: { id: a.id, name: a.name || 'Audio' } }); } });
+  if (sg.ref && sg.ref.id && !seen.has(sg.ref.id)) items.push({ id: sg.ref.id, name: sg.ref.name || 'Referenzmelodie', kind: 'ref', f: { id: sg.ref.id, name: sg.ref.name || 'Referenzmelodie' } });
+  return items;
+}
+const allOfflineItems = () => { const seen = new Set(), out = []; Object.keys(lib.songs).forEach(sid => songOfflineItems(sid).forEach(it => { if (!seen.has(it.id)) { seen.add(it.id); out.push(it); } })); return out; };
+const songOfflineAll = (sid) => { const it = songOfflineItems(sid); return it.length > 0 && it.every(x => cachedIds.has(x.id)); };
+function offlineStats() {
+  const all = allOfflineItems(), sh = all.filter(x => x.kind === 'sheet'), au = all.filter(x => x.kind !== 'sheet');
+  const have = (l) => l.filter(x => cachedIds.has(x.id)).length;
+  return { sheets: [have(sh), sh.length], audio: [have(au), au.length], missing: all.filter(x => !cachedIds.has(x.id)) };
+}
+async function cacheItem(it) {
+  if (cachedIds.has(it.id) && !isOnline()) return;
+  const res = await driveFetch(`${DRIVE_FILES}/${it.id}?alt=media`);
+  await storeBlob(it.kind === 'sheet' ? it.f : { id: it.id, name: it.name }, await res.blob());
+}
+let cachingNow = false;
+async function cacheItems(list) {
+  if (cachingNow) { toast('Offline-Speichern läuft bereits.'); return; }
+  const todo = list.filter(x => !cachedIds.has(x.id));
+  if (!todo.length) { setStatus('Alles ist offline verfügbar', 'ok'); toast('Alles ist bereits offline verfügbar.'); return; }
+  if (!isOnline()) { toast('Offline – zum Speichern ist Internet nötig.'); return; }
+  cachingNow = true; let n = 0; const failed = [];
+  try {
+    for (const it of todo) {
+      setStatus(`Offline speichern … ${n + failed.length + 1}/${todo.length}`, 'saving');
+      try { await cacheItem(it); n++; } catch (e) { failed.push(it.name); }
+    }
+  } finally { cachingNow = false; }
+  if (failed.length) { setStatus(`${n} gespeichert, ${failed.length} fehlgeschlagen`, 'error'); toast('Nicht geladen: ' + failed.slice(0, 3).join(', ') + (failed.length > 3 ? ' …' : ''), 6000); }
+  else setStatus(`${n} Dateien offline verfügbar`, 'ok');
+  renderSidebar();
+}
+const cacheMany = (list) => cacheItems(list.map(f => ({ id: f.id, name: f.name, kind: 'sheet', f })));
+const offlineLabel = () => { const st = offlineStats(); return `Blätter ${st.sheets[0]}/${st.sheets[1]} · Audio ${st.audio[0]}/${st.audio[1]}`; };
+// Übersicht «Offline & Sync»: je Song alle Dateien mit Stand offline / Drive
+function offlineOverview() {
+  const body = h('div', { class: 'offsync' });
+  const api = openModal({ title: '📶 Offline & Sync', body, wide: true, buttons: [{ label: 'Schliessen' }] });
+  const nm = (id) => { const f = files.find(x => x.id === id); return f ? f.name : id; };
+  function draw() {
+    body.innerHTML = '';
+    const st = offlineStats(), pend = pendingCount();
+    body.append(h('div', { class: 'sub', style: 'margin-bottom:8px; line-height:1.5;' },
+      h('b', { text: offlineLabel() + ' offline' }), h('br'),
+      !isOnline() ? '⚠ Offline – Abgleich mit Drive ausstehend.' : !tokenValid() ? '🔒 Nicht angemeldet.' : pend ? '● ' + pend + ' Änderung(en) noch nicht in Drive: ' + pendingDetail() : '✓ Drive ist auf dem neuesten Stand.'));
+    const act = h('div', { style: 'display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;' },
+      h('button', { class: 'primary', text: st.missing.length ? '⇩ Fehlende laden (' + st.missing.length + ')' : '✓ Alles offline', disabled: st.missing.length ? null : true, onclick: async () => { await cacheItems(st.missing); draw(); } }),
+      h('button', { text: '⟳ Mit Drive abgleichen', onclick: async () => { $('syncState').click(); setTimeout(draw, 1500); } }));
+    body.append(act);
+    const songs = Object.keys(lib.songs).filter(sid => songOfflineItems(sid).length).sort((a, b) => lib.songs[a].n.localeCompare(lib.songs[b].n, 'de', { numeric: true, sensitivity: 'base' }));
+    songs.forEach(sid => {
+      const items = songOfflineItems(sid), ok = items.every(x => cachedIds.has(x.id));
+      const grp = h('div', { style: 'border:1px solid var(--border); border-radius:10px; margin-bottom:6px; padding:6px 10px; background:var(--panel);' },
+        h('div', { style: 'font-weight:600;', text: (ok ? '● ' : '○ ') + lib.songs[sid].n }));
+      items.forEach(it => {
+        const off = cachedIds.has(it.id), dirty = dirtyIds.has(it.id) || textDirtyIds.has(it.id);
+        const icon = it.kind === 'sheet' ? '📄' : it.kind === 'backing' ? '🎧' : it.kind === 'ref' ? '🎼' : '🎤';
+        grp.append(h('div', { class: 'sub', style: 'display:flex; gap:4px 8px; padding:3px 0; flex-wrap:wrap; align-items:baseline;' },
+          h('span', { text: icon }), h('span', { style: 'flex:1 1 150px; min-width:0; overflow-wrap:anywhere; white-space:normal;', text: it.name }),
+          h('span', { style: 'color:' + (off ? 'var(--ok)' : 'var(--warn)') + ';', text: off ? '✓ offline' : '○ nicht offline' }),
+          h('span', { style: 'color:' + (dirty ? 'var(--warn)' : 'var(--ok)') + '; min-width:84px; text-align:right;', text: dirty ? '● nicht in Drive' : '✓ in Drive' })));
+      });
+      body.append(grp);
+    });
+    if (!songs.length) body.append(h('div', { class: 'empty-note', text: 'Noch keine Dateien.' }));
   }
-  setStatus(`${n} Blätter offline verfügbar`, 'ok');
+  draw();
 }
 async function toggleOffline(f) {
   if (cachedIds.has(f.id)) { cachedIds.delete(f.id); await safe(IDB.del('blobs', f.id)); renderSidebar(); toast('Offline-Kopie entfernt'); return; }
   try { setStatus('Speichere offline …', 'saving'); await cacheSheet(f); setStatus('Offline gespeichert', 'ok'); }
   catch (e) { fail('Offline speichern fehlgeschlagen', e); }
 }
-$('offlineAllBtn').addEventListener('click', () => cacheMany(files));
+$('offlineAllBtn').addEventListener('click', () => cacheItems(allOfflineItems()));
 
 // ---------------------------------------------------------------
 // Blatt öffnen
@@ -6332,7 +6396,8 @@ $('newMenuBtn').addEventListener('click', () => menuSheet('Neu', [
 $('moreMenuBtn').addEventListener('click', () => menuSheet('Mehr', [
   { label: '💾 Backup & Wiederherstellen …', fn: () => $('backupBtn').click() },
   { label: '♻ Aus Drive-Sicherung (täglich automatisch) …', fn: () => driveRestoreDialog() },
-  { label: '⇩ Alle Blätter offline speichern (' + cachedIds.size + '/' + files.length + ')', fn: () => $('offlineAllBtn').click() },
+  { label: '⇩ Alles offline speichern (' + offlineLabel() + ')', fn: () => $('offlineAllBtn').click() },
+  { label: '📶 Offline & Sync …', fn: () => offlineOverview() },
   { label: '🎹 Klaviatur (Taste P)', fn: () => pianoToggle() },
   { label: 'ℹ Version & Build', fn: () => aboutDialog() },
   { label: '❓ Kurzanleitung', fn: () => showTour() },
@@ -6404,7 +6469,7 @@ function showTour() {
     ['Lesen und Zeichnen', 'Standard ist «Lesen»: scrollen und blättern, nichts wird versehentlich gezeichnet. Mit «✏ Zeichnen» erscheinen Stift, Marker, Text und Symbole. Notizen liegen auf Ebenen (unter «⋯ Mehr»).'],
     ['Üben', 'Im Reiter «Üben» findest du Aufwärmen, Metronom, Aufgaben und Stimmumfang. Pro Song: «🎙 Aufnahmen» (eigene Aufnahmen, Backing-Tracks, Melodie), «🔗 Verknüpfungen» (YouTube/Spotify) und «📓 Journal».'],
     ['Auftritt', '«▶ Auftritt» blendet alle Bedienelemente aus. Blättern: auf die Pfeile am linken/rechten Rand tippen (oder irgendwo im linken/rechten Drittel), wischen, Pfeiltasten oder Fusspedal; Mitte antippen = Leiste. «▯▯ 2 Seiten» zeigt zwei Seiten nebeneinander.'],
-    ['Teilen und Sicherheit', 'Mit «📤 Teilen» gibst du Blätter an deine Gesangslehrerin bzw. Schüler frei. Unter «⋯ Mehr» gibt es Backup und «Alle Blätter offline speichern» (für Proben ohne Internet).']
+    ['Teilen und Sicherheit', 'Mit «📤 Teilen» gibst du Blätter an deine Gesangslehrerin bzw. Schüler frei. Unter «⋯ Mehr» gibt es Backup und «Alles offline speichern» (Blätter, Backing-Tracks und Aufnahmen – für Proben ohne Internet).']
   ];
   let i = 0;
   const body = h('div', {});
