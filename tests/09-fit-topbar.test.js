@@ -44,6 +44,7 @@ module.exports = async () => {
       const a = await g(); eq([a.hv, a.tv], ['flex', 'flex']);
       await pg.click('#topToggle'); await pg.waitForTimeout(1500);
       const c = await g(); eq([c.hv, c.tv], ['none', 'none']); ok(c.h > a.h + 70, 'Platz: ' + a.h + ' → ' + c.h); ok(c.ph > a.ph, 'Blatt grösser: ' + a.ph + ' → ' + c.ph);
+      await pg.evaluate(() => lsSet('gapp_resume', '0'));   // Start ohne letzten Song, damit kein Blatt offen ist
       await pg.reload(); await pg.waitForTimeout(1200);
       eq(await pg.evaluate(() => document.body.classList.contains('hdr-off')), false);   // ohne offenes Blatt nie ausgeblendet
       eq(await pg.evaluate(() => getComputedStyle(document.querySelector('header')).display), 'flex');

@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-oCMwaWK5qazTirOuZqlAwOOyoZ2FJdmbB7Qb4GN0g18=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-F0k84B6fI+FCvJslR46lnE3IChODQ7IZ0SHRpcg6jsg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-oCMwaWK5qazTirOuZqlAwOOyoZ2FJdmbB7Qb4GN0g18=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-F0k84B6fI+FCvJslR46lnE3IChODQ7IZ0SHRpcg6jsg=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -885,7 +885,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.41.0';
+const APP_VERSION = '2.42.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -5568,10 +5568,10 @@ function themeControls() {
   draw(); return box;
 }
 applyTheme();
-// --- Start: zuletzt geöffneten Song direkt laden (ab v2.37.0, pro Gerät, Standard: aus) ---
+// --- Start: zuletzt geöffneten Song direkt laden (ab v2.37.0, pro Gerät; seit v2.42.0 standardmässig an) ---
 let resumeTried = false;
 async function resumeLastSong() {
-  if (resumeTried || currentFile || lsGet('gapp_resume') !== '1') return;
+  if (resumeTried || currentFile || lsGet('gapp_resume') === '0') return;
   let o = null; try { o = JSON.parse(lsGet('gapp_lastsong') || 'null'); } catch (e) {}
   if (!o || !lib.songs[o.s] || lib.songs[o.s].d) return;
   const sheets = songSheets(o.s);
@@ -5581,7 +5581,7 @@ async function resumeLastSong() {
   try { await openFile(f); } catch (e) {}
 }
 function resumeControl() {
-  const cb = h('input', { type: 'checkbox', checked: lsGet('gapp_resume') === '1' || null });
+  const cb = h('input', { type: 'checkbox', checked: lsGet('gapp_resume') !== '0' || null });
   cb.addEventListener('change', () => lsSet('gapp_resume', cb.checked ? '1' : '0'));
   return h('label', { class: 'sub', style: 'display:flex; gap:8px; align-items:flex-start; padding:0 6px 10px; border-bottom:1px solid var(--border); margin-bottom:10px; cursor:pointer;' },
     cb, h('span', {}, h('b', { text: 'Beim Start zuletzt geöffneten Song laden' }), h('br'), 'Statt der leeren Übersicht (gilt nur für dieses Gerät).'));

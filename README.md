@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.42.0 – Start mit letztem Song standardmässig an
+- «Beim Start zuletzt geöffneten Song laden» ist jetzt standardmässig eingeschaltet (Einstellungen → abschaltbar, pro Gerät).
+
 ### v2.41.0 – Doppelseite nur im Querformat
 - Zwei-Seiten-Ansicht ist im schmalen Hochformat (Breite unter 900 px und höher als breit, also Handy und Tablet hochkant) automatisch aus; dort bleibt eine Seite gross lesbar. Die Einstellung bleibt gemerkt und greift sofort wieder, sobald das Gerät gedreht wird. Der Knopf erscheint im Hochformat gestrichelt, mit Hinweis.
 
