@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.44.0 – Stille Anmeldung im Hintergrund
+- Die Google-Anmeldung wird beim Start, beim Zurückkehren in die App, nach Wiederverbindung und kurz vor Ablauf des Tokens im Hintergrund erneuert (`prompt: none`, mit gemerktem Konto). Klappt das nicht, weil der Browser das Hintergrund-Fenster blockiert, erneuert wie bisher der nächste Tipp die Anmeldung. Das Zugriffstoken gilt bei Google weiterhin nur ca. 1 Stunde.
+
 ### v2.43.0 – «Alles offline» und Übersicht «Offline & Sync»
 - «Alles offline speichern» lädt jetzt Blätter **und** Audio (Backing-Tracks, Aufnahmen, Referenzmelodie) – ein gemeinsamer Knopf in ⋯ Mehr, im Song- und im Setlisten-Menü.
 - Zähler getrennt: «Blätter 35/35 · Audio 2/3» (vorher gemischt, z. B. 37/35).
