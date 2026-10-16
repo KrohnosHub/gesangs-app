@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-rcVObEicnCCLYO6KbzeTdQCjtBkDqxG8udQBV5wXgHo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-u6iM/kUp75KMB8xXiZpDXcGh9NV/lQejAXGy7nBX/UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-rcVObEicnCCLYO6KbzeTdQCjtBkDqxG8udQBV5wXgHo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-u6iM/kUp75KMB8xXiZpDXcGh9NV/lQejAXGy7nBX/UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -295,8 +295,11 @@
     #mainViewer > #toolbar{order:5; border-top:1px solid var(--border); border-bottom:0; padding-bottom:max(6px, env(safe-area-inset-bottom)); flex-wrap:wrap; overflow:visible;}
     #toolbar #pageNav{display:none;}
     #toolbar .spacer-flex{display:none;}
-    #canvasWrap{padding-bottom:16px;}
-    #pageFloat{bottom:10px;}
+    #canvasArea > #canvasWrap, #canvasArea > #canvasWrap.has-pf{padding-bottom:16px;}
+    /* v2.45.0: Seitensteuerung als eigene Leiste unter dem Blatt -- überdeckt nie mehr Text */
+    #canvasArea{flex-direction:column;}
+    #canvasWrap{flex:1 1 0; min-height:0;}
+    #canvasArea > #pageFloat{position:static; transform:none; margin:6px auto; flex:none; order:2;}
   }
   #sidebarToggle{display:none;}
   @media (max-width: 800px){
@@ -885,7 +888,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.44.0';
+const APP_VERSION = '2.45.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2906,7 +2909,11 @@ function fitWidth(mode = fitMode) {
   const cw = canvasWrap.clientWidth, ch = canvasWrap.clientHeight, pad = perf ? 0 : 32;
   let w = cw - pad;
   if (spreadOn()) w = (w - spreadGap()) / 2;
-  if (mode === 'page') w = Math.min(w, (ch - pad) / Math.max(pageAspect, aspect2 && spreadOn() ? aspect2 : 0));
+  if (mode === 'page') {
+    // v2.45.0: tatsächliches Padding (inkl. Platz für die schwebende Seitensteuerung) abziehen
+    const cs = getComputedStyle(canvasWrap), vp = perf ? 0 : (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    w = Math.min(w, (ch - (perf ? 0 : Math.max(vp, pad))) / Math.max(pageAspect, aspect2 && spreadOn() ? aspect2 : 0));
+  }
   return Math.max(spreadOn() ? 60 : 200, Math.min(w, perf ? 4000 : 1400));
 }
 function applyCssSize() {

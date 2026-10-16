@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.45.0 – Seitensteuerung überdeckt keinen Text mehr
+- Handy im Hochformat: Die Seitensteuerung («‹ Seite 2 / 2 Ende») liegt jetzt in einer eigenen Leiste unter dem Blatt statt darüber. Bei «Ganze Seite» wird zudem das tatsächliche Padding in die Passgrösse eingerechnet.
+
 ### v2.44.0 – Stille Anmeldung im Hintergrund
 - Die Google-Anmeldung wird beim Start, beim Zurückkehren in die App, nach Wiederverbindung und kurz vor Ablauf des Tokens im Hintergrund erneuert (`prompt: none`, mit gemerktem Konto). Klappt das nicht, weil der Browser das Hintergrund-Fenster blockiert, erneuert wie bisher der nächste Tipp die Anmeldung. Das Zugriffstoken gilt bei Google weiterhin nur ca. 1 Stunde.
 

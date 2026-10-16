@@ -29,6 +29,8 @@ module.exports = async () => {
       const q = await st(); eq([q.on, q.off], [true, false]);
       await pg.setViewportSize({ width: 390, height: 780 }); await pg.waitForTimeout(1500);
       eq((await st()).on, false);
+      const ov = await pg.evaluate(() => { const f = $('pageFloat').getBoundingClientRect(), c = $('canvasWrap').getBoundingClientRect(); return { shown: getComputedStyle($('pageFloat')).display !== 'none', overlap: f.top < c.bottom - 1 && f.bottom > c.top + 1 }; });
+      if (ov.shown) ok(!ov.overlap, 'Seitensteuerung überdeckt das Blatt nicht');
       eq(pg.errs, []); await pg.context().close();
     });
     await test('Kopfbereich: Song-Leiste und Blatt-Reiter in einer Zeile (PC), Kopfzeile kompakt', async () => {
