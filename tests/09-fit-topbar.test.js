@@ -31,6 +31,14 @@ module.exports = async () => {
       eq((await st()).on, false);
       const ov = await pg.evaluate(() => { const f = $('pageFloat').getBoundingClientRect(), c = $('canvasWrap').getBoundingClientRect(); return { shown: getComputedStyle($('pageFloat')).display !== 'none', overlap: f.top < c.bottom - 1 && f.bottom > c.top + 1 }; });
       if (ov.shown) ok(!ov.overlap, 'Seitensteuerung überdeckt das Blatt nicht');
+      const fit = await pg.evaluate(() => ({ sh: $('canvasStack').getBoundingClientRect().height, ch: $('canvasWrap').clientHeight, tp: totalPages }));
+      ok(fit.sh <= fit.ch, 'Hochformat: ganze Seite sichtbar ' + JSON.stringify(fit));
+      if (fit.tp > 1) {
+        const sw = (x0, x1) => pg.evaluate(([a, b]) => { const st = $('canvasStack'), o = { bubbles: true, pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0 };
+          st.dispatchEvent(new PointerEvent('pointerdown', { ...o, clientX: a, clientY: 300 })); st.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: b, clientY: 310 })); }, [x0, x1]);
+        await sw(300, 100); await pg.waitForTimeout(600); eq(await pg.evaluate(() => currentPage), 2);
+        await sw(100, 300); await pg.waitForTimeout(600); eq(await pg.evaluate(() => currentPage), 1);
+      }
       eq(pg.errs, []); await pg.context().close();
     });
     await test('Kopfbereich: Song-Leiste und Blatt-Reiter in einer Zeile (PC), Kopfzeile kompakt', async () => {
@@ -51,7 +59,7 @@ module.exports = async () => {
       eq(await pg.evaluate(() => document.body.classList.contains('hdr-off')), false);   // ohne offenes Blatt nie ausgeblendet
       eq(await pg.evaluate(() => getComputedStyle(document.querySelector('header')).display), 'flex');
       await load(pg); eq(await pg.evaluate(() => document.body.classList.contains('hdr-off')), true);
-      await pg.click('#topToggle'); await pg.waitForTimeout(500);
+      await pg.click('#topHandle'); await pg.waitForTimeout(500);
       eq(await pg.evaluate(() => getComputedStyle(document.querySelector('header')).display), 'flex');
       eq(pg.errs, []); await pg.context().close();
     });

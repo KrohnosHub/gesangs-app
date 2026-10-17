@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.46.0 – Handy-Hochformat: ganze Seite, Wischen, Kopfzeilen-Knopf oben
+- Handy hochkant: Das Blatt wird automatisch so eingepasst, dass die ganze Seite sichtbar ist (statt 100 % Seitenbreite). Mit Zoom lässt sich weiter vergrössern.
+- Waagrecht wischen wechselt die Seite (nur bei eingepasster Ansicht, Finger; beim Zoomen scrollt es wie bisher).
+- Der Knopf «Kopfzeile ausblenden» (⌃) sitzt jetzt in der Kopfzeile selbst; ist sie ausgeblendet, holt ein kleiner Griff (⌄) am oberen Blattrand sie zurück.
+
 ### v2.45.0 – Seitensteuerung überdeckt keinen Text mehr
 - Handy im Hochformat: Die Seitensteuerung («‹ Seite 2 / 2 Ende») liegt jetzt in einer eigenen Leiste unter dem Blatt statt darüber. Bei «Ganze Seite» wird zudem das tatsächliche Padding in die Passgrösse eingerechnet.
 

@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-u6iM/kUp75KMB8xXiZpDXcGh9NV/lQejAXGy7nBX/UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-mLsi11LVU+V41yxYDW7yNxkMglFv09aIieTpTLwBF7k=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-u6iM/kUp75KMB8xXiZpDXcGh9NV/lQejAXGy7nBX/UM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-mLsi11LVU+V41yxYDW7yNxkMglFv09aIieTpTLwBF7k=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -381,7 +381,9 @@
   @media (max-width: 800px){ #miniPlayer{right:6px; bottom:6px; width:min(240px, calc(100vw - 12px));} }
   #perfBtn{padding:6px 12px; flex-shrink:0;}
   body.hdr-off > header, body.hdr-off #topRow{display:none !important;}
-  #topToggle.on{background:var(--accent-light); border-color:var(--accent);}
+  #topHandle{display:none; position:absolute; top:4px; left:50%; transform:translateX(-50%); z-index:15; padding:0 16px; height:22px; line-height:20px; font-size:14px; border-radius:999px; background:var(--panel); border:1px solid var(--border); opacity:.85; box-shadow:0 2px 8px rgba(0,0,0,.2);}
+  body.hdr-off #topHandle{display:block;}
+  body.perf #topHandle, body.mode-text #topHandle{display:none !important;}
   @media (max-width: 599px){ #topRow{flex-wrap:wrap;} #topRow #sheetTabs:not(.single){flex:1 1 100%; border-left:0; border-top:1px solid var(--border); padding-left:8px;} }
   @media (max-width: 599px){ #sheetTabs.single .tab, #sheetTabs.single .tab-edit{display:none;} }
   @media (min-width: 480px){ #perfBtn .lbl-t{display:inline;} }
@@ -627,6 +629,7 @@
   <button id="renameBtn" class="icon" title="Song umbenennen" style="display:none;">✎</button>
   <button id="favBtn" class="icon" title="Als Favorit markieren" style="display:none;">☆</button>
   <button id="perfBtn" title="Auftritts-/Übungsmodus: Vollbild ohne Werkzeuge, Umblättern per Tipp an den Rand" style="display:none;"><span>▶</span><span class="lbl-t"> Auftritt</span></button>
+  <button id="topToggle" class="icon" title="Kopfzeile und Song-Leiste ausblenden (mehr Platz fürs Blatt)" style="display:none;">⌃</button>
   <button id="pianoBtn" class="icon" title="Klaviatur ein-/ausblenden (Taste P)">🎹</button>
   <span id="syncState" title="Synchronisierung – antippen zum Synchronisieren">…</span>
   <span id="status"></span>
@@ -752,7 +755,6 @@
           <button id="nextPage" class="icon">›</button>
         </div>
         <button id="spreadBtn" class="icon" title="Zwei Seiten nebeneinander (Zeichnen: automatisch eine Seite)">▯▯</button>
-        <button id="topToggle" class="icon" title="Kopfzeile und Song-Leiste ausblenden / einblenden (mehr Platz fürs Blatt)">⌃</button>
         <div style="flex:1"></div>
         <button id="toolMoreBtn" class="tool" title="Ebenen, Helligkeit, Finger-Modus, Bildschirm an, Seite leeren">⋯ Mehr</button>
         <button id="exportBtn" title="Als PDF mit Annotationen exportieren">⤓ PDF</button>
@@ -766,6 +768,7 @@
       <div id="txtSymBar"></div>
 
       <div id="canvasArea">
+      <button id="topHandle" title="Kopfzeile und Song-Leiste wieder einblenden">⌄</button>
         <div id="pageFloat" style="display:none;">
           <button id="pfPrev" title="Vorherige Seite">‹</button>
           <span id="pfLabel">Seite 1 / 1</span>
@@ -888,7 +891,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.45.0';
+const APP_VERSION = '2.46.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2905,7 +2908,9 @@ async function openFile(f, opts = {}) {
 // ---------------------------------------------------------------
 // Layout / Rendering
 // ---------------------------------------------------------------
-function fitWidth(mode = fitMode) {
+function phonePortrait() { return window.innerWidth <= 600 && window.innerHeight > window.innerWidth; }
+function fitWidth(mode) {
+  if (mode === undefined) { mode = fitMode; if (mode === 'width' && phonePortrait() && !perf) mode = 'page'; }   // v2.46.0: Handy hochkant: ganze Seite sichtbar
   const cw = canvasWrap.clientWidth, ch = canvasWrap.clientHeight, pad = perf ? 0 : 32;
   let w = cw - pad;
   if (spreadOn()) w = (w - spreadGap()) / 2;
@@ -3867,6 +3872,11 @@ function endPointer(e, cancelled) {
   try { stack.releasePointerCapture(e.pointerId); } catch (er) {}
   if (pinch) { if (pointers.size < 2) { pinch = null; action = null; } return; }
   const a = action; action = null;
+  if (a && a.kind === 'pan' && !cancelled && e.pointerType === 'touch' && totalPages > 1 && sheetKind !== 'text' && zoom <= 1.05 && canvasWrap.scrollWidth <= canvasWrap.clientWidth + 4) {
+    // v2.46.0: waagrecht wischen = Seite wechseln (nur bei eingepasster Ansicht)
+    const dx = e.clientX - a.sx, dy = e.clientY - a.sy;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < Math.abs(dx) * 0.6) { pageFloatHint(0); goPage(currentPage + (dx < 0 ? 1 : -1)); return; }
+  }
   if (a && a.kind === 'pan' && !cancelled) { pageFloatHint(0); if (a.over > 90) turnPage(1); else if (a.over < -90) turnPage(-1); }
   if (!a || cancelled) { if (a && a.kind === 'stroke') { live = null; requestInk(); } if (a && a.kind === 'erase' && a.items.length) { a.items.sort((x, y) => x.idx - y.idx).forEach(it => pageArr().splice(it.idx, 0, it.o)); commitChange(); } return; }
   if (a.kind === 'stroke' && live) {
@@ -4333,13 +4343,15 @@ async function afterSignIn() {
 // Kopfzeile + Song-Leiste einklappen (ab v2.33.0); nur wirksam, solange ein Blatt offen ist (sonst gäbe es keinen Knopf zum Zurückholen)
 let hdrOff = lsGet('gapp_hdroff') === '1';
 function applyHdr() {
-  const on = hdrOff && mainViewerEl.style.display !== 'none' && !!currentFile;
-  if (document.body.classList.contains('hdr-off') === on) { $('topToggle').classList.toggle('on', hdrOff); return; }
-  document.body.classList.toggle('hdr-off', on); $('topToggle').classList.toggle('on', hdrOff);
-  $('topToggle').textContent = hdrOff ? '⌄' : '⌃';
+  const open = mainViewerEl.style.display !== 'none' && !!currentFile;
+  const on = hdrOff && open;
+  $('topToggle').style.display = open && !on ? '' : 'none';
+  if (document.body.classList.contains('hdr-off') === on) return;
+  document.body.classList.toggle('hdr-off', on);
   if (ready) { applyCssSize(); scheduleRender(150); }
 }
-$('topToggle').addEventListener('click', () => { hdrOff = !hdrOff; lsSet('gapp_hdroff', hdrOff ? '1' : '0'); applyHdr(); });
+$('topHandle').addEventListener('click', () => { hdrOff = false; lsSet('gapp_hdroff', '0'); applyHdr(); });
+$('topToggle').addEventListener('click', () => { hdrOff = true; lsSet('gapp_hdroff', '1'); applyHdr(); });
 new MutationObserver(applyHdr).observe(mainViewerEl, { attributes: true, attributeFilter: ['style'] });
 let sbAutoOpened = false;
 function showShell() {
