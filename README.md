@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.49.0 – Handy-Hochformat: Seitenwahl als kleines Chip am Blattrand
+- Die untere Werkzeugleiste bleibt sicher einzeilig: Die Seitenwahl ist nicht mehr in der Leiste, sondern ein kleines Chip («‹ 1 / 2 ›») in einem nur 26 px hohen Streifen direkt unter dem Blatt. Es überdeckt keinen Text.
+
 ### v2.48.0 – Handy-Hochformat: einzeilige Werkzeugleiste, Seitenwahl in der Leiste
 - Untere Leiste braucht nur noch eine Zeile: «⤓ PDF» ist ins Menü «⋯ Mehr» gewandert, der (im Hochformat wirkungslose) Doppelseiten-Knopf ist ausgeblendet.
 - Die Seitenwahl («‹ 1 / 2 ›») sitzt kompakt in dieser Leiste; die eigene Leiste unter dem Blatt entfällt, das Blatt wird grösser. Wischen funktioniert weiterhin.

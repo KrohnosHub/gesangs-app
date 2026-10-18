@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-49iFbFKhWoR0O7iz6tOtYj0a1QPLlW3dujmhkf508lA=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-8y1hTNsKVWtULU3QkrBW/PSTyUbV2omd+HhqGn7H+Xs=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-49iFbFKhWoR0O7iz6tOtYj0a1QPLlW3dujmhkf508lA=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-8y1hTNsKVWtULU3QkrBW/PSTyUbV2omd+HhqGn7H+Xs=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -296,11 +296,14 @@
     /* v2.48.0: untere Leiste einzeilig: Doppelseiten- und PDF-Knopf entfallen (PDF im Menü «Mehr»), Seitenwahl kompakt in der Leiste */
     #toolbar .spacer-flex{display:none;}
     #toolbar #spreadBtn, #toolbar #exportBtn{display:none !important;}
-    #toolbar #pageNav.single{display:none !important;}
+    #toolbar #pageNav{display:none !important;}
     #toolbar{gap:4px;} #toolbar .sep{display:none;}
-    #toolbar button.icon{width:32px; padding:4px;} #zoomNav, #toolbar #pageNav{gap:1px;} #zoomLabel{min-width:34px;} #pageLabel{min-width:30px; text-align:center;}
-    #canvasArea > #canvasWrap, #canvasArea > #canvasWrap.has-pf{padding-bottom:16px;}
-    #canvasArea > #pageFloat{display:none !important;}
+    #toolbar button.icon{width:32px; padding:4px;} #zoomNav, #toolbar #pageNav{gap:1px;} #zoomLabel{min-width:34px;} 
+    /* v2.49.0: Seitenwahl als kleines Chip im unteren Rand des Blatt-Bereichs (eigener Streifen von nur 26 px, überdeckt nichts) */
+    #canvasArea > #canvasWrap{padding-bottom:16px;} #canvasArea > #canvasWrap.has-pf{padding-bottom:30px;}
+    #canvasArea > #pageFloat{bottom:3px; padding:0; gap:0; height:24px; font-size:12px; box-shadow:none; opacity:.9;}
+    #pageFloat button{padding:0 10px !important; min-width:30px !important; height:22px; font-size:13px !important; line-height:1;}
+    #pageFloat #pfLabel{padding:0 4px; font-size:12px;}
   }
   #sidebarToggle{display:none;}
   @media (max-width: 800px){
@@ -892,7 +895,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.48.0';
+const APP_VERSION = '2.49.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -3180,10 +3183,11 @@ function updatePageNav() {
   const multi = totalPages > 1 && sheetKind !== 'text';
   $('pageFloat').style.display = multi ? 'flex' : 'none';
   canvasWrap.classList.toggle('has-pf', multi); $('pageNav').classList.toggle('single', totalPages < 2);
-  $('pfLabel').textContent = 'Seite ' + spanLabel(currentPage) + ' / ' + totalPages;
+  const compact = phonePortrait();
+  $('pfLabel').textContent = (compact ? '' : 'Seite ') + spanLabel(currentPage) + ' / ' + totalPages;
   $('pfPrev').disabled = currentPage <= 1;
   $('pfNext').disabled = !hasNext;
-  $('pfNext').textContent = hasNext ? 'Seite ' + spanLabel(currentPage + step) + ' ›' : 'Ende';
+  $('pfNext').textContent = compact ? (hasNext ? '›' : '■') : (hasNext ? 'Seite ' + spanLabel(currentPage + step) + ' ›' : 'Ende');
   if (typeof updatePerfPage === 'function') updatePerfPage();
 }
 async function goPage(p) {
@@ -3273,7 +3277,7 @@ canvasWrap.addEventListener('wheel', (e) => {
   e.preventDefault();
   zoomAt(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
 }, { passive: false });
-window.addEventListener('resize', () => { if (ready) { applyCssSize(); scheduleRender(200); } });
+window.addEventListener('resize', () => { if (ready) { applyCssSize(); scheduleRender(200); updatePageNav(); } });
 
 // ---------------------------------------------------------------
 // Helligkeit / Kontrast des Blatts (pro Blatt gespeichert, synchronisiert)
