@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.48.0 – Handy-Hochformat: einzeilige Werkzeugleiste, Seitenwahl in der Leiste
+- Untere Leiste braucht nur noch eine Zeile: «⤓ PDF» ist ins Menü «⋯ Mehr» gewandert, der (im Hochformat wirkungslose) Doppelseiten-Knopf ist ausgeblendet.
+- Die Seitenwahl («‹ 1 / 2 ›») sitzt kompakt in dieser Leiste; die eigene Leiste unter dem Blatt entfällt, das Blatt wird grösser. Wischen funktioniert weiterhin.
+
 ### v2.47.0 – Start-Tags für die vorhandenen Songs
 - Einmalig beim nächsten Start: Die 19 bestehenden Songs erhalten Tags (Rock, Metal, Pop, Country/Folk, Ballade, Aufwärmen, Mehrstimmig, Weihnachten). Bestehende Tags bleiben, es wird nur ergänzt; pro Song geschieht das nur einmal, später entfernte Tags kommen nicht zurück. Zuordnung nach Songtitel.
 

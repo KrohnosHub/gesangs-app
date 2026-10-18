@@ -29,8 +29,9 @@ module.exports = async () => {
       const q = await st(); eq([q.on, q.off], [true, false]);
       await pg.setViewportSize({ width: 390, height: 780 }); await pg.waitForTimeout(1500);
       eq((await st()).on, false);
-      const ov = await pg.evaluate(() => { const f = $('pageFloat').getBoundingClientRect(), c = $('canvasWrap').getBoundingClientRect(); return { shown: getComputedStyle($('pageFloat')).display !== 'none', overlap: f.top < c.bottom - 1 && f.bottom > c.top + 1 }; });
-      if (ov.shown) ok(!ov.overlap, 'Seitensteuerung überdeckt das Blatt nicht');
+      const tb = await pg.evaluate(() => { const t = $('toolbar'), pn = $('pageNav').getBoundingClientRect(), tr = t.getBoundingClientRect(); const ks = [...t.children].filter(c => c.offsetParent !== null).map(c => { const r = c.getBoundingClientRect(); return Math.round((r.top + r.bottom) / 2 / 20); });
+        return { rows: new Set(ks).size, pnShown: getComputedStyle($('pageNav')).display !== 'none', pnIn: pn.right <= tr.right + 1, floatHidden: getComputedStyle($('pageFloat')).display === 'none', exp: getComputedStyle($('exportBtn')).display, spr: getComputedStyle($('spreadBtn')).display }; });
+      eq([tb.rows, tb.pnShown, tb.pnIn, tb.floatHidden, tb.exp, tb.spr], [1, true, true, true, 'none', 'none']);
       const fit = await pg.evaluate(() => ({ sh: $('canvasStack').getBoundingClientRect().height, ch: $('canvasWrap').clientHeight, tp: totalPages }));
       ok(fit.sh <= fit.ch, 'Hochformat: ganze Seite sichtbar ' + JSON.stringify(fit));
       if (fit.tp > 1) {
