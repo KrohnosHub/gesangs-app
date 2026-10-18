@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.47.0 – Start-Tags für die vorhandenen Songs
+- Einmalig beim nächsten Start: Die 19 bestehenden Songs erhalten Tags (Rock, Metal, Pop, Country/Folk, Ballade, Aufwärmen, Mehrstimmig, Weihnachten). Bestehende Tags bleiben, es wird nur ergänzt; pro Song geschieht das nur einmal, später entfernte Tags kommen nicht zurück. Zuordnung nach Songtitel.
+
 ### v2.46.0 – Handy-Hochformat: ganze Seite, Wischen, Kopfzeilen-Knopf oben
 - Handy hochkant: Das Blatt wird automatisch so eingepasst, dass die ganze Seite sichtbar ist (statt 100 % Seitenbreite). Mit Zoom lässt sich weiter vergrössern.
 - Waagrecht wischen wechselt die Seite (nur bei eingepasster Ansicht, Finger; beim Zoomen scrollt es wie bisher).

@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-mLsi11LVU+V41yxYDW7yNxkMglFv09aIieTpTLwBF7k=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-LVxFbTuudKJqGq8ioFsUvp0yASVu8uEBzVIC/dsjvKc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-mLsi11LVU+V41yxYDW7yNxkMglFv09aIieTpTLwBF7k=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-LVxFbTuudKJqGq8ioFsUvp0yASVu8uEBzVIC/dsjvKc=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -891,7 +891,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.46.0';
+const APP_VERSION = '2.47.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1768,6 +1768,23 @@ function migrateSongs() {
   for (const x of Object.values(lib.songs)) {
     if (x.d) continue;
     (x.links || []).forEach(l => { if (l.auto && l.type === 'sp' && l.kind === 'karaoke' && !isKaraokeText(l.title)) { l.kind = 'orig'; l.u = nowTs(); x.u = nowTs(); changed = true; } });
+  }
+  // Ab v2.47.0: einmalige Start-Tags für die 19 vorhandenen Songs (nur ergänzen, nie entfernen; pro Song nur einmal: Flag `ts`)
+  const SEED_TAGS = {
+    allrightnow: ['Rock'], badmoonrising: ['Rock', 'Aufwärmen', 'Mehrstimmig'], foolforyourloving: ['Rock'], nameinblood: ['Metal'],
+    stone: ['Rock', 'Country/Folk'], heartofsteel: ['Metal'], chaosmaster: ['Metal'], bentandbroken: ['Metal'],
+    oceandeep: ['Metal', 'Ballade'], whileyourlipsarestillred: ['Metal', 'Ballade'], theislander: ['Metal', 'Country/Folk', 'Ballade'],
+    codeoflife: ['Metal', 'Mehrstimmig'], christmastruce: ['Metal', 'Weihnachten'], houseoftherisingsun: ['Rock', 'Country/Folk', 'Ballade'],
+    creep: ['Rock', 'Ballade'], tennesseewhiskey: ['Country/Folk', 'Ballade'], skyfall: ['Pop', 'Ballade'],
+    writingsonthewall: ['Pop', 'Ballade'], losecontrol: ['Pop', 'Ballade']
+  };
+  for (const x of Object.values(lib.songs)) {
+    if (x.d || x.ts) continue;
+    const add = SEED_TAGS[String(x.n || '').toLowerCase().replace(/[^a-z0-9]/g, '')];
+    if (!add) continue;
+    x.tg = x.tg || [];
+    add.forEach(t => { if (!x.tg.includes(t)) x.tg.push(t); });
+    x.ts = 1; x.u = nowTs(); changed = true;
   }
   if (cleanAllLinks()) changed = true;          // ab v2.8.1: unpassende automatische Verknüpfungen entfernen
   if (changed) libChanged();
