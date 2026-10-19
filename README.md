@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.50.0 – PDF mit/ohne Annotationen, Farb-Sammelknopf
+- «⤓ PDF» ist wieder in der Werkzeugleiste (auch im Hochformat am Handy). Im Export-Dialog gibt es die Option «Mit Annotationen» (Standard an); ohne Haken wird das PDF ohne Zeichnungen, Texte und Symbole erstellt (Dateiname ohne «(annotiert)»).
+- Farbwahl: In der Leiste stehen nur noch Schwarz, Rot, Blau, die gerade gewählte Farbe und ein bunter Sammelknopf; dieser öffnet ein Popup mit allen Farben (jetzt 12).
+- Das Blatt passt sich neu ein, wenn sich die Höhe des Blatt-Bereichs ändert (z. B. beim Wechsel in den Zeichenmodus mit mehr Werkzeugen).
+
 ### v2.49.0 – Handy-Hochformat: Seitenwahl als kleines Chip am Blattrand
 - Die untere Werkzeugleiste bleibt sicher einzeilig: Die Seitenwahl ist nicht mehr in der Leiste, sondern ein kleines Chip («‹ 1 / 2 ›») in einem nur 26 px hohen Streifen direkt unter dem Blatt. Es überdeckt keinen Text.
 

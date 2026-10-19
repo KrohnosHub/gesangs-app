@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-8y1hTNsKVWtULU3QkrBW/PSTyUbV2omd+HhqGn7H+Xs=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-Owr262+7M18GpvFlK5m8gmOtQv+bDC5MrPoAs/tOsZo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-8y1hTNsKVWtULU3QkrBW/PSTyUbV2omd+HhqGn7H+Xs=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-Owr262+7M18GpvFlK5m8gmOtQv+bDC5MrPoAs/tOsZo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -182,6 +182,9 @@
   #toolbar button.tool{padding:7px 9px; font-size:13px;}
   .swatch{width:24px; height:24px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0;}
   .swatch.active{border-color:var(--text);}
+  #colorMore{background:conic-gradient(#c0392b,#e67e22,#f1c40f,#27633f,#2471a3,#8e44ad,#c0392b); padding:0;}
+  #colorPop .cgrid{display:grid; grid-template-columns:repeat(6, 32px); gap:10px; justify-items:center;}
+  #colorPop .swatch{width:30px; height:30px;}
   #widthRange{width:70px;}
   #pageNav, #zoomNav{display:flex; align-items:center; gap:5px; font-size:13px; color:var(--muted);}
   #zoomLabel{min-width:40px; text-align:center;}
@@ -295,7 +298,7 @@
     #mainViewer > #toolbar{order:5; border-top:1px solid var(--border); border-bottom:0; padding-bottom:max(6px, env(safe-area-inset-bottom)); flex-wrap:wrap; overflow:visible;}
     /* v2.48.0: untere Leiste einzeilig: Doppelseiten- und PDF-Knopf entfallen (PDF im Menü «Mehr»), Seitenwahl kompakt in der Leiste */
     #toolbar .spacer-flex{display:none;}
-    #toolbar #spreadBtn, #toolbar #exportBtn{display:none !important;}
+    #toolbar #spreadBtn{display:none !important;}
     #toolbar #pageNav{display:none !important;}
     #toolbar{gap:4px;} #toolbar .sep{display:none;}
     #toolbar button.icon{width:32px; padding:4px;} #zoomNav, #toolbar #pageNav{gap:1px;} #zoomLabel{min-width:34px;} 
@@ -737,13 +740,13 @@
         <button class="tool draw-only" data-tool="stamp" title="Symbole (Atem, Crescendo, Fermate …)">♪ Symbole</button>
         <button class="tool draw-only" data-tool="select" title="Auswählen / verschieben">➤ Auswahl</button>
         <div class="sep draw-only"></div>
-        <div class="swatch draw-only active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
-        <div class="swatch draw-only" data-color="#c0392b" style="background:#c0392b"></div>
-        <div class="swatch draw-only" data-color="#2471a3" style="background:#2471a3"></div>
-        <div class="swatch draw-only" data-color="#27633f" style="background:#27633f"></div>
-        <div class="swatch draw-only" data-color="#8e44ad" style="background:#8e44ad"></div>
-        <div class="swatch draw-only" data-color="#f1c40f" style="background:#f1c40f"></div>
-        <div class="swatch draw-only" data-color="#e67e22" style="background:#e67e22"></div>
+        <span id="colorQuick" class="draw-only" style="display:flex; align-items:center; gap:5px;">
+          <div class="swatch active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+          <div class="swatch" data-color="#c0392b" style="background:#c0392b"></div>
+          <div class="swatch" data-color="#2471a3" style="background:#2471a3"></div>
+          <div class="swatch" id="colorExtra" style="display:none;"></div>
+          <button id="colorMore" class="swatch" title="Alle Farben" aria-label="Alle Farben"></button>
+        </span>
         <input type="range" id="widthRange" class="draw-only" min="1" max="10" value="3" title="Strichstärke / Grösse">
         <button id="undoBtn" class="icon draw-only" title="Rückgängig (Strg+Z)">↶</button>
         <div class="sep"></div>
@@ -822,6 +825,7 @@
         </select></div>
         </div>
         <div id="layerPop" class="popover" style="top:8px; right:8px;"></div>
+        <div id="colorPop" class="popover" style="position:fixed; width:auto; max-width:calc(100vw - 16px);"></div>
         <div id="dispPop" class="popover" style="top:8px; right:8px;">
           <h4>Anzeige dieses Blatts</h4>
           <div class="rowp"><span style="width:70px;">Helligkeit</span><input type="range" id="briRange" min="40" max="200" value="100"><span id="briVal" style="width:38px; text-align:right;">100%</span></div>
@@ -895,7 +899,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.49.0';
+const APP_VERSION = '2.50.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -3278,6 +3282,15 @@ canvasWrap.addEventListener('wheel', (e) => {
   zoomAt(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
 }, { passive: false });
 window.addEventListener('resize', () => { if (ready) { applyCssSize(); scheduleRender(200); updatePageNav(); } });
+// Ab v2.50.0: Änderte sich die Höhe des Blatt-Bereichs (z. B. Zeichenmodus blendet Werkzeuge ein), Blatt neu einpassen
+if (window.ResizeObserver) {
+  let lastCH = 0, roT = 0;
+  new ResizeObserver(() => {
+    const ch = canvasWrap.clientHeight; if (!lastCH) { lastCH = ch; return; }
+    if (Math.abs(ch - lastCH) < 4) return; lastCH = ch;
+    clearTimeout(roT); roT = setTimeout(() => { if (ready) { applyCssSize(); scheduleRender(100); } }, 120);
+  }).observe(canvasWrap);
+}
 
 // ---------------------------------------------------------------
 // Helligkeit / Kontrast des Blatts (pro Blatt gespeichert, synchronisiert)
@@ -3957,15 +3970,34 @@ $('toolMoreBtn').addEventListener('click', () => menuSheet('Ansicht & Optionen',
   { label: '☀ Helligkeit & Kontrast …', fn: () => $('dispBtn').click() },
   { label: $('fingerBtn').textContent.trim() + ' – antippen zum Wechseln', fn: () => $('fingerBtn').click() },
   { label: '☼ Bildschirm an halten: ' + (wakeWanted ? 'ein' : 'aus') + ' – antippen zum Wechseln', fn: () => $('wakeBtn').click() },
-  ...(getComputedStyle($('exportBtn')).display === 'none' ? [{ label: '⤓ Als PDF exportieren (mit Annotationen)', fn: () => $('exportBtn').click() }] : []),
   { label: '🗑 Seite leeren …', danger: true, fn: () => $('clearBtn').click() }
 ]));
 
+// Ab v2.50.0: Toolbar zeigt Schwarz/Rot/Blau + ggf. die aktuelle Farbe + Sammelknopf; alle Farben im Popup
+const ALL_COLORS = ['#1a1a1a', '#c0392b', '#2471a3', '#27633f', '#8e44ad', '#f1c40f', '#e67e22', '#7f8c8d', '#e84393', '#16a085', '#6e4b2a', '#ffffff'];
+const QUICK_COLORS = ['#1a1a1a', '#c0392b', '#2471a3'];
 function setColor(c) {
   color = c; lsSet('gapp_color', c);
-  document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.color === c));
+  const ex = $('colorExtra'), quick = QUICK_COLORS.includes(c);
+  ex.style.display = quick ? 'none' : ''; if (!quick) { ex.dataset.color = c; ex.style.background = c; }
+  document.querySelectorAll('.swatch[data-color]').forEach(s => s.classList.toggle('active', s.dataset.color === c));
 }
-document.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => setColor(s.dataset.color)));
+$('colorPop').append(h('div', { class: 'cgrid' }, ...ALL_COLORS.map(c => h('div', { class: 'swatch', 'data-color': c, style: 'background:' + c + (c === '#ffffff' ? '; border-color:var(--border)' : '') }))));
+document.addEventListener('click', (e) => {
+  const sw = e.target.closest && e.target.closest('.swatch[data-color]');
+  if (sw) { setColor(sw.dataset.color); $('colorPop').classList.remove('show'); return; }
+  if (e.target.closest && e.target.closest('#colorMore')) {
+    const pop = $('colorPop'), r = $('colorMore').getBoundingClientRect();
+    if (pop.classList.toggle('show')) {
+      const pw = pop.offsetWidth, ph = pop.offsetHeight;
+      pop.style.left = Math.max(8, Math.min(innerWidth - pw - 8, r.left + r.width / 2 - pw / 2)) + 'px';
+      if (r.top > innerHeight / 2) { pop.style.top = 'auto'; pop.style.bottom = (innerHeight - r.top + 8) + 'px'; }
+      else { pop.style.bottom = 'auto'; pop.style.top = (r.bottom + 8) + 'px'; }
+    }
+    return;
+  }
+  if (!e.target.closest || !e.target.closest('#colorPop')) $('colorPop').classList.remove('show');
+});
 $('widthRange').value = widthVal;
 $('widthRange').addEventListener('input', (e) => { widthVal = Number(e.target.value); lsSet('gapp_width', widthVal); });
 
@@ -5230,7 +5262,7 @@ async function exportPdf() {
   if (sheetKind === 'text') return exportTextSheetPdf();
   const f = currentFile, blob = currentBlob, annot = annotData, img = currentImg;
   const outName = f.name.replace(/\.[^.]+$/, '') + ' (annotiert).pdf';
-  exportDialog({ build: () => buildAnnotatedPdfBytes(f, blob, annot, { img }), downloadName: outName, sheetName: outName, srcFile: f });
+  exportDialog({ build: (o) => buildAnnotatedPdfBytes(f, blob, o && o.annot === false ? emptyAnnot() : annot, { img }), annotOption: true, downloadName: outName, sheetName: outName, srcFile: f });
 }
 $('exportBtn').addEventListener('click', exportPdf);
 
@@ -7257,13 +7289,16 @@ function textPdfExportDialog(songName, html, { downloadName, sheetName, srcFile 
 }
 // Export-Dialog (ab v2.6.0; ab v2.7.0 vor dem Erzeugen): herunterladen und/oder direkt als weiteres
 // Blatt im Song ablegen; bei Text-Blättern optional den Songtitel als Überschrift einfügen (Standard: aus).
-function exportDialog({ build, headerOption = false, downloadName, sheetName, srcFile }) {
+function exportDialog({ build, headerOption = false, annotOption = false, downloadName, sheetName, srcFile }) {
   const sid = currentSongId && sget(currentSongId) ? currentSongId : null;
   const cbHead = h('input', { type: 'checkbox' });
+  const cbAnn = h('input', { type: 'checkbox', checked: true });
   const run = async (what) => {
     try {
       setStatus('Exportiere …', 'saving');
-      const bytes = await build({ header: cbHead.checked });
+      const noAnn = annotOption && !cbAnn.checked;
+      if (noAnn) { downloadName = downloadName.replace(' (annotiert)', ''); sheetName = sheetName.replace(' (annotiert)', ''); }
+      const bytes = await build({ header: cbHead.checked, annot: !noAnn });
       setStatus('');
       if (what === 'sheet') await attachExportedPdf(sid, bytes, sheetName, srcFile);
       else { await deliverFile(new File([bytes], downloadName, { type: 'application/pdf' })); toast('PDF exportiert: ' + downloadName); }
@@ -7275,6 +7310,7 @@ function exportDialog({ build, headerOption = false, downloadName, sheetName, sr
   openModal({
     title: '⤓ PDF exportieren', buttons,
     body: [
+      annotOption ? h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:14px; margin-bottom:8px;' }, cbAnn, h('span', { text: 'Mit Annotationen (Zeichnungen, Texte, Symbole)' })) : null,
       headerOption ? h('label', { style: 'display:flex; gap:8px; align-items:center; font-size:13px; margin-bottom:6px;' }, cbHead, h('span', { text: 'Songtitel «' + (sid ? sget(sid).n : '') + '» als Überschrift einfügen' })) : null,
       sid ? h('p', { class: 'sub', style: 'font-size:12.5px; color:var(--muted);', text: '«Als Blatt hinzufügen» legt das PDF als «' + sheetName + '» direkt hinter dem aktuellen Blatt in «' + sget(sid).n + '» ab (in Drive gespeichert und offline verfügbar).' }) : null
     ].filter(Boolean)
