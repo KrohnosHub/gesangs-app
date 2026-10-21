@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-l3hZx46hQLHTFxQNlhPM2VfOoS+0ADiPVVAwX/HpTwM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-MwYXGusxFI6o4rjBUk48eIvuEVk1HjHu4E8jkIy1jS8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-l3hZx46hQLHTFxQNlhPM2VfOoS+0ADiPVVAwX/HpTwM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-MwYXGusxFI6o4rjBUk48eIvuEVk1HjHu4E8jkIy1jS8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -696,7 +696,7 @@
       <div id="sbPractice">
         <button id="warmupBtn" data-desc="Tonleitern und Intervalle nachsingen, mit Treffer-Anzeige" title="Einsingen">🎵 Einsingen</button>
         <button id="metroBtn" data-desc="Tempo vorgeben, mit Takt und Zählzeiten" title="Metronom">⏱ Metronom</button>
-        <button id="tasksBtn" data-desc="Alle offenen Lehrer-Aufgaben über alle Songs" title="Aufgaben">📓 Aufgaben</button>
+        <button id="tasksBtn" data-desc="Alle offenen Aufgaben der Lehrperson über alle Songs" title="Aufgaben">📓 Aufgaben</button>
         <button id="voiceRangeBtn" data-desc="Stimmumfang über die Zeit, Transpositionsvorschläge" title="Stimmumfang">📏 Umfang</button>
       </div>
       <p class="sb-hint">Übungen zu einem einzelnen Song (Aufnahmen, Backing-Tracks, Melodie, Journal) stehen oben in der Song-Leiste des geöffneten Songs.</p>
@@ -914,7 +914,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.52.0';
+const APP_VERSION = '2.52.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2340,7 +2340,7 @@ function songActionItems(s) {
     { primary: false, short: (s.fv ? '★' : '☆') + ' Favorit', on: !!s.fv, title: s.fv ? 'Favorit entfernen' : 'Als Favorit markieren', label: s.fv ? '☆ Favorit entfernen' : '★ Als Favorit markieren', fn: () => sTouch(s.id, x => { x.fv = x.fv ? 0 : 1; }) },
     { primary: true, short: '🎙 Aufnahmen' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : ''), title: 'Aufnahmen, Backing-Tracks und Referenzmelodie', label: '🎙 Aufnahmen & Backing-Tracks' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : '') + ' …', fn: () => manageAudio(s) },
     { primary: true, short: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : ''), title: 'Spotify-/YouTube-Verknüpfungen', label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
-    { primary: true, short: '📓 Journal' + (nOpen ? ` (${nOpen})` : ''), on: nOpen > 0, title: 'Übungsjournal: Lehrer-Aufgaben und Übungsnotizen', label: '📓 Übungsjournal' + (nOpen ? ` (${nOpen} offen)` : '') + ' …', fn: () => openJournal(s.id) },
+    { primary: true, short: '📓 Journal' + (nOpen ? ` (${nOpen})` : ''), on: nOpen > 0, title: 'Übungsjournal: Aufgaben der Lehrperson und Übungsnotizen', label: '📓 Übungsjournal' + (nOpen ? ` (${nOpen} offen)` : '') + ' …', fn: () => openJournal(s.id) },
     { primary: true, short: '📤 Teilen' + (s.sh ? ' ✓' : ''), on: !!s.sh, title: s.sh ? 'Geteilt – Freigabe aktualisieren/beenden' : 'Song teilen (Drive-Freigabe, lesend)', label: '📤 Song teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('song', s.id) },
     { label: '✎ Song umbenennen', fn: () => renameSong(s.id) },
     { label: '📁 In Ordner verschieben …', fn: () => moveSong(s) },
@@ -4430,8 +4430,8 @@ function welcomeCard() {
   return h('div', { class: 'welcome' },
     h('h3', { text: 'Willkommen!' }),
     h('p', { text: 'Hier legst du Songs mit Notenblättern, Lyrics, Backing-Tracks und Übungsnotizen ab. So beginnst du:' }),
-    h('ol', {}, h('li', { text: 'Tippe auf «♪ Neuer Song» und gib Titel und Interpret ein.' }),
-      h('li', { text: 'Füge ein Blatt hinzu: PDF/Bild hochladen, mit «＋ ▾» scannen oder ein Text-Blatt schreiben.' }),
+    h('ol', {}, h('li', { text: 'Tippe auf «♪ Neuer Song» und gib Titel und Interpret ein – die Lyrics werden automatisch gesucht.' }),
+      h('li', { text: 'Optional: weitere Blätter hinzufügen (PDF/Bild hochladen, mit «＋ ▾» scannen, Text-Blatt schreiben).' }),
       h('li', { text: 'Öffne den Song: «Lesen» zum Üben, «Zeichnen» für Notizen, «▶ Auftritt» für die Bühne.' })),
     h('div', { class: 'wbtns' },
       h('button', { class: 'primary', text: '♪ Ersten Song anlegen', onclick: () => $('newSongBtn').click() }),
@@ -6617,15 +6617,16 @@ function showTour() {
       'Danach meldet sich die App beim Start von selbst im Hintergrund an. Nur selten ist nochmals ein Tipp auf «Anmelden» nötig.'] },
     { t: 'Als App installieren (empfohlen)', p: [
       'So startet die App mit eigenem Symbol und funktioniert auch ohne Internet.',
-      'Android/Chrome: Menü ⋮ → «App installieren» bzw. «Zum Startbildschirm». iPhone/iPad (Safari): Teilen-Symbol → «Zum Home-Bildschirm». PC (Chrome/Edge): Installieren-Symbol rechts in der Adressleiste.'] },
+      'Android/Chrome: Menü ⋮ → «App installieren» bzw. «Zum Startbildschirm».\niPhone/iPad (Safari): Teilen-Symbol → «Zum Home-Bildschirm».\nPC (Chrome/Edge): Installieren-Symbol rechts in der Adressleiste.'] },
     { t: 'Song anlegen und finden', p: [
-      'Links (auf dem Handy über ☰) auf «♪ Neuer Song»: Titel und Interpret eingeben, dann Blätter hinzufügen – PDF oder Bild hochladen, scannen oder ein Text-Blatt schreiben. Mehrere Blätter pro Song sind möglich (Reiter über dem Blatt).',
+      'Links (auf dem Handy über ☰) auf «♪ Neuer Song»: Titel und Interpret eingeben. Die Lyrics werden automatisch gesucht und geladen (sofern gefunden). Du kannst sie als Text-Blatt bearbeiten (Formatierung, Akkorde) und als PDF speichern.',
+      'Optional weitere Blätter hinzufügen: PDF oder Bild hochladen, Noten scannen (＋ ▾) oder ein eigenes Text-Blatt schreiben. Mehrere Blätter pro Song sind möglich (Reiter über dem Blatt).',
       'Wiederfinden: Suche, Filter «Alle Tags», ★ Favoriten, Ordner. Tags setzt du im ⋯-Menü des Songs.'] },
     { t: 'Blatt lesen, blättern, zeichnen', p: [
       'Standard ist «Lesen»: scrollen und blättern, nichts wird versehentlich gezeichnet. Zum Blättern nach links/rechts wischen oder die Seitenwahl unter dem Blatt nutzen. Am Handy hochkant siehst du die ganze Seite; quer zeigt «▯▯» zwei Seiten nebeneinander.',
       'Mit dem Stift-Knopf (Zeichnen) erscheinen Stift, Marker, Text und Symbole; weitere Farben unter dem bunten Knopf. Notizen liegen auf Ebenen (⋯ Mehr).'] },
     { t: 'Die Symbole der Song-Leiste', p: ['Oben im geöffneten Song:'],
-      icons: [['🎤', 'Original abspielen (YouTube/Spotify)'], ['🎧', 'Karaoke/Backing abspielen'], ['🎙', 'Aufnahmen, Backing-Tracks, Melodie'], ['🔗', 'Verknüpfungen (YouTube/Spotify)'], ['📓', 'Übungsjournal und Lehrer-Aufgaben'], ['📤', 'Song teilen (PDFs und Links, lesend)'], ['⋯', 'Mehr: Tags, Setliste, Blätter, offline …']],
+      icons: [['🎤', 'Original abspielen (YouTube/Spotify)'], ['🎧', 'Karaoke/Backing abspielen'], ['🎙', 'Aufnahmen, Backing-Tracks, Melodie'], ['🔗', 'Verknüpfungen (YouTube/Spotify)'], ['📓', 'Übungsjournal und Aufgaben der Lehrperson'], ['📤', 'Song teilen (PDFs und Links, lesend)'], ['⋯', 'Mehr: Tags, Setliste, Blätter, offline …']],
       p2: ['Original/Karaoke erscheinen, sobald dazu eine Verknüpfung oder ein Backing-Track vorhanden ist. Die Knöpfe lassen sich lange drücken (andere Version wählen).'] },
     { t: 'Üben', p: [
       'In der Seitenleiste unter «Üben»: Einsingen (Tonleitern nachsingen, mit Treffer-Anzeige; das Mikrofon musst du einmal erlauben), Metronom, Aufgaben und Stimmumfang.',
@@ -6633,7 +6634,7 @@ function showTour() {
     { t: 'Auftritt', p: [
       '«▶ Auftritt» blendet alle Bedienelemente aus. Blättern: auf den linken/rechten Rand tippen, wischen, Pfeiltasten oder Fusspedal; Mitte antippen = Leiste. Aus einer Setliste springst du über «♫ Setliste» zum nächsten Lied.'] },
     { t: 'Teilen, Offline, Sicherung', p: [
-      'Mit «📤 Teilen» gibst du einen Song (oder eine Setliste) als Google-Drive-Ordner frei – an Gesangslehrerin, Schüler oder andere (nur lesend, per E-Mail oder Link). Enthalten sind die Blätter als PDF, die Links und auf Wunsch Backing-Tracks (Aufnahmen nur per Haken). Empfänger brauchen die App nicht.',
+      'Mit «📤 Teilen» gibst du einen Song (oder eine Setliste) als Google-Drive-Ordner frei – an Lehrperson, Lernende oder andere (nur lesend, per E-Mail oder Link). Enthalten sind die Blätter als PDF, die Links und auf Wunsch Backing-Tracks (Aufnahmen nur per Haken). Empfänger brauchen die App nicht.',
       'Unter «⋯ Mehr»: «Alles offline speichern» (Blätter, Backing-Tracks, Aufnahmen für Proben ohne Internet), «Offline & Sync» zeigt, was synchronisiert ist, dazu Backup. Die Hilfe findest du jederzeit über ❓ links unten.'] }
   ];
   let i = 0;
@@ -6644,7 +6645,7 @@ function showTour() {
     body.textContent = '';
     body.append(h('div', { style: 'font-size:12px;color:var(--muted);margin-bottom:6px;', text: 'Schritt ' + (i + 1) + ' von ' + steps.length }),
       h('h4', { style: 'margin:0 0 6px;', text: st.t }));
-    st.p.forEach(t => body.append(h('p', { style: 'margin:0 0 8px;font-size:14px;line-height:1.5;', text: t })));
+    st.p.forEach(t => body.append(h('p', { style: 'margin:0 0 8px;font-size:14px;line-height:1.5;white-space:pre-line;', text: t })));
     if (st.icons) body.append(h('ul', { style: 'list-style:none;margin:0 0 8px;padding:0;font-size:14px;line-height:1.9;' },
       st.icons.map(([g, t]) => h('li', { style: 'display:flex;gap:10px;align-items:center;' }, h('span', { style: 'width:22px;text-align:center;flex:none;' }, svgIcon(g) || g), h('span', { text: t })))));
     (st.p2 || []).forEach(t => body.append(h('p', { style: 'margin:0 0 8px;font-size:13px;line-height:1.5;color:var(--muted);', text: t })));
@@ -9737,7 +9738,7 @@ function journalChip(id) {
   const o = openTasks(id);
   if (!o.length) return null;
   const late = o.some(isOverdue);
-  return h('span', { class: 'jchip' + (late ? ' late' : ''), title: late ? 'Aufgabe überfällig' : 'Offene Lehrer-Aufgaben', text: '📓 ' + o.length + ' offen' });
+  return h('span', { class: 'jchip' + (late ? ' late' : ''), title: late ? 'Aufgabe überfällig' : 'Offene Aufgaben der Lehrperson', text: '📓 ' + o.length + ' offen' });
 }
 // Änderung am Journal + automatischer Tag
 function jTouch(id, fn) {

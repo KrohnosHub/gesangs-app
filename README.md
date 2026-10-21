@@ -21,10 +21,14 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.52.1 – Kurzanleitung überarbeitet, neutrale Formulierungen
+- Schritt 2: Geräte je auf eigener Zeile. Schritt 3: Lyrics werden automatisch gesucht, lassen sich bearbeiten und als PDF speichern; weitere Blätter sind optional (auch in der Willkommenskarte).
+- Keine geschlechtsspezifischen Bezeichnungen mehr («Lehrperson», «Lernende», «Aufgaben der Lehrperson»). Der Tag «Lehrer-Aufgabe» bleibt unverändert, da er in bestehenden Daten steckt.
+
 ### v2.52.0 – Audio beim Teilen
 - Der Teilen-Dialog kann Backing-Tracks mitsenden (Standard: an), die Referenzmelodie und die eigenen Aufnahmen nur per Haken (Standard: aus; es sind Stimmaufnahmen). Die Dateien liegen als «Songname – Backing – Dateiname» im Freigabe-Ordner. Nicht ladbare Dateien (z. B. offline) werden im Ergebnis genannt; «Aktualisieren» lädt alles neu hoch.
 
-### v2.51.0 – Einstieg für neue Nutzer (Lehrerin)
+### v2.51.0 – Einstieg für neue Nutzer
 - Neue Kurzanleitung (8 Schritte): Anmelden inkl. Hinweis auf das Google-Fenster «nicht überprüft», App installieren, Song anlegen und finden, Lesen/Blättern/Zeichnen, Symbole der Song-Leiste (mit Icons), Üben, Auftritt, Teilen/Offline/Sicherung.
 - Leere Bibliothek zeigt eine Willkommenskarte mit den ersten drei Schritten und Knöpfen «Ersten Song anlegen» und «Kurzanleitung» (Seitenleiste und Startfläche).
 - ❓-Knopf in der Seitenleiste öffnet die Kurzanleitung jederzeit.

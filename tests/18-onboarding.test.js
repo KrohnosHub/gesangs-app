@@ -14,6 +14,8 @@ module.exports = async () => {
       }
       ok(texts[0].includes('Schritt 1 von 8') && texts[0].includes('nicht überprüft'), 'Schritt 1');
       ok(texts[7].includes('Schritt 8 von 8'), 'Schritt 8');
+      ok(texts[1].includes('Android/Chrome') && texts[1].split('\n').filter(l => /Android|iPhone|PC \(/.test(l)).length === 3, 'Geräte je eigene Zeile');
+      ok(texts[2].includes('Lyrics') && texts[2].includes('PDF') && !/Gesangslehrerin|Lehrerin/.test(texts.join(' ')), 'Schritt 3 / neutral');
       ok(!await pg.evaluate(() => !!document.querySelector('.modal')), 'Dialog nach «Fertig» zu');
       await pg.click('#helpBtn'); await pg.waitForTimeout(200);
       for (let i = 0; i < 4; i++) { await pg.locator('.modal button.primary').first().click(); await pg.waitForTimeout(80); }
