@@ -21,6 +21,14 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.51.0 – Einstieg für neue Nutzer (Lehrerin)
+- Neue Kurzanleitung (8 Schritte): Anmelden inkl. Hinweis auf das Google-Fenster «nicht überprüft», App installieren, Song anlegen und finden, Lesen/Blättern/Zeichnen, Symbole der Song-Leiste (mit Icons), Üben, Auftritt, Teilen/Offline/Sicherung.
+- Leere Bibliothek zeigt eine Willkommenskarte mit den ersten drei Schritten und Knöpfen «Ersten Song anlegen» und «Kurzanleitung» (Seitenleiste und Startfläche).
+- ❓-Knopf in der Seitenleiste öffnet die Kurzanleitung jederzeit.
+- Anmeldeseite: aufklappbare «Hilfe bei der Anmeldung»; verständlichere Meldung bei «Zugriff verweigert».
+- Spotify-Zugang in den Einstellungen als optional gekennzeichnet.
+- Teilen neutral formuliert (nicht mehr «Lehrer»): Der Dialog nennt, was enthalten ist (PDFs, Links & Notizen) und was nicht (Audio).
+
 ### v2.50.0 – PDF mit/ohne Annotationen, Farb-Sammelknopf
 - «⤓ PDF» ist wieder in der Werkzeugleiste (auch im Hochformat am Handy). Im Export-Dialog gibt es die Option «Mit Annotationen» (Standard an); ohne Haken wird das PDF ohne Zeichnungen, Texte und Symbole erstellt (Dateiname ohne «(annotiert)»).
 - Farbwahl: In der Leiste stehen nur noch Schwarz, Rot, Blau, die gerade gewählte Farbe und ein bunter Sammelknopf; dieser öffnet ein Popup mit allen Farben (jetzt 12).

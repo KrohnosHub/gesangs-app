@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-Owr262+7M18GpvFlK5m8gmOtQv+bDC5MrPoAs/tOsZo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-07M6bC2f8h4WhqFO7mJ/Ys6Dj9upuC4fWv6rql+2CZY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-Owr262+7M18GpvFlK5m8gmOtQv+bDC5MrPoAs/tOsZo=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-07M6bC2f8h4WhqFO7mJ/Ys6Dj9upuC4fWv6rql+2CZY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -165,6 +165,11 @@
   .empty-note{padding:16px; color:var(--muted); font-size:13px;}
   #sbFooter{padding:8px; border-top:1px solid var(--border); display:flex; gap:6px; align-items:center; font-size:12px; color:var(--muted);}
   #sbFooter button{flex:1; padding:8px; font-size:13px;}
+  #sbFooter #helpBtn{flex:none; width:38px;}
+  .welcome{text-align:left; max-width:360px; font-size:13.5px; line-height:1.5; color:var(--text);}
+  .welcome h3{margin:0 0 6px; font-size:17px;} .welcome p{margin:0 0 8px;} .welcome ol{margin:0 0 12px; padding-left:20px;} .welcome li{margin-bottom:4px;}
+  .welcome .wbtns{display:flex; gap:8px; flex-wrap:wrap;}
+  #sidebar .welcome{padding:12px 10px;}
   #setHead{display:flex; align-items:center; gap:6px; padding:8px; border-bottom:1px solid var(--border);}
   #setHead .t{flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .set-item .idx{width:20px; text-align:center; color:var(--muted); font-size:12px;}
@@ -676,6 +681,7 @@
       <div id="sbFooter">
         <button id="settingsBtn" title="Einstellungen (u. a. Spotify-Zugang)">⚙ Einstellungen</button>
         <button id="moreMenuBtn" title="Backup, Offline-Speicher, Kurzanleitung">⋯ Mehr</button>
+        <button id="helpBtn" title="Kurzanleitung / Hilfe" aria-label="Kurzanleitung">❓</button>
       </div>
       <div id="verLine" title="Version und Build anzeigen"></div>
       <div id="sbLegacy" style="display:none;">
@@ -710,6 +716,15 @@
       <p>Melde dich mit Google an, um deine Lyric-Blätter zu sehen und zu bearbeiten. Dateien werden in deinem eigenen Google Drive gespeichert und lassen sich danach auch offline nutzen.</p>
       <button class="primary" id="authBtn2">Mit Google anmelden</button>
       <p id="authError" style="color:var(--danger); font-size:13px; max-width:340px; display:none;"></p>
+      <details id="authHelp" style="font-size:12.5px; max-width:340px; text-align:left; color:var(--muted); margin-top:6px;">
+        <summary style="cursor:pointer;">Hilfe bei der Anmeldung</summary>
+        <ul style="margin:6px 0 0; padding-left:18px; line-height:1.5;">
+          <li>Es öffnet sich ein Google-Fenster – erlaube dem Browser Pop-ups für diese Seite.</li>
+          <li>Zeigt Google «Diese App wurde nicht überprüft»: «Erweitert» → «Weiter zu … (unsicher)». Das ist normal, die App ist privat.</li>
+          <li>Erlaube den Zugriff auf Google Drive: Die App sieht nur ihre eigenen Dateien, nicht dein restliches Drive.</li>
+          <li>«Zugriff verweigert»: Dein Google-Konto muss vom App-Betreiber als Testnutzer freigeschaltet werden.</li>
+        </ul>
+      </details>
       <p id="diag" style="font-size:11px; word-break:break-all;"></p>
     </div>
 
@@ -899,7 +914,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.50.0';
+const APP_VERSION = '2.51.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1879,7 +1894,7 @@ function explainError(e) {
   const m = String((e && e.message) || e);
   if (/accessNotConfigured|SERVICE_DISABLED|has not been used|is disabled/i.test(m))
     return 'Die Google Drive API ist im Cloud-Projekt dieser Client-ID nicht aktiviert (Cloud Console → APIs & Dienste → Bibliothek → «Google Drive API» → Aktivieren).';
-  if (/access_denied/.test(m)) return 'Zugriff verweigert – ist dein Google-Konto im OAuth-Zustimmungsbildschirm als Testnutzer eingetragen?';
+  if (/access_denied/.test(m)) return 'Zugriff verweigert. Mögliche Gründe: Du hast im Google-Fenster abgebrochen oder den Zugriff auf Drive nicht erlaubt – oder dein Google-Konto ist für diese App noch nicht freigeschaltet (der App-Betreiber muss es als Testnutzer eintragen).';
   if (/popup_closed|popup_failed/.test(m)) return 'Das Anmelde-Popup wurde geschlossen oder vom Browser blockiert.';
   if (/unauthorized/.test(m)) return 'Sitzung abgelaufen – bitte anmelden.';
   if (/^offline$/.test(m)) return 'Keine Internetverbindung.';
@@ -2257,9 +2272,11 @@ function renderSheets() {
     if (!filesKnown && !global) list.append(h('div', { class: 'empty-note' },
       h('p', { text: 'Deine Songs liegen in Google Drive und sind auf diesem Gerät noch nicht geladen.' }),
       h('button', { class: 'primary', text: tokenValid() ? 'Songs laden' : 'Mit Google anmelden', onclick: () => (tokenValid() ? afterSignIn().catch(e => syncFail(e)) : signIn()) })));
-    else list.append(h('div', { class: 'empty-note', text: global ? 'Keine Treffer.' : (aliveSongs().length ? 'Dieser Ordner ist leer.' : 'Noch keine Songs. Oben «♪ Neuer Song» anlegen (inkl. automatischer Lyrics-Suche), oder direkt ein Blatt per «+ Blatt» / «📷 Scan» hochladen.') }));
+    else if (!global && !aliveSongs().length) list.append(welcomeCard());
+    else list.append(h('div', { class: 'empty-note', text: global ? 'Keine Treffer.' : 'Dieser Ordner ist leer.' }));
   }
   $('offlineAllBtn').textContent = `⇩ Alles offline speichern (${offlineLabel()})`;
+  updateEmptyHint();
   updateTasksBtn();
 }
 function resetFilters() {
@@ -2324,7 +2341,7 @@ function songActionItems(s) {
     { primary: true, short: '🎙 Aufnahmen' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : ''), title: 'Aufnahmen, Backing-Tracks und Referenzmelodie', label: '🎙 Aufnahmen & Backing-Tracks' + (audioCount(s.id) ? ` (${audioCount(s.id)})` : '') + ' …', fn: () => manageAudio(s) },
     { primary: true, short: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : ''), title: 'Spotify-/YouTube-Verknüpfungen', label: '🔗 Verknüpfungen' + ((s.links || []).length ? ` (${s.links.length})` : '') + ' …', fn: () => manageLinks(s) },
     { primary: true, short: '📓 Journal' + (nOpen ? ` (${nOpen})` : ''), on: nOpen > 0, title: 'Übungsjournal: Lehrer-Aufgaben und Übungsnotizen', label: '📓 Übungsjournal' + (nOpen ? ` (${nOpen} offen)` : '') + ' …', fn: () => openJournal(s.id) },
-    { primary: true, short: '📤 Teilen' + (s.sh ? ' ✓' : ''), on: !!s.sh, title: s.sh ? 'Geteilt – Freigabe aktualisieren/beenden' : 'Mit Lehrer teilen (Drive-Freigabe)', label: '📤 Mit Lehrer teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('song', s.id) },
+    { primary: true, short: '📤 Teilen' + (s.sh ? ' ✓' : ''), on: !!s.sh, title: s.sh ? 'Geteilt – Freigabe aktualisieren/beenden' : 'Song teilen (Drive-Freigabe, lesend)', label: '📤 Song teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('song', s.id) },
     { label: '✎ Song umbenennen', fn: () => renameSong(s.id) },
     { label: '📁 In Ordner verschieben …', fn: () => moveSong(s) },
     { label: '🏷 Tags bearbeiten' + ((s.tg || []).length ? ` (${s.tg.length})` : '') + ' …', fn: () => editSongTags(s.id) },
@@ -2604,7 +2621,7 @@ function setMenu(id) {
   menuSheet('♫ ' + s.n, [
     { label: '▶ Im Auftrittsmodus starten', fn: () => startSetlist(id) },
     { label: '⇩ Alles offline speichern', fn: () => cacheItems(s.it.flatMap(sid => songOfflineItems(sid))) },
-    { label: '📤 Setliste mit Lehrer teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('set', id) },
+    { label: '📤 Setliste teilen' + (s.sh ? ' (geteilt)' : '') + ' …', fn: () => shareDialog('set', id) },
     { label: '✎ Umbenennen', fn: () => { const n = (prompt('Neuer Name der Setliste:', s.n) || '').trim(); if (n) setTouch(id, x => { x.n = n; }); } },
     { label: '🗑 Setliste löschen', danger: true, fn: () => { if (confirm('Setliste «' + s.n + '» löschen? (Die Songs bleiben erhalten.)')) { setTouch(id, x => { x.d = 1; }); if (setView === id) setView = null; renderSidebar(); } } }
   ]);
@@ -4408,8 +4425,29 @@ function applyHdr() {
 $('topHandle').addEventListener('click', () => { hdrOff = false; lsSet('gapp_hdroff', '0'); applyHdr(); });
 $('topToggle').addEventListener('click', () => { hdrOff = true; lsSet('gapp_hdroff', '1'); applyHdr(); });
 new MutationObserver(applyHdr).observe(mainViewerEl, { attributes: true, attributeFilter: ['style'] });
+// Willkommenskarte für leere Bibliothek (ab v2.51.0): Seitenleiste und Startfläche
+function welcomeCard() {
+  return h('div', { class: 'welcome' },
+    h('h3', { text: 'Willkommen!' }),
+    h('p', { text: 'Hier legst du Songs mit Notenblättern, Lyrics, Backing-Tracks und Übungsnotizen ab. So beginnst du:' }),
+    h('ol', {}, h('li', { text: 'Tippe auf «♪ Neuer Song» und gib Titel und Interpret ein.' }),
+      h('li', { text: 'Füge ein Blatt hinzu: PDF/Bild hochladen, mit «＋ ▾» scannen oder ein Text-Blatt schreiben.' }),
+      h('li', { text: 'Öffne den Song: «Lesen» zum Üben, «Zeichnen» für Notizen, «▶ Auftritt» für die Bühne.' })),
+    h('div', { class: 'wbtns' },
+      h('button', { class: 'primary', text: '♪ Ersten Song anlegen', onclick: () => $('newSongBtn').click() }),
+      h('button', { text: '❓ Kurzanleitung', onclick: () => showTour() })));
+}
+function updateEmptyHint() {
+  const e = $('empty'); if (!e) return;
+  const none = !aliveSongs().length && filesKnownSafe();
+  e.textContent = '';
+  if (none) e.append(welcomeCard());
+  else e.textContent = 'Wähle in der Songliste einen Song aus oder lege über «♪ Neuer Song» einen neuen an.';
+}
+const filesKnownSafe = () => { try { return !!filesKnown; } catch (e) { return false; } };
 let sbAutoOpened = false;
 function showShell() {
+  updateEmptyHint();
   signedOutEl.style.display = 'none';
   // Handy/Tablet (Seitenleiste als Overlay): beim Start einmalig öffnen, wenn noch kein Blatt offen ist
   if (!sbAutoOpened) { sbAutoOpened = true; if (!currentFile && matchMedia('(max-width: 800px)').matches) sidebar.classList.add('open'); }
@@ -5761,6 +5799,7 @@ function openSettingsDialog() {
   body.append(themeControls());
   body.append(resumeControl());
   body.append(h('div', { class: 'empty-note', style: 'margin-bottom:10px;' },
+    h('b', { text: 'Optional: ' }), 'Nur nötig, wenn du Spotify-Titel automatisch finden willst – YouTube-Verknüpfungen und eigene Links funktionieren auch ohne. ',
     'Der Spotify-Zugang (Client-Secret) wird aus Sicherheitsgründen nicht mehr in der App-Datei mitgeliefert, ',
     'sondern nur lokal auf diesem Gerät gespeichert. Client-ID und Client-Secret erhältst du unter ',
     h('a', { href: 'https://developer.spotify.com/dashboard', target: '_blank', rel: 'noopener', style: 'color:var(--accent);' }, 'developer.spotify.com/dashboard'),
@@ -6568,24 +6607,48 @@ simBanner();
 // Kurzanleitung (ab v2.18.0): erscheint einmal beim allerersten Start (nicht, wenn schon angemeldet
 // gewesen), danach jederzeit über «⋯ Mehr → Kurzanleitung». Dient auch als Einstieg für neue Nutzer.
 // ---------------------------------------------------------------
+$('helpBtn').addEventListener('click', () => showTour());
 function showTour() {
+  // Ab v2.51.0: 8 Schritte, Symbol-Erklärung der Song-Leiste, Hinweise zum Google-Fenster und zum Installieren
   const steps = [
-    ['Anmelden', 'Tippe oben auf «Anmelden» und wähle dein Google-Konto. Alles wird in DEINEM eigenen Google Drive gespeichert – andere sehen nichts, solange du nichts teilst. Nach ca. 1 Stunde läuft die Anmeldung ab: ein gelber Balken zeigt das an, ein Tipp auf «Anmelden» genügt.'],
-    ['Song anlegen', 'Links (auf dem Handy über ☰) auf «♪ Neuer Song». Dem Song fügst du Blätter hinzu: PDF/Bild hochladen, scannen oder ein Text-Blatt schreiben. Mehrere Blätter pro Song sind möglich (Reiter über dem Blatt).'],
-    ['Lesen und Zeichnen', 'Standard ist «Lesen»: scrollen und blättern, nichts wird versehentlich gezeichnet. Mit «✏ Zeichnen» erscheinen Stift, Marker, Text und Symbole. Notizen liegen auf Ebenen (unter «⋯ Mehr»).'],
-    ['Üben', 'Im Reiter «Üben» findest du Aufwärmen, Metronom, Aufgaben und Stimmumfang. Pro Song: «🎙 Aufnahmen» (eigene Aufnahmen, Backing-Tracks, Melodie), «🔗 Verknüpfungen» (YouTube/Spotify) und «📓 Journal».'],
-    ['Auftritt', '«▶ Auftritt» blendet alle Bedienelemente aus. Blättern: auf die Pfeile am linken/rechten Rand tippen (oder irgendwo im linken/rechten Drittel), wischen, Pfeiltasten oder Fusspedal; Mitte antippen = Leiste. «▯▯ 2 Seiten» zeigt zwei Seiten nebeneinander.'],
-    ['Teilen und Sicherheit', 'Mit «📤 Teilen» gibst du Blätter an deine Gesangslehrerin bzw. Schüler frei. Unter «⋯ Mehr» gibt es Backup und «Alles offline speichern» (Blätter, Backing-Tracks und Aufnahmen – für Proben ohne Internet).']
+    { t: 'Willkommen – Anmelden', p: [
+      'Tippe auf «Mit Google anmelden» und wähle dein Google-Konto. Alles liegt in DEINEM eigenen Google Drive – niemand sieht etwas, solange du nichts teilst.',
+      'Erlaube Pop-ups und den Zugriff auf Drive (die App sieht nur ihre eigenen Dateien). Zeigt Google «Diese App wurde nicht überprüft», wähle «Erweitert» → «Weiter».',
+      'Danach meldet sich die App beim Start von selbst im Hintergrund an. Nur selten ist nochmals ein Tipp auf «Anmelden» nötig.'] },
+    { t: 'Als App installieren (empfohlen)', p: [
+      'So startet die App mit eigenem Symbol und funktioniert auch ohne Internet.',
+      'Android/Chrome: Menü ⋮ → «App installieren» bzw. «Zum Startbildschirm». iPhone/iPad (Safari): Teilen-Symbol → «Zum Home-Bildschirm». PC (Chrome/Edge): Installieren-Symbol rechts in der Adressleiste.'] },
+    { t: 'Song anlegen und finden', p: [
+      'Links (auf dem Handy über ☰) auf «♪ Neuer Song»: Titel und Interpret eingeben, dann Blätter hinzufügen – PDF oder Bild hochladen, scannen oder ein Text-Blatt schreiben. Mehrere Blätter pro Song sind möglich (Reiter über dem Blatt).',
+      'Wiederfinden: Suche, Filter «Alle Tags», ★ Favoriten, Ordner. Tags setzt du im ⋯-Menü des Songs.'] },
+    { t: 'Blatt lesen, blättern, zeichnen', p: [
+      'Standard ist «Lesen»: scrollen und blättern, nichts wird versehentlich gezeichnet. Zum Blättern nach links/rechts wischen oder die Seitenwahl unter dem Blatt nutzen. Am Handy hochkant siehst du die ganze Seite; quer zeigt «▯▯» zwei Seiten nebeneinander.',
+      'Mit dem Stift-Knopf (Zeichnen) erscheinen Stift, Marker, Text und Symbole; weitere Farben unter dem bunten Knopf. Notizen liegen auf Ebenen (⋯ Mehr).'] },
+    { t: 'Die Symbole der Song-Leiste', p: ['Oben im geöffneten Song:'],
+      icons: [['🎤', 'Original abspielen (YouTube/Spotify)'], ['🎧', 'Karaoke/Backing abspielen'], ['🎙', 'Aufnahmen, Backing-Tracks, Melodie'], ['🔗', 'Verknüpfungen (YouTube/Spotify)'], ['📓', 'Übungsjournal und Lehrer-Aufgaben'], ['📤', 'Song teilen (PDFs und Links, lesend)'], ['⋯', 'Mehr: Tags, Setliste, Blätter, offline …']],
+      p2: ['Original/Karaoke erscheinen, sobald dazu eine Verknüpfung oder ein Backing-Track vorhanden ist. Die Knöpfe lassen sich lange drücken (andere Version wählen).'] },
+    { t: 'Üben', p: [
+      'In der Seitenleiste unter «Üben»: Einsingen (Tonleitern nachsingen, mit Treffer-Anzeige; das Mikrofon musst du einmal erlauben), Metronom, Aufgaben und Stimmumfang.',
+      'Zu jedem Song gibt es zusätzlich Aufnahmen, Backing-Tracks (mit Tempo- und Tonhöhenänderung, A–B-Schleife) und das Journal.'] },
+    { t: 'Auftritt', p: [
+      '«▶ Auftritt» blendet alle Bedienelemente aus. Blättern: auf den linken/rechten Rand tippen, wischen, Pfeiltasten oder Fusspedal; Mitte antippen = Leiste. Aus einer Setliste springst du über «♫ Setliste» zum nächsten Lied.'] },
+    { t: 'Teilen, Offline, Sicherung', p: [
+      'Mit «📤 Teilen» gibst du einen Song (oder eine Setliste) als Google-Drive-Ordner frei – an Gesangslehrerin, Schüler oder andere (nur lesend, per E-Mail oder Link). Enthalten sind die Blätter als PDF und die Links; Audio-Dateien werden nicht mitgeschickt. Empfänger brauchen die App nicht.',
+      'Unter «⋯ Mehr»: «Alles offline speichern» (Blätter, Backing-Tracks, Aufnahmen für Proben ohne Internet), «Offline & Sync» zeigt, was synchronisiert ist, dazu Backup. Die Hilfe findest du jederzeit über ❓ links unten.'] }
   ];
   let i = 0;
   const body = h('div', {});
   const api = openModal({ title: 'Kurzanleitung', body, buttons: [] });
   function draw() {
+    const st = steps[i];
     body.textContent = '';
     body.append(h('div', { style: 'font-size:12px;color:var(--muted);margin-bottom:6px;', text: 'Schritt ' + (i + 1) + ' von ' + steps.length }),
-      h('h4', { style: 'margin:0 0 6px;', text: steps[i][0] }),
-      h('p', { style: 'margin:0 0 12px;font-size:14px;line-height:1.5;', text: steps[i][1] }));
-    const row = h('div', { style: 'display:flex;gap:8px;justify-content:space-between;' });
+      h('h4', { style: 'margin:0 0 6px;', text: st.t }));
+    st.p.forEach(t => body.append(h('p', { style: 'margin:0 0 8px;font-size:14px;line-height:1.5;', text: t })));
+    if (st.icons) body.append(h('ul', { style: 'list-style:none;margin:0 0 8px;padding:0;font-size:14px;line-height:1.9;' },
+      st.icons.map(([g, t]) => h('li', { style: 'display:flex;gap:10px;align-items:center;' }, h('span', { style: 'width:22px;text-align:center;flex:none;' }, svgIcon(g) || g), h('span', { text: t })))));
+    (st.p2 || []).forEach(t => body.append(h('p', { style: 'margin:0 0 8px;font-size:13px;line-height:1.5;color:var(--muted);', text: t })));
+    const row = h('div', { style: 'display:flex;gap:8px;justify-content:space-between;margin-top:6px;' });
     row.append(h('button', { text: 'Zurück', disabled: i === 0, onclick: () => { i--; draw(); } }),
       h('button', { class: 'primary', text: i === steps.length - 1 ? 'Fertig' : 'Weiter', onclick: () => { if (i === steps.length - 1) api.close(); else { i++; draw(); } } }));
     body.append(row);
@@ -7763,7 +7826,7 @@ $('perfOfsUp').addEventListener('click', () => { setPerfBar(true); AS.ofs = Math
 // Ein Song bzw. eine ganze Setliste wird als eigener Drive-Ordner «Freigabe – …» im App-Ordner
 // abgelegt: je Blatt ein PDF (Striche/Symbole/Textfelder auf Wunsch eingebrannt, Text-Blätter mit
 // Formatierung/Akkorden) plus «Links & Notizen» als Textdatei. Dieser Ordner wird lesend per E-Mail
-// (Google-Konto der Lehrperson) und/oder per Link freigegeben -- die Lehrperson braucht die App nicht.
+// (Google-Konto der empfangenden Person) und/oder per Link freigegeben -- sie braucht die App nicht.
 // Die Freigabe ist eine Momentaufnahme; «Aktualisieren» ersetzt den Inhalt, der Link bleibt gleich.
 // Gemerkt wird sie am Song bzw. an der Setliste: sh = { fid, em:[E-Mails], lk:0|1, u }.
 // ---------------------------------------------------------------
@@ -7894,7 +7957,7 @@ function shareTarget(kind, id) {
 }
 function shareDialog(kind, id) {
   const t = shareTarget(kind, id), sh = t.obj.sh || null;
-  const email = h('input', { type: 'text', placeholder: 'E-Mail der Lehrperson (Google-Konto)', style: 'width:100%;', value: (sh && sh.em && sh.em[sh.em.length - 1]) || lsGet('gapp_teacher') || '' });
+  const email = h('input', { type: 'text', placeholder: 'E-Mail der Empfängerin / des Empfängers (Google-Konto)', style: 'width:100%;', value: (sh && sh.em && sh.em[sh.em.length - 1]) || lsGet('gapp_teacher') || '' });
   const msg = h('textarea', { rows: 3, style: 'width:100%; margin-top:6px;', placeholder: 'Nachricht (optional), z. B. «Bitte bis Donnerstag anschauen»' });
   const cbA = h('input', { type: 'checkbox' }); cbA.checked = true;
   const cbL = h('input', { type: 'checkbox' }); cbL.checked = !!(sh && sh.lk);
@@ -7902,7 +7965,7 @@ function shareDialog(kind, id) {
   const row = (cb, text) => h('label', { style: 'display:flex; gap:8px; align-items:center; margin-top:8px; font-size:13px;' }, cb, h('span', { text }));
   const nSheets = t.songs.filter(songAlive).reduce((a, sid) => a + songSheets(sid).length, 0);
   const body = h('div', {},
-    h('p', { style: 'margin-top:0; font-size:13px; color:var(--muted);', text: `Legt in deinem Drive einen Ordner «Freigabe – ${t.name}» mit ${nSheets} PDF(s) an und gibt ihn lesend frei. Die Lehrperson braucht die App nicht – nur einen Browser.` }),
+    h('p', { style: 'margin-top:0; font-size:13px; color:var(--muted);', text: `Legt in deinem Drive einen Ordner «Freigabe – ${t.name}» an und gibt ihn lesend frei: ${nSheets} PDF(s) (je Blatt eines) und, falls vorhanden, eine Textdatei «Links & Notizen». Nicht enthalten: Aufnahmen, Backing-Tracks und Melodie (Audio). Die Empfängerin bzw. der Empfänger braucht die App nicht – nur ein Google-Konto und einen Browser.` }),
     sh ? h('div', { class: 'sub', style: 'margin-bottom:8px;', text: '✓ Bereits geteilt (' + new Date(sh.u).toLocaleDateString('de-CH') + ')' + (sh.em && sh.em.length ? ' mit ' + sh.em.join(', ') : '') + (sh.lk ? ' · per Link' : '') + ' – «Aktualisieren» ersetzt den Inhalt, der Link bleibt gleich.' }) : null,
     h('label', { text: 'E-Mail (optional, wenn per Link geteilt wird)', style: 'display:block; font-size:12px; color:var(--muted); margin:2px 0 4px;' }), email, msg,
     row(cbA, 'Mit meinen Anmerkungen (Striche, Symbole, Textfelder, Notizen)'),
