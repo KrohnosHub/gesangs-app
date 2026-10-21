@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-07M6bC2f8h4WhqFO7mJ/Ys6Dj9upuC4fWv6rql+2CZY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-l3hZx46hQLHTFxQNlhPM2VfOoS+0ADiPVVAwX/HpTwM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-07M6bC2f8h4WhqFO7mJ/Ys6Dj9upuC4fWv6rql+2CZY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-l3hZx46hQLHTFxQNlhPM2VfOoS+0ADiPVVAwX/HpTwM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -914,7 +914,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.51.0';
+const APP_VERSION = '2.52.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -6633,7 +6633,7 @@ function showTour() {
     { t: 'Auftritt', p: [
       '«▶ Auftritt» blendet alle Bedienelemente aus. Blättern: auf den linken/rechten Rand tippen, wischen, Pfeiltasten oder Fusspedal; Mitte antippen = Leiste. Aus einer Setliste springst du über «♫ Setliste» zum nächsten Lied.'] },
     { t: 'Teilen, Offline, Sicherung', p: [
-      'Mit «📤 Teilen» gibst du einen Song (oder eine Setliste) als Google-Drive-Ordner frei – an Gesangslehrerin, Schüler oder andere (nur lesend, per E-Mail oder Link). Enthalten sind die Blätter als PDF und die Links; Audio-Dateien werden nicht mitgeschickt. Empfänger brauchen die App nicht.',
+      'Mit «📤 Teilen» gibst du einen Song (oder eine Setliste) als Google-Drive-Ordner frei – an Gesangslehrerin, Schüler oder andere (nur lesend, per E-Mail oder Link). Enthalten sind die Blätter als PDF, die Links und auf Wunsch Backing-Tracks (Aufnahmen nur per Haken). Empfänger brauchen die App nicht.',
       'Unter «⋯ Mehr»: «Alles offline speichern» (Blätter, Backing-Tracks, Aufnahmen für Proben ohne Internet), «Offline & Sync» zeigt, was synchronisiert ist, dazu Backup. Die Hilfe findest du jederzeit über ❓ links unten.'] }
   ];
   let i = 0;
@@ -7912,6 +7912,21 @@ async function songInfoText(songId, withNotes) {
   return out.length > 3 ? out.join('\n') : null;
 }
 
+// Audio für die Freigabe (ab v2.52.0): Backing-Tracks, auf Wunsch Aufnahmen und Referenzmelodie
+function shareAudioItems(songId, opts) {
+  const s = lib.songs[songId]; if (!s) return [];
+  const out = [];
+  if (opts.backing) songAudio(songId, 'backing').forEach(a => out.push({ a, pre: 'Backing' }));
+  if (opts.takes) songAudio(songId, 'take').forEach(a => out.push({ a, pre: 'Aufnahme' }));
+  if (opts.ref && s.ref && s.ref.id) { const a = (s.audio || []).find(x => x.id === s.ref.id) || { id: s.ref.id, name: s.ref.name || 'Melodie' }; out.push({ a, pre: 'Melodie' }); }
+  return out;
+}
+const EXT_BY_MIME = { 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/x-m4a': '.m4a', 'audio/wav': '.wav', 'audio/x-wav': '.wav', 'audio/ogg': '.ogg', 'audio/webm': '.webm', 'audio/aac': '.aac', 'audio/flac': '.flac', 'audio/midi': '.mid', 'audio/x-midi': '.mid' };
+async function uploadToFolder(file, fid) {
+  const meta = { name: file.name, parents: [fid] };
+  if (file.size > RESUMABLE_FROM) { try { return await uploadResumable(file, meta); } catch (e) { if (e.message === 'unauthorized') throw e; } }
+  return uploadMultipart(file, meta);
+}
 async function runShare(target, opts, progress) {
   const obj = target.obj, prev = obj.sh || null;
   let fid = prev && prev.fid;
@@ -7936,6 +7951,18 @@ async function runShare(target, opts, progress) {
     const name = prefix(i) + safeFileName(lib.songs[songs[i]].n) + ' – Links & Notizen.txt';
     await uploadMultipart(new File([txt], name, { type: 'text/plain' }), { name, parents: [fid] });
   }
+  let audioN = 0, audioFailed = [];
+  const aJobs = songs.flatMap((sid, i) => shareAudioItems(sid, opts).map(x => Object.assign(x, { sid, i })));
+  for (const j of aJobs) {
+    progress(`Lade Audio ${audioN + audioFailed.length + 1}/${aJobs.length} …`);
+    try {
+      const blob = await loadAudioBlob(j.a);
+      let nm = safeFileName(j.a.name || 'Audio'); if (!/\.[A-Za-z0-9]{2,4}$/.test(nm)) nm += EXT_BY_MIME[blob.type] || '';
+      const name = prefix(j.i) + safeFileName(lib.songs[j.sid].n) + ' – ' + j.pre + ' – ' + nm;
+      await uploadToFolder(new File([blob], name, { type: blob.type || 'application/octet-stream' }), fid);
+      audioN++;
+    } catch (e) { if (e && e.message === 'unauthorized') throw e; audioFailed.push((j.a && j.a.name) || 'Audio'); }
+  }
   progress('Gebe frei …');
   const em = new Set((prev && prev.em) || []);
   if (opts.email && !em.has(opts.email)) {
@@ -7947,7 +7974,7 @@ async function runShare(target, opts, progress) {
   else if (!opts.link && lk) { await driveRemoveLinkPermission(fid); lk = 0; }
   const sh = { fid, em: [...em], lk, u: nowTs() };
   if (target.kind === 'set') setTouch(target.id, x => { x.sh = sh; }); else sTouch(target.id, x => { x.sh = sh; });
-  return { fid, count: jobs.length };
+  return { fid, count: jobs.length, audio: audioN, failed: audioFailed };
 }
 
 function shareTarget(kind, id) {
@@ -7961,14 +7988,21 @@ function shareDialog(kind, id) {
   const msg = h('textarea', { rows: 3, style: 'width:100%; margin-top:6px;', placeholder: 'Nachricht (optional), z. B. «Bitte bis Donnerstag anschauen»' });
   const cbA = h('input', { type: 'checkbox' }); cbA.checked = true;
   const cbL = h('input', { type: 'checkbox' }); cbL.checked = !!(sh && sh.lk);
+  const nAud = (k) => t.songs.filter(songAlive).reduce((a, sid) => a + (k === 'ref' ? (lib.songs[sid].ref && lib.songs[sid].ref.id ? 1 : 0) : songAudio(sid, k).length), 0);
+  const nB = nAud('backing'), nT = nAud('take'), nR = nAud('ref');
+  const cbB = h('input', { type: 'checkbox' }); cbB.checked = true;
+  const cbT = h('input', { type: 'checkbox' }), cbR = h('input', { type: 'checkbox' });
   const err = h('div', { class: 'empty-note', style: 'display:none; color:var(--danger); padding:6px 0 0;' });
   const row = (cb, text) => h('label', { style: 'display:flex; gap:8px; align-items:center; margin-top:8px; font-size:13px;' }, cb, h('span', { text }));
   const nSheets = t.songs.filter(songAlive).reduce((a, sid) => a + songSheets(sid).length, 0);
   const body = h('div', {},
-    h('p', { style: 'margin-top:0; font-size:13px; color:var(--muted);', text: `Legt in deinem Drive einen Ordner «Freigabe – ${t.name}» an und gibt ihn lesend frei: ${nSheets} PDF(s) (je Blatt eines) und, falls vorhanden, eine Textdatei «Links & Notizen». Nicht enthalten: Aufnahmen, Backing-Tracks und Melodie (Audio). Die Empfängerin bzw. der Empfänger braucht die App nicht – nur ein Google-Konto und einen Browser.` }),
+    h('p', { style: 'margin-top:0; font-size:13px; color:var(--muted);', text: `Legt in deinem Drive einen Ordner «Freigabe – ${t.name}» an und gibt ihn lesend frei: ${nSheets} PDF(s) (je Blatt eines) und, falls vorhanden, eine Textdatei «Links & Notizen». Audio (Backing-Tracks, Aufnahmen, Melodie) wählst du unten aus. Die Empfängerin bzw. der Empfänger braucht die App nicht – nur ein Google-Konto und einen Browser.` }),
     sh ? h('div', { class: 'sub', style: 'margin-bottom:8px;', text: '✓ Bereits geteilt (' + new Date(sh.u).toLocaleDateString('de-CH') + ')' + (sh.em && sh.em.length ? ' mit ' + sh.em.join(', ') : '') + (sh.lk ? ' · per Link' : '') + ' – «Aktualisieren» ersetzt den Inhalt, der Link bleibt gleich.' }) : null,
     h('label', { text: 'E-Mail (optional, wenn per Link geteilt wird)', style: 'display:block; font-size:12px; color:var(--muted); margin:2px 0 4px;' }), email, msg,
     row(cbA, 'Mit meinen Anmerkungen (Striche, Symbole, Textfelder, Notizen)'),
+    nB ? row(cbB, `Backing-Tracks mitsenden (${nB})`) : null,
+    nR ? row(cbR, `Referenzmelodie mitsenden (${nR})`) : null,
+    nT ? row(cbT, `Meine Aufnahmen mitsenden (${nT}) – das sind deine Stimmaufnahmen`) : null,
     row(cbL, 'Zusätzlich per Link teilen (jede Person mit dem Link kann ansehen)'),
     err,
     sh ? h('button', { class: 'danger', style: 'margin-top:12px;', text: '✕ Freigabe beenden', onclick: () => { api.close(); stopShare(t); } }) : null);
@@ -7980,7 +8014,7 @@ function shareDialog(kind, id) {
         if (e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { err.textContent = 'Bitte eine gültige E-Mail-Adresse eingeben.'; err.style.display = ''; return false; }
         if (!e && !cbL.checked && !(sh && ((sh.em || []).length || sh.lk))) { err.textContent = 'Bitte eine E-Mail-Adresse eingeben oder «per Link teilen» wählen.'; err.style.display = ''; return false; }
         if (e) lsSet('gapp_teacher', e);
-        doShare(t, { email: e, message: msg.value.trim(), annot: cbA.checked, link: cbL.checked });
+        doShare(t, { email: e, message: msg.value.trim(), annot: cbA.checked, link: cbL.checked, backing: nB > 0 && cbB.checked, takes: nT > 0 && cbT.checked, ref: nR > 0 && cbR.checked });
       } }
     ]
   });
@@ -7991,12 +8025,13 @@ async function doShare(t, opts) {
     await flushSave(); await flushTextSave();
     const r = await runShare(t, opts, (m) => setStatus(m, 'saving'));
     setStatus('Geteilt', 'ok');
-    shareResultDialog(r.fid, r.count, opts);
+    shareResultDialog(r.fid, r.count, opts, r);
   } catch (e) { fail('Teilen fehlgeschlagen', e); }
 }
-function shareResultDialog(fid, count, opts) {
+function shareResultDialog(fid, count, opts, r) {
   const url = shareFolderUrl(fid);
-  const lines = [count + ' PDF(s) liegen im Freigabe-Ordner.'];
+  const lines = [count + ' PDF(s)' + (r && r.audio ? ' und ' + r.audio + ' Audio-Datei(en)' : '') + ' liegen im Freigabe-Ordner.'];
+  if (r && r.failed && r.failed.length) lines.push('Nicht hochgeladen (offline oder nicht verfügbar): ' + r.failed.join(', ') + '.');
   if (opts.email) lines.push('«' + opts.email + '» hat Lesezugriff und bekommt von Google eine E-Mail mit dem Link.');
   if (opts.link) lines.push('Zusätzlich kann jede Person mit dem Link den Ordner ansehen.');
   openModal({
