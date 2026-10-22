@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-QXp0sDNxw6W9i9idLJdRB6K/u6oNKfqgHeueK6eSJqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-m4XEbzFrm626FomirqZGHuIZmooJVNuxta6didecc3A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-QXp0sDNxw6W9i9idLJdRB6K/u6oNKfqgHeueK6eSJqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-m4XEbzFrm626FomirqZGHuIZmooJVNuxta6didecc3A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -564,6 +564,8 @@
   #spreadBtn.on, #perfSpread.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
   /* v2.53.0: zwei A4-Seiten (Seitenverhältnis 2×210:297), Text füllt zuerst Seite 1, dann Seite 2 – Verteilung per Leerzeilen/Umbrüchen steuerbar */
   body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); aspect-ratio:420 / 297; height:auto; min-height:0; column-count:2; column-gap:64px; column-fill:auto; column-rule:1px solid #d9d2c8; overflow:auto; padding:34px 3vw;}
+  /* v2.54.0: passt alles auf eine Seite, nur eine A4-Seite zeigen */
+  body.spread-text:not(.perf) #textSheet.spread-one{width:min(760px, 100%); aspect-ratio:210 / 297; column-count:1; column-rule:none; padding:34px 5vw;}
   body.perf.spread-text #textSheet{width:min(1500px, 97vw); height:calc(100% - 24px); margin:12px auto; align-self:stretch; padding:22px 3.5vw;
     column-count:2; column-gap:7vw; column-fill:auto; overflow:hidden; cursor:default;}
   body.perf.spread-text #canvasWrap{overflow:hidden;}
@@ -915,7 +917,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.53.0';
+const APP_VERSION = '2.54.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -2993,6 +2995,16 @@ const curP = () => currentPage + (spreadShown && pageOff && currentPage + 1 <= t
 const activeInk = () => curP() > currentPage ? inkCanvas2 : inkCanvas;
 const textSpread = () => spreadPref && spreadAllowed() && sheetKind === 'text';
 const textSpreadPaged = () => perf && textSpread();
+// v2.54.0: Seitenzahl folgt dem Inhalt – passt alles auf eine Seite, verschwindet die leere zweite; läuft der Text über, öffnet sich die zweite.
+let tsFitQ = 0;
+function textSpreadFit() {
+  const el = $('textSheet');
+  if (!el) return;
+  if (!textSpread() || perf) { el.classList.remove('spread-one'); return; }
+  el.classList.add('spread-one');
+  if (el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2) el.classList.remove('spread-one');
+}
+const queueTextSpreadFit = () => { cancelAnimationFrame(tsFitQ); tsFitQ = requestAnimationFrame(textSpreadFit); };
 const spreadStart = (p) => p - ((p - 1) % 2);
 const baseCanvas2 = $('baseCanvas2'), inkCanvas2 = $('inkCanvas2');
 let base2Cache = null, prefetched2 = null, render2Seq = 0, aspect2 = 0;
@@ -3080,7 +3092,7 @@ function refreshSpread(force) {
   ['spreadBtn', 'perfSpread'].forEach(id => { const b = $(id); b.classList.toggle('on', spreadPref && spreadAllowed()); b.classList.toggle('portrait-off', spreadPref && !spreadAllowed()); });
   $('spreadBtn').title = spreadAllowed() ? 'Zwei Seiten nebeneinander (Zeichnen: automatisch eine Seite)' : 'Zwei Seiten nebeneinander – im Hochformat aus, Gerät ins Querformat drehen';
   if (!ready) { spreadShown = sp; return; }
-  if (sheetKind === 'text') { spreadShown = false; textPageSync(); updatePageNav(); return; }
+  if (sheetKind === 'text') { spreadShown = false; textSpreadFit(); textPageSync(); updatePageNav(); return; }
   if (sp === spreadShown && !force) return;
   spreadShown = sp; pageOff = 0; selId = null;
   fitMode = (perf || sp || (spreadPref && spreadAllowed())) ? 'page' : 'width'; zoom = 1;   // Doppelseite / Ansicht "ganze Seite": standardmässig beide Seiten vollständig im Fenster
@@ -6863,6 +6875,7 @@ function applyTxtStyle() {
   textSheetEl.style.fontSize = (txtFs * (perf ? PERF_TXT_SCALE : 1)) + 'px';
   textSheetEl.style.lineHeight = String(txtLh);
   textSheetEl.style.textAlign = txtAlignDoc === 'left' ? '' : txtAlignDoc;
+  queueTextSpreadFit();
 }
 function setSelValue(sel, v) {
   const s = String(v);
@@ -6874,6 +6887,7 @@ function loadTextSheet(rawHtmlContent) {
   txtFs = parsed.fontSize; txtLh = parsed.lineHeight; textLrc = parsed.lrc; txtAlignDoc = parsed.align;
   textSheetEl.innerHTML = parsed.html;
   applyTxtStyle();
+  queueTextSpreadFit();
   lastTxtRange = null;
   reflectParaFormat(null);
 }
@@ -6943,7 +6957,7 @@ function reflectParaFormat(p) {
 document.addEventListener('selectionchange', updateTxtButtonStates);
 try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
 
-textSheetEl.addEventListener('input', () => { if (ready && sheetKind === 'text') { ensureParagraphs(); queueTextSave(); } });
+textSheetEl.addEventListener('input', () => { if (ready && sheetKind === 'text') { ensureParagraphs(); queueTextSave(); queueTextSpreadFit(); } });
 // Format pro Absatz (ab v2.6.0): gilt für die markierten Absätze bzw. den Absatz mit dem Cursor;
 // ohne Cursor im Text für alle Absätze. Grösse wird relativ (em) zur Grundgrösse gespeichert, damit
 // die Vergrösserung im Auftrittsmodus weiterhin für alle Zeilen wirkt.

@@ -98,9 +98,14 @@ module.exports = async () => {
     await test('Text: zwei Spalten; im Auftritt Doppelseiten per Tippen', async () => {
       const pg = await open(b, D, { logs: false }); await prep(pg);
       await pg.click('text=Text >> nth=0'); await wait(pg, 1500); await pg.click('#spreadBtn'); await wait(pg, 700);
-      eq(await pg.evaluate(() => getComputedStyle(textSheetEl).columnCount), '2');
-      const r = await pg.evaluate(() => { const e = textSheetEl.getBoundingClientRect(); return [e.width / e.height, getComputedStyle(textSheetEl).columnFill]; });
-      ok(Math.abs(r[0] - 420 / 297) < 0.05 && r[1] === 'auto', 'A4-Doppelseite, Seite 1 füllt zuerst: ' + r);
+      const st = () => pg.evaluate(() => { const e = textSheetEl.getBoundingClientRect(); return { one: textSheetEl.classList.contains('spread-one'), cols: getComputedStyle(textSheetEl).columnCount, ratio: e.width / e.height, d: [textSheetEl.scrollHeight, textSheetEl.clientHeight, textSheetEl.children.length, textSheetEl.className, getComputedStyle(textSheetEl).overflowY, getComputedStyle(textSheetEl).minHeight] }; });
+      const lines = (n) => pg.evaluate((n) => { textSheetEl.innerHTML = Array.from({ length: n }, (_, i) => '<p>Zeile ' + i + '</p>').join(''); textSheetEl.dispatchEvent(new Event('input', { bubbles: true })); }, n);
+      await lines(120); await wait(pg, 300);
+      let r = await st(); eq([r.one, r.cols], [false, '2'], 'viel Text: zwei Seiten ' + JSON.stringify(r.d)); ok(Math.abs(r.ratio - 420 / 297) < 0.05, 'A4-Doppelseite ' + r.ratio);
+      await lines(5); await wait(pg, 300);
+      r = await st(); eq([r.one, r.cols], [true, '1'], 'wenig Text: eine Seite'); ok(Math.abs(r.ratio - 210 / 297) < 0.05, 'A4 einzeln ' + r.ratio);
+      await lines(120); await wait(pg, 300);
+      eq((await st()).one, false, 'Text läuft über: zweite Seite öffnet sich');
       await pg.click('#perfBtn'); await wait(pg, 1500);
       const n = await pg.evaluate(() => tsCount()); ok(n > 1, 'mehrere Doppelseiten: ' + n);
       await pg.keyboard.press('ArrowRight'); await wait(pg, 400);

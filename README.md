@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.54.0 – Textblatt: Seitenzahl folgt dem Inhalt
+- Zwei-Seiten-Ansicht: passt der Text auf eine Seite, wird nur eine A4-Seite gezeigt (keine leere zweite); läuft er beim Bearbeiten über, öffnet sich die zweite automatisch – und umgekehrt.
+
 ### v2.53.0 – Zwei-Seiten-Ansicht: Textblatt als A4-Seiten, Scans ganz sichtbar
 - Textblatt im Zwei-Seiten-Modus: zwei A4-Seiten; Text füllt erst Seite 1, dann Seite 2 (statt gleichmässiger Spaltenteilung). Verteilung per Leerzeilen steuerbar.
 - Einseitige Blätter/Scans bleiben einseitig und werden bei aktiver Zwei-Seiten-Einstellung komplett ins Fenster skaliert.
