@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-m4XEbzFrm626FomirqZGHuIZmooJVNuxta6didecc3A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-FfjCaqcwrEGrAL5bPf2tPmS7BvmVxaXU1JCqpOGNvzM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-m4XEbzFrm626FomirqZGHuIZmooJVNuxta6didecc3A=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-FfjCaqcwrEGrAL5bPf2tPmS7BvmVxaXU1JCqpOGNvzM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -563,9 +563,9 @@
   #spreadBtn.portrait-off, #perfSpread.portrait-off{opacity:.55; border-style:dashed;}
   #spreadBtn.on, #perfSpread.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
   /* v2.53.0: zwei A4-Seiten (Seitenverhältnis 2×210:297), Text füllt zuerst Seite 1, dann Seite 2 – Verteilung per Leerzeilen/Umbrüchen steuerbar */
-  body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); aspect-ratio:420 / 297; height:auto; min-height:0; column-count:2; column-gap:64px; column-fill:auto; column-rule:1px solid #d9d2c8; overflow:auto; padding:34px 3vw;}
+  body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); aspect-ratio:420 / 297; height:auto; min-height:0; column-count:2; column-gap:64px; column-fill:auto; column-rule:1px solid #d9d2c8; overflow:auto; padding:34px 48px;}
   /* v2.54.0: passt alles auf eine Seite, nur eine A4-Seite zeigen */
-  body.spread-text:not(.perf) #textSheet.spread-one{width:min(760px, 100%); aspect-ratio:210 / 297; column-count:1; column-rule:none; padding:34px 5vw;}
+  body.spread-text:not(.perf) #textSheet.spread-one{width:min(760px, 100%); aspect-ratio:210 / 297; column-count:1; column-rule:none; padding:34px 48px;}
   body.perf.spread-text #textSheet{width:min(1500px, 97vw); height:calc(100% - 24px); margin:12px auto; align-self:stretch; padding:22px 3.5vw;
     column-count:2; column-gap:7vw; column-fill:auto; overflow:hidden; cursor:default;}
   body.perf.spread-text #canvasWrap{overflow:hidden;}
@@ -917,7 +917,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.54.0';
+const APP_VERSION = '2.55.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -3001,10 +3001,17 @@ function textSpreadFit() {
   const el = $('textSheet');
   if (!el) return;
   if (!textSpread() || perf) { el.classList.remove('spread-one'); return; }
+  if (!el.offsetParent) return;   // unsichtbar (z. B. anderes Blatt aktiv): später per ResizeObserver
   el.classList.add('spread-one');
   if (el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2) el.classList.remove('spread-one');
 }
 const queueTextSpreadFit = () => { cancelAnimationFrame(tsFitQ); tsFitQ = requestAnimationFrame(textSpreadFit); };
+// jede Änderung (Tippen, Einfügen, Akkorde/Symbole, Formatierung, Anzeigen/Verstecken, Schriftladen) prüft die Seitenzahl neu
+try {
+  new MutationObserver(queueTextSpreadFit).observe($('textSheet'), { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['style'] });
+  new ResizeObserver(queueTextSpreadFit).observe($('textSheet'));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(queueTextSpreadFit);
+} catch (e) {}
 const spreadStart = (p) => p - ((p - 1) % 2);
 const baseCanvas2 = $('baseCanvas2'), inkCanvas2 = $('inkCanvas2');
 let base2Cache = null, prefetched2 = null, render2Seq = 0, aspect2 = 0;
@@ -7309,7 +7316,7 @@ async function renderPdfPreview(bytes, container, { targetW = 360, maxPages = 30
 // Änderungen bauen das PDF neu und aktualisieren die Vorschau (entprellt).
 function textPdfExportDialog(songName, html, { downloadName, sheetName, srcFile }) {
   const sid = currentSongId && sget(currentSongId) ? currentSongId : null;
-  const opts = { header: false, margin: 54, scale: 1 };
+  const opts = { header: false, margin: TXT_PDF_MARGIN, scale: 1 };
   // Vorschau: Miniaturen aller Seiten in einem eigenen, scrollbaren Bereich (Regler bleiben sichtbar);
   // «Grosse Ansicht» zeigt die Seiten einspaltig in voller Breite.
   const previewWrap = h('div', { class: 'pv-wrap', style: 'min-height:180px; max-height:46vh; overflow:auto; padding:8px; background:rgba(128,128,128,.12); border-radius:8px;' });
@@ -7456,7 +7463,9 @@ const symWidthFactor = (k) => SYM_WIDE[k] || (DYN[k] ? 0.5 + 0.45 * k.length : 1
 // margin (Seitenränder in pt) und scale (Gesamtskalierung des Textes) ab v2.14.0 im Export-Dialog
 // einstellbar (siehe textPdfExportDialog() in 14_textedit.js) -- wirkt sich, anders als die
 // Schriftgrösse im Text-Blatt selbst, auf den Seitenumbruch und damit auf die PDF-Grösse aus.
-async function buildTextSheetPdf(songName, html, { header = false, margin = 54, scale = 1 } = {}) {
+// v2.55.0: Standardansicht = Bildschirm-Seite (A4 = 760 px breit → 595 pt): 1 px ≙ 0,783 pt, Zeilenabstand wie am Bildschirm, Rand ≈ 48 px ≙ 36 pt
+const TXT_PT_PER_PX = 595.28 / 760, TXT_PDF_MARGIN = 36;
+async function buildTextSheetPdf(songName, html, { header = false, margin = TXT_PDF_MARGIN, scale = 1 } = {}) {
   const { PDFDocument, StandardFonts, rgb } = await loadPdfLib();
   const parsed = parseLyricsHtml(html);
   const root = document.createElement('div'); root.innerHTML = parsed.html;
@@ -7485,7 +7494,7 @@ async function buildTextSheetPdf(songName, html, { header = false, margin = 54, 
     symImg[k] = await doc.embedPng(new Uint8Array(await (await canvasBlob(c, 'image/png')).arrayBuffer()));
   }
   const W = 595.28, H = 841.89, M = clamp(margin, 24, 90), MAXW = W - 2 * M;
-  const size = clamp(parsed.fontSize * clamp(scale, 0.5, 1.5), 6, 60);
+  const size = clamp(parsed.fontSize * TXT_PT_PER_PX * clamp(scale, 0.5, 1.5), 4, 60);
   const accent = rgb(0x6b / 255, 0x4f / 255, 0x3b / 255), muted = rgb(0x8a / 255, 0x81 / 255, 0x78 / 255);
   const ink = rgb(0x2a / 255, 0x26 / 255, 0x22 / 255), chordCol = rgb(0x24 / 255, 0x71 / 255, 0xa3 / 255), refBar = rgb(0xc9 / 255, 0xb2 / 255, 0x9b / 255);
   const title = sanitizeForPdf(songName);
@@ -7520,7 +7529,7 @@ async function buildTextSheetPdf(songName, html, { header = false, margin = 54, 
   paras.forEach((p, pi) => {
     const f = p.fmt, fam = f.fam;
     const sz = clamp(size * f.mult * (p.cls === 'lbl' ? 0.8 : 1), 5, 60);
-    const lineGap = sz * f.lh * 0.8, chordSize = sz * 0.72, chordH = chordSize * 1.2;
+    const lineGap = sz * f.lh, chordSize = sz * 0.72, chordH = chordSize * 1.2;
     const x0 = M + (p.cls === 'ref' ? 14 : p.cls === 'bri' ? 22 : 0), maxw = W - M - x0;
     // Tokens: Wörter/Leerräume/Symbole mit Stil + daran hängende Akkorde
     const toks = []; let pend = [];
@@ -7539,7 +7548,7 @@ async function buildTextSheetPdf(songName, html, { header = false, margin = 54, 
     if (pend.length) toks.push({ s: '', st: {}, sp: false, w: 0, ch: pend });
     const hasText = toks.some(t => !t.br && (t.s.trim() || t.sym || (t.ch && t.ch.length)));
     if (!hasText) { need(lineGap); y -= lineGap; return; }
-    if (p.cls === 'lbl' && pi > 0) y -= size * 0.45;
+    if (p.cls === 'lbl' && pi > 0) y -= sz * 0.7;
     // Wörter (zusammenhängende Nicht-Leerraum-Tokens) zu Zeilen umbrechen
     const units = [];
     toks.forEach(t => {
@@ -7582,6 +7591,7 @@ async function buildTextSheetPdf(songName, html, { header = false, margin = 54, 
       if (p.cls === 'ref') page.drawLine({ start: { x: M + 3, y: y - top + 1 }, end: { x: M + 3, y: y - top - lineGap + 3 }, thickness: 2, color: refBar });
       y -= top + lineGap;
     });
+    y -= sz * 0.15;   // Absatzabstand wie am Bildschirm (0,15 em)
   });
   const pages = doc.getPages();
   if (pages.length > 1) pages.forEach((pg, i) => safeDrawText(pg, 'Seite ' + (i + 1) + '/' + pages.length, { x: W - M - 40, y: 30, size: 8, font: FR, color: muted }));

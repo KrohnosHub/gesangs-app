@@ -21,6 +21,11 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.55.0 – Text→PDF sieht standardmässig aus wie das Textblatt; Seitenzahl zuverlässiger
+- PDF-Export aus Textblatt: Standard (Ränder 36 pt, Skalierung 100 %) entspricht jetzt der Bildschirm-A4-Seite – gleiche relative Schriftgrösse, Zeilenabstand, Absatzabstände und Seitenränder.
+- Seitenränder der Textseite am Bildschirm fest (nicht mehr vom Fenster abhängig).
+- Ein-/Zwei-Seiten-Anzeige beobachtet das Blatt laufend (Änderungen, Sichtbarkeit, Grösse, Schriften) statt nur beim Tippen.
+
 ### v2.54.0 – Textblatt: Seitenzahl folgt dem Inhalt
 - Zwei-Seiten-Ansicht: passt der Text auf eine Seite, wird nur eine A4-Seite gezeigt (keine leere zweite); läuft er beim Bearbeiten über, öffnet sich die zweite automatisch – und umgekehrt.
 

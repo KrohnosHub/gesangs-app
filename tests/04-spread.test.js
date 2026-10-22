@@ -106,6 +106,10 @@ module.exports = async () => {
       r = await st(); eq([r.one, r.cols], [true, '1'], 'wenig Text: eine Seite'); ok(Math.abs(r.ratio - 210 / 297) < 0.05, 'A4 einzeln ' + r.ratio);
       await lines(120); await wait(pg, 300);
       eq((await st()).one, false, 'Text läuft über: zweite Seite öffnet sich');
+      await pg.evaluate(() => { textSheetEl.innerHTML = '<p>kurz</p>'; });   // ohne input-Ereignis (z. B. Akkord/Symbol/Undo)
+      await wait(pg, 300); eq((await st()).one, true, 'DOM-Änderung ohne Eingabe: wieder eine Seite');
+      await pg.evaluate((n) => { textSheetEl.innerHTML = Array.from({ length: n }, (_, i) => '<p>Zeile ' + i + '</p>').join(''); }, 120);
+      await wait(pg, 300); eq((await st()).one, false, 'DOM-Änderung ohne Eingabe: zweite Seite');
       await pg.click('#perfBtn'); await wait(pg, 1500);
       const n = await pg.evaluate(() => tsCount()); ok(n > 1, 'mehrere Doppelseiten: ' + n);
       await pg.keyboard.press('ArrowRight'); await wait(pg, 400);
