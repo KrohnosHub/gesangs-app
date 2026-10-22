@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <!-- Ab v2.9.0: zweite Verteidigungslinie gegen XSS (die eigentliche Absicherung sitzt bereits in
-     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-MwYXGusxFI6o4rjBUk48eIvuEVk1HjHu4E8jkIy1jS8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
+     14_textedit.js beim Einlesen/Sanitisieren fremder HTML-Fragmente). default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-QXp0sDNxw6W9i9idLJdRB6K/u6oNKfqgHeueK6eSJqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; wird von build.py durch
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-MwYXGusxFI6o4rjBUk48eIvuEVk1HjHu4E8jkIy1jS8=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-QXp0sDNxw6W9i9idLJdRB6K/u6oNKfqgHeueK6eSJqY=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -562,7 +562,8 @@
   body.perf.spread-on #baseCanvas, body.perf.spread-on #baseCanvas2{box-shadow:none;}
   #spreadBtn.portrait-off, #perfSpread.portrait-off{opacity:.55; border-style:dashed;}
   #spreadBtn.on, #perfSpread.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
-  body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); column-count:2; column-gap:64px;}
+  /* v2.53.0: zwei A4-Seiten (Seitenverhältnis 2×210:297), Text füllt zuerst Seite 1, dann Seite 2 – Verteilung per Leerzeilen/Umbrüchen steuerbar */
+  body.spread-text:not(.perf) #textSheet{width:min(1500px, 100%); aspect-ratio:420 / 297; height:auto; min-height:0; column-count:2; column-gap:64px; column-fill:auto; column-rule:1px solid #d9d2c8; overflow:auto; padding:34px 3vw;}
   body.perf.spread-text #textSheet{width:min(1500px, 97vw); height:calc(100% - 24px); margin:12px auto; align-self:stretch; padding:22px 3.5vw;
     column-count:2; column-gap:7vw; column-fill:auto; overflow:hidden; cursor:default;}
   body.perf.spread-text #canvasWrap{overflow:hidden;}
@@ -914,7 +915,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.52.1';
+const APP_VERSION = '2.53.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -3082,7 +3083,7 @@ function refreshSpread(force) {
   if (sheetKind === 'text') { spreadShown = false; textPageSync(); updatePageNav(); return; }
   if (sp === spreadShown && !force) return;
   spreadShown = sp; pageOff = 0; selId = null;
-  fitMode = (perf || sp) ? 'page' : 'width'; zoom = 1;   // Doppelseite: standardmässig beide Seiten vollständig im Fenster
+  fitMode = (perf || sp || (spreadPref && spreadAllowed())) ? 'page' : 'width'; zoom = 1;   // Doppelseite / Ansicht "ganze Seite": standardmässig beide Seiten vollständig im Fenster
   if (sp) currentPage = spreadStart(currentPage); else hideSecond();
   markActive();
   updatePageNav(); bindNotes(); applyCssSize();
@@ -4569,7 +4570,7 @@ function enterPerf() {
 function exitPerf() {
   if (!perf) return;
   perf = false; document.body.classList.remove('perf');
-  fitMode = spreadOn() ? 'page' : 'width'; zoom = 1; prefetched = null; hidePerfHint();
+  fitMode = (spreadOn() || (spreadPref && spreadAllowed())) ? 'page' : 'width'; zoom = 1; prefetched = null; hidePerfHint();
   refreshSpread();
   setPerfBar(false);
   try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}

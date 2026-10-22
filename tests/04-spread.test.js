@@ -99,6 +99,8 @@ module.exports = async () => {
       const pg = await open(b, D, { logs: false }); await prep(pg);
       await pg.click('text=Text >> nth=0'); await wait(pg, 1500); await pg.click('#spreadBtn'); await wait(pg, 700);
       eq(await pg.evaluate(() => getComputedStyle(textSheetEl).columnCount), '2');
+      const r = await pg.evaluate(() => { const e = textSheetEl.getBoundingClientRect(); return [e.width / e.height, getComputedStyle(textSheetEl).columnFill]; });
+      ok(Math.abs(r[0] - 420 / 297) < 0.05 && r[1] === 'auto', 'A4-Doppelseite, Seite 1 füllt zuerst: ' + r);
       await pg.click('#perfBtn'); await wait(pg, 1500);
       const n = await pg.evaluate(() => tsCount()); ok(n > 1, 'mehrere Doppelseiten: ' + n);
       await pg.keyboard.press('ArrowRight'); await wait(pg, 400);

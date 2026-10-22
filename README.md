@@ -21,6 +21,10 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.53.0 – Zwei-Seiten-Ansicht: Textblatt als A4-Seiten, Scans ganz sichtbar
+- Textblatt im Zwei-Seiten-Modus: zwei A4-Seiten; Text füllt erst Seite 1, dann Seite 2 (statt gleichmässiger Spaltenteilung). Verteilung per Leerzeilen steuerbar.
+- Einseitige Blätter/Scans bleiben einseitig und werden bei aktiver Zwei-Seiten-Einstellung komplett ins Fenster skaliert.
+
 ### v2.52.1 – Kurzanleitung überarbeitet, neutrale Formulierungen
 - Schritt 2: Geräte je auf eigener Zeile. Schritt 3: Lyrics werden automatisch gesucht, lassen sich bearbeiten und als PDF speichern; weitere Blätter sind optional (auch in der Willkommenskarte).
 - Keine geschlechtsspezifischen Bezeichnungen mehr («Lehrperson», «Lernende», «Aufgaben der Lehrperson»). Der Tag «Lehrer-Aufgabe» bleibt unverändert, da er in bestehenden Daten steckt.
