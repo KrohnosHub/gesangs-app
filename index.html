@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N/3mOscm2/zbgJp4eZig8RnX1YjmfE/N/0xpVGb000I=' 'sha256-FfjCaqcwrEGrAL5bPf2tPmS7BvmVxaXU1JCqpOGNvzM=' https://accounts.google.com https://www.youtube.com https://open.spotify.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-YR7gnJX438624lDlRAQspRZb/Sdp0YhsH50dJ/eOw1A=' 'sha256-XlxX5dweNWbDidHh5Zm7BAu3tFg3huLXP9BX0h1d+yM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -43,7 +43,9 @@
     // "⚙ Einstellungen" eingetragen und nur lokal in diesem Browser gespeichert (localStorage) --
     // nie in dieser Datei, nie über Drive synchronisiert. Ohne Eintrag bleibt die automatische
     // Spotify-Suche einfach leer (YouTube funktioniert unabhängig davon weiter).
-    SPOTIFY_CLIENT_SECRET: ''
+    SPOTIFY_CLIENT_SECRET: '',
+    // Ab v2.56.0: Last.fm-API-Key für «Lieder-Vorschläge» (kostenlos, last.fm/api/account/create); nur lokal auf dem Gerät gespeichert.
+    LASTFM_API_KEY: ''
   };
   // Ab v2.22.0 (Entwicklermodus): «?sim=NAME» startet die App als simulierter neuer Nutzer in einer vollständig getrennten
   // Umgebung (eigene IndexedDB, eigene localStorage-Schlüssel mit Präfix) – die echten Daten werden weder gelesen noch verändert.
@@ -54,6 +56,7 @@
   try {
     const spi = localStorage.getItem(LSP + 'sp_id'); if (spi) CONFIG.SPOTIFY_CLIENT_ID = spi;
     const sps = localStorage.getItem(LSP + 'sp_secret'); if (sps) CONFIG.SPOTIFY_CLIENT_SECRET = sps;
+    const lfk = localStorage.getItem(LSP + 'lf_key'); if (lfk) CONFIG.LASTFM_API_KEY = lfk;
   } catch (e) {}
   // Für automatisierte Tests: erlaubt, einzelne Werte oben ohne Codeänderung zu überschreiben.
   if (window.__TEST_CFG) Object.assign(CONFIG, window.__TEST_CFG);
@@ -917,7 +920,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.55.0';
+const APP_VERSION = '2.56.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -5827,6 +5830,10 @@ function openSettingsDialog() {
   const idInput = h('input', { type: 'text', placeholder: 'Spotify Client-ID', value: CONFIG.SPOTIFY_CLIENT_ID || '', style: 'width:100%; margin-bottom:6px;' });
   const secretInput = h('input', { type: 'password', placeholder: 'Spotify Client-Secret', value: CONFIG.SPOTIFY_CLIENT_SECRET || '', style: 'width:100%;' });
   body.append(h('div', { style: 'padding:9px 6px;' }, idInput, secretInput));
+  body.append(h('div', { class: 'empty-note', style: 'margin:6px 0;' }, h('b', { text: 'Lieder-Vorschläge: ' }), 'kostenloser Last.fm-API-Key (nur lokal gespeichert) für treffsichere Titel – erhältlich unter ',
+    h('a', { href: 'https://www.last.fm/api/account/create', target: '_blank', rel: 'noopener', style: 'color:var(--accent);' }, 'last.fm/api/account/create'), '.'));
+  const lfInput = h('input', { type: 'text', placeholder: 'Last.fm API-Key', value: CONFIG.LASTFM_API_KEY || '', style: 'width:100%;' });
+  body.append(h('div', { style: 'padding:0 6px 9px;' }, lfInput));
   if (!SIM) {
     const devCb = h('input', { type: 'checkbox', checked: rawGet('gapp_dev') === '1' || null });
     devCb.addEventListener('change', () => { rawSet('gapp_dev', devCb.checked ? '1' : '0'); devRow.style.display = devCb.checked ? '' : 'none'; });
@@ -5837,11 +5844,12 @@ function openSettingsDialog() {
   openModal({
     title: '⚙ Einstellungen', body,
     buttons: [
-      { label: 'Zurücksetzen', fn: () => { lsDel('sp_id'); lsDel('sp_secret'); CONFIG.SPOTIFY_CLIENT_ID = 'cba857fdd8fc4118bed7aad8e470ea5d'; CONFIG.SPOTIFY_CLIENT_SECRET = ''; spotifyToken = null; toast('Zurückgesetzt.'); return false; } },
+      { label: 'Zurücksetzen', fn: () => { lsDel('sp_id'); lsDel('sp_secret'); lsDel('lf_key'); CONFIG.LASTFM_API_KEY = ''; CONFIG.SPOTIFY_CLIENT_ID = 'cba857fdd8fc4118bed7aad8e470ea5d'; CONFIG.SPOTIFY_CLIENT_SECRET = ''; spotifyToken = null; toast('Zurückgesetzt.'); return false; } },
       { label: 'Speichern', primary: true, fn: () => {
         const id = idInput.value.trim(), sec = secretInput.value.trim();
         if (id) { lsSet('sp_id', id); CONFIG.SPOTIFY_CLIENT_ID = id; } else { lsDel('sp_id'); }
         if (sec) { lsSet('sp_secret', sec); CONFIG.SPOTIFY_CLIENT_SECRET = sec; } else { lsDel('sp_secret'); CONFIG.SPOTIFY_CLIENT_SECRET = ''; }
+        const lfk = lfInput.value.trim(); if (lfk) { lsSet('lf_key', lfk); CONFIG.LASTFM_API_KEY = lfk; } else { lsDel('lf_key'); CONFIG.LASTFM_API_KEY = ''; }
         spotifyToken = null; spotifyTokenExp = 0;   // altes Token verwerfen, ggf. neue Zugangsdaten sofort nutzen
         toast('Gespeichert.');
       } }
@@ -6551,10 +6559,182 @@ function newSongFlow() {
   setTimeout(() => titleInput.focus(), 0);
 }
 $('newSongBtn').addEventListener('click', newSongFlow);
+// ---------------------------------------------------------------
+// Lieder-Vorschläge (ab v2.56.0): aus bestehenden Songs ähnliche Titel vorschlagen.
+// Quelle: Last.fm (track.getSimilar, braucht einen kostenlosen API-Key in ⚙ Einstellungen); ohne Key
+// grober Ersatz über MusicBrainz (Genre-Tags des Interpreten → Interpreten mit gleichem Tag, ohne Titel).
+// Vorschau: YouTube-Suche erst beim Antippen (spart Kontingent), Wiedergabe im Mini-Player.
+// ---------------------------------------------------------------
+const normSong = (s) => String(s || '').toLowerCase().replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/[^a-z0-9äöüéèàçß]+/g, ' ').trim();
+function songParts(s) {
+  let t = String(s.n || ''), a = String(s.ar || '');
+  if (!a) { const m = t.match(/^(.+?)\s+[-–]\s+(.+)$/); if (m) { a = m[1]; t = m[2]; } }
+  return { title: t.trim(), artist: a.trim() };
+}
+async function lfmCall(method, params) {
+  const u = 'https://ws.audioscrobbler.com/2.0/?' + new URLSearchParams(Object.assign({ method, api_key: CONFIG.LASTFM_API_KEY, format: 'json', autocorrect: '1' }, params));
+  let res; try { res = await fetch(u); } catch (e) { throw new Error('Last.fm nicht erreichbar (offline?)'); }
+  const d = await res.json().catch(() => ({}));
+  if (d.error) throw new Error('Last.fm: ' + (d.message || d.error));
+  return d;
+}
+const arr = (x) => Array.isArray(x) ? x : x ? [x] : [];
+async function lfmSimilar(seed) {
+  let artist = seed.artist;
+  if (!artist) {                                   // Interpret unbekannt → über Titelsuche ermitteln
+    const d = await lfmCall('track.search', { track: seed.title, limit: '1' });
+    const t = arr(((d.results || {}).trackmatches || {}).track)[0]; artist = t ? t.artist : '';
+    if (!artist) return [];
+  }
+  const d = await lfmCall('track.getsimilar', { artist, track: seed.title, limit: '12' });
+  const tr = arr((d.similartracks || {}).track).map(t => ({ title: t.name, artist: (t.artist || {}).name || '', score: Number(t.match) || 0 }));
+  if (tr.length) return tr;
+  const out = [];                                  // kein Titel-Treffer → ähnliche Interpreten und deren bekannteste Titel
+  const sa = await lfmCall('artist.getsimilar', { artist, limit: '3' });
+  for (const a of arr((sa.similarartists || {}).artist)) {
+    const tt = await lfmCall('artist.gettoptracks', { artist: a.name, limit: '2' });
+    arr((tt.toptracks || {}).track).forEach(x => out.push({ title: x.name, artist: a.name, score: (Number(a.match) || 0) * 0.8 }));
+  }
+  return out;
+}
+let mbLast = 0;
+async function mbCall(path) {
+  const wait = Math.max(0, mbLast + 1100 - Date.now()); if (wait) await new Promise(r => setTimeout(r, wait));
+  mbLast = Date.now();
+  let res; try { res = await fetch('https://musicbrainz.org/ws/2/' + path + (path.includes('?') ? '&' : '?') + 'fmt=json'); } catch (e) { throw new Error('MusicBrainz nicht erreichbar (offline?)'); }
+  if (!res.ok) throw new Error('MusicBrainz-Fehler ' + res.status);
+  return res.json();
+}
+async function mbSimilar(seed) {
+  if (!seed.artist) return [];
+  const q = (s) => encodeURIComponent(s.replace(/"/g, ''));
+  const s = await mbCall('artist/?query=' + q('artist:"' + seed.artist + '"') + '&limit=1');
+  const a = arr(s.artists)[0]; if (!a) return [];
+  const d = await mbCall('artist/' + a.id + '?inc=tags');
+  const tags = arr(d.tags).sort((x, y) => (y.count || 0) - (x.count || 0)).slice(0, 2).map(t => t.name);
+  const out = [];
+  for (const tg of tags) {
+    const r = await mbCall('artist/?query=' + encodeURIComponent('tag:"' + tg.replace(/"/g, '') + '"') + '&limit=8');
+    arr(r.artists).forEach(x => { if (x.id !== a.id) out.push({ title: '', artist: x.name, score: (x.score || 50) / 200, tag: tg }); });
+  }
+  return out;
+}
+// Ergebnisse aller Ausgangssongs zusammenführen: bekannte Titel/Interpreten und abgelehnte entfernen, Mehrfachtreffer höher gewichten
+function aggregateSuggestions(results, existingTitles, seedArtists, dismissed) {
+  const map = new Map();
+  results.forEach(({ seed, items }) => items.forEach(it => {
+    const nt = normSong(it.title), na = normSong(it.artist);
+    if (!na && !nt) return;
+    if (nt && existingTitles.has(nt)) return;
+    if (!nt && seedArtists.has(na)) return;
+    const key = na + '|' + nt;
+    if (dismissed.has(key)) return;
+    let e = map.get(key);
+    if (!e) { e = { key, title: it.title, artist: it.artist, tag: it.tag || '', score: 0, seeds: new Set() }; map.set(key, e); }
+    e.score += it.score || 0.1; e.seeds.add(seed.title);
+  }));
+  return [...map.values()].map(e => Object.assign(e, { rank: e.score * (1 + 0.35 * (e.seeds.size - 1)) })).sort((a, b) => b.rank - a.rank).slice(0, 20);
+}
+const suggDismissed = () => { try { return new Set(JSON.parse(lsGet('sugg_x') || '[]')); } catch (e) { return new Set(); } };
+const suggDismiss = (key) => { const s = suggDismissed(); s.add(key); lsSet('sugg_x', JSON.stringify([...s].slice(-300))); };
+const suggPool = (filter) => aliveSongs().filter(s => {
+  if (filter === 'all') return true;
+  if (filter === 'fav') return !!s.fv;
+  if (filter.startsWith('t:')) return (s.tg || []).includes(filter.slice(2));
+  if (filter.startsWith('f:')) return s.f === filter.slice(2);
+  return true;
+}).map(s => Object.assign(songParts(s), { id: s.id })).filter(p => p.title);
+const shuffled = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const ytPreviewCache = new Map();
+async function suggestionPreview(sg) {
+  const key = sg.key;
+  if (!ytPreviewCache.has(key)) {
+    const r = await youtubeSearch((sg.artist + ' ' + sg.title).trim());
+    ytPreviewCache.set(key, r[0] || null);
+  }
+  return ytPreviewCache.get(key);
+}
+function suggestDialog() {
+  const hasKey = !!CONFIG.LASTFM_API_KEY;
+  const folders = Object.entries(lib.folders).filter(([id, f]) => !f.d).map(([id, f]) => [id, f.n]);
+  const filterSel = h('select', { style: 'width:100%;' },
+    h('option', { value: 'all', text: 'Alle Songs' }), h('option', { value: 'fav', text: '★ Favoriten' }),
+    ...allTags().sort((a, b) => a.localeCompare(b, 'de')).map(t => h('option', { value: 't:' + t, text: 'Tag: ' + t })),
+    ...folders.map(([id, n]) => h('option', { value: 'f:' + id, text: 'Ordner: ' + n })));
+  const status = h('div', { class: 'empty-note', style: 'padding:6px 0;' });
+  const list = h('div');
+  let busy = false;
+  async function run() {
+    if (busy) return; busy = true;
+    list.replaceChildren();
+    const pool = suggPool(filterSel.value);
+    if (!pool.length) { status.textContent = 'Keine passenden Songs mit Titel in dieser Auswahl.'; busy = false; return; }
+    const seeds = shuffled(pool).slice(0, hasKey ? 6 : 3);
+    const results = [], errs = [];
+    for (let i = 0; i < seeds.length; i++) {
+      status.textContent = 'Suche … (' + (i + 1) + ' / ' + seeds.length + ': ' + seeds[i].title + ')';
+      try { results.push({ seed: seeds[i], items: await (hasKey ? lfmSimilar(seeds[i]) : mbSimilar(seeds[i])) }); }
+      catch (e) { errs.push(e.message); if (hasKey && /Invalid API key|API Key/i.test(e.message)) break; }
+    }
+    const existing = new Set(aliveSongs().map(s => normSong(songParts(s).title)));
+    const seedArtists = new Set(aliveSongs().map(s => normSong(songParts(s).artist)).filter(Boolean));
+    const sugg = aggregateSuggestions(results, existing, seedArtists, suggDismissed());
+    const src = hasKey ? 'Last.fm' : 'MusicBrainz (ohne Last.fm-Key nur Interpreten mit ähnlichem Genre)';
+    status.textContent = sugg.length ? sugg.length + ' Vorschläge · Basis: ' + seeds.map(s => s.title).join(', ') + ' · Quelle: ' + src
+      : (errs.length ? errs[0] : 'Keine neuen Vorschläge gefunden – «Neu mischen» versucht andere Ausgangssongs.');
+    sugg.forEach(sg => list.append(suggRow(sg)));
+    busy = false;
+  }
+  function suggRow(sg) {
+    const label = sg.title ? sg.title : sg.artist;
+    const sub = sg.title ? sg.artist : ('Genre: ' + (sg.tag || '?') + ' – bekannter Titel per Vorschau suchen');
+    const why = 'ähnlich zu: ' + [...sg.seeds].slice(0, 3).join(', ');
+    const prevBtn = h('button', { text: '▶ Vorschau', title: 'YouTube-Vorschau im Mini-Player' });
+    const addBtn = h('button', { text: '＋ Song', title: 'Als neuen Song anlegen' });
+    const noBtn = h('button', { text: '✕', title: 'Nicht mehr vorschlagen' });
+    const row = h('div', { class: 'file-item', style: 'cursor:default; align-items:center; gap:6px; flex-wrap:wrap;' },
+      h('div', { style: 'flex:1; min-width:160px;' }, h('b', { text: label }), h('div', { class: 'sub', style: 'font-size:12px;', text: sub }), h('div', { class: 'sub', style: 'font-size:11px; opacity:.75;', text: why })),
+      prevBtn, addBtn, noBtn);
+    prevBtn.addEventListener('click', async () => {
+      prevBtn.disabled = true; prevBtn.textContent = '…';
+      try {
+        if (!CONFIG.YOUTUBE_API_KEY) { window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent((sg.artist + ' ' + sg.title).trim()), '_blank', 'noopener'); return; }
+        const v = await suggestionPreview(sg);
+        if (!v) { toast('Kein YouTube-Treffer gefunden.'); return; }
+        startMiniPlayerLink({ id: 'sug_' + v.mediaId, type: 'yt', mediaId: v.mediaId, title: v.title, url: v.url });
+      } catch (e) { toast(e.message, 3500); }
+      finally { prevBtn.disabled = false; prevBtn.textContent = '▶ Vorschau'; }
+    });
+    addBtn.addEventListener('click', async () => {
+      addBtn.disabled = true;
+      let v = ytPreviewCache.get(sg.key) || null, title = sg.title;
+      if (!title) {                                   // nur Interpret bekannt → Titel aus dem YouTube-Treffer
+        try { v = v || await suggestionPreview(sg); } catch (e) {}
+        if (v) title = String(v.title).replace(new RegExp('^\\s*' + sg.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[-–:]\\s*', 'i'), '').replace(/\s*[\(\[].*$/, '').trim();
+        if (!title) { toast('Titel unbekannt – bitte zuerst «Vorschau» wählen oder von Hand anlegen.', 3500); addBtn.disabled = false; return; }
+      }
+      const id = createSongRaw(title.replace(/[\\/]+/g, '-'), { folder: currentFolder, artist: sg.artist.replace(/[\\/]+/g, '-') });
+      if (v) addLink(id, { type: 'yt', kind: 'orig', mediaId: v.mediaId, title: v.title, url: v.url, thumb: v.thumb });
+      suggDismiss(sg.key);
+      addBtn.textContent = '✓ angelegt'; noBtn.remove();
+      toast('Song «' + title + '» angelegt.');
+    });
+    noBtn.addEventListener('click', () => { suggDismiss(sg.key); row.remove(); });
+    return row;
+  }
+  const goBtn = h('button', { class: 'primary', text: hasKey ? 'Vorschläge holen' : 'Vorschläge holen (MusicBrainz)', onclick: run });
+  const body = h('div', {},
+    hasKey ? null : h('div', { class: 'empty-note', style: 'padding:0 0 8px;' }, 'Für treffsichere Titel-Vorschläge einen kostenlosen Last.fm-API-Key unter ⚙ Einstellungen eintragen (last.fm/api/account/create). Ohne Key gibt es nur Interpreten mit ähnlichem Genre.'),
+    h('label', { text: 'Ausgangssongs', style: 'display:block; font-size:12px; color:var(--muted); margin:2px 0 4px;' }), filterSel,
+    h('div', { style: 'display:flex; gap:8px; margin:10px 0 4px;' }, goBtn, h('button', { text: '🔀 Neu mischen', onclick: run })),
+    status, list);
+  return openModal({ title: '💡 Lieder-Vorschläge', body, wide: true, buttons: [{ label: 'Schliessen' }] });
+}
 // Ab v2.17.0: «＋ ▾» (Scannen, Ordner) und «⋯ Mehr» (Backup, Offline) als Menüs; die ursprünglichen Knöpfe bleiben
 // unsichtbar erhalten, damit alle bisherigen Abläufe unverändert dieselben Funktionen auslösen.
 $('newMenuBtn').addEventListener('click', () => menuSheet('Neu', [
   { label: '♪ Neuer Song …', fn: () => $('newSongBtn').click() },
+  { label: '💡 Lieder-Vorschläge …', fn: () => suggestDialog() },
   { label: '📷 Blatt scannen …', fn: () => $('scanBtn').click() },
   { label: '📁 Neuer Ordner …', fn: () => $('newFolderBtn').click() }
 ]));

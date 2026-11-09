@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.56.0 – Lieder-Vorschläge
+- Neu im Menü «＋ ▾ Neu»: «💡 Lieder-Vorschläge …». Aus einer Auswahl bestehender Songs (alle, Favoriten, Tag oder Ordner; zufällig gemischt) werden ähnliche Titel vorgeschlagen; vorhandene Songs erscheinen nie, Mehrfachtreffer stehen weiter oben, «✕» lehnt einen Vorschlag dauerhaft ab.
+- Quelle: Last.fm (`track.getSimilar`) mit eigenem, kostenlosem API-Key (⚙ Einstellungen, nur lokal gespeichert). Ohne Key: grober Ersatz über MusicBrainz (Interpreten mit gleichem Genre-Tag, ohne Titel).
+- «▶ Vorschau» sucht erst beim Antippen ein YouTube-Video (spart Kontingent) und spielt es im Mini-Player; «＋ Song» legt den Song samt YouTube-Link an.
+- CSP: `connect-src` um `ws.audioscrobbler.com` und `musicbrainz.org` ergänzt.
+
 ### v2.55.0 – Text→PDF sieht standardmässig aus wie das Textblatt; Seitenzahl zuverlässiger
 - PDF-Export aus Textblatt: Standard (Ränder 36 pt, Skalierung 100 %) entspricht jetzt der Bildschirm-A4-Seite – gleiche relative Schriftgrösse, Zeilenabstand, Absatzabstände und Seitenränder.
 - Seitenränder der Textseite am Bildschirm fest (nicht mehr vom Fenster abhängig).

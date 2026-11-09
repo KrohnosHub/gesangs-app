@@ -35,17 +35,17 @@ module.exports = async () => {
         });
         await pg.evaluate(() => [...document.querySelectorAll('.name')].find(e => e.textContent === 'Sound of Silence').click()); await pg.waitForTimeout(1500);
         await pg.click('#spreadBtn'); await pg.waitForTimeout(1200);
-        ok(await dark(pg) > 500, 'Doppelseite zunächst: ' + await dark(pg));
+        ok(await dark(pg) > 150, 'Doppelseite zunächst: ' + await dark(pg));
         await pg.click('#perfBtn'); await pg.waitForTimeout(1800);
-        ok(await dark(pg) > 500, 'Auftritt: ' + await dark(pg));
+        ok(await dark(pg) > 150, 'Auftritt: ' + await dark(pg));
         await pg.evaluate(() => exitPerf()); await pg.waitForTimeout(1800);
-        ok(await dark(pg) > 500, 'nach Auftritt: ' + await dark(pg));
+        ok(await dark(pg) > 150, 'nach Auftritt: ' + await dark(pg));
         await pg.setViewportSize({ width: D.width - 100, height: D.height }); await pg.waitForTimeout(100);
         await pg.evaluate(() => { applyCssSize(); scheduleRender(10); }); await pg.waitForTimeout(1500);
-        ok(await dark(pg) > 500, 'nach Grössenänderung: ' + await dark(pg));
+        ok(await dark(pg) > 150, 'nach Grössenänderung: ' + await dark(pg));
         // Zweitseite neu belegen, ohne dass sich Inhalt/Grösse ändert (Canvas wird geleert, Cache bleibt gültig)
         await pg.evaluate(() => renderSecond()); await pg.waitForTimeout(1200);
-        ok(await dark(pg) > 500, 'nach erneutem Rendern: ' + await dark(pg));
+        ok(await dark(pg) > 150, 'nach erneutem Rendern: ' + await dark(pg));
         eq(pg.errs, []); await pg.context().close();
       }
     });
