@@ -41,7 +41,9 @@ module.exports = async () => {
       await pg.click('.modal .file-item:has-text("Unchained") >> text=＋ Song'); await pg.waitForTimeout(400);
       const sg = await pg.evaluate(() => Object.values(lib.songs).find(s => s.n === 'Unchained'));
       ok(sg && sg.ar === 'Nightwish', 'Song angelegt');
+      ok(await pg.evaluate(() => [...document.querySelectorAll('.modal h3')].some(e => e.textContent.startsWith('Lyrics für «'))), 'Lyrics-Dialog nach «＋ Song»');
       eq(sg.links.map(l => l.mediaId), ['abcdefghijk']);
+      await pg.click('text=Später / ohne Text-Blatt fortfahren'); await pg.waitForTimeout(300);
       // Ablehnen bleibt abgelehnt
       await pg.click('.modal .file-item:has-text("Storm") >> text=✕'); await pg.waitForTimeout(200);
       ok((await pg.evaluate(() => JSON.parse(lsGet('sugg_x')).length)) >= 2, 'abgelehnt gemerkt');
@@ -76,6 +78,27 @@ module.exports = async () => {
       const css = await pg.evaluate(() => [...document.styleSheets].flatMap(s => [...s.cssRules]).filter(r => /miniPlayer$|^\.modal-bg$/.test(r.selectorText || '')).map(r => r.selectorText + ':' + r.style.zIndex));
       const mpz = +css.find(c => c.startsWith('#miniPlayer')).split(':')[1], mz = +css.find(c => c.startsWith('.modal-bg')).split(':')[1];
       ok(mpz > mz, 'miniPlayer z ' + mpz + ' > modal ' + mz);
+      eq(pg.errs, []); await pg.context().close();
+    });
+    await test('Last.fm-Key: in lib.cfg, Merge (neuerer gewinnt), wird auf anderem Gerät übernommen', async () => {
+      const pg = await open(b, D, { logs: false });
+      const r = await pg.evaluate(() => {
+        CONFIG.LASTFM_API_KEY = ''; lsDel('lf_key');
+        libCfgSetLf('KEY-A');
+        const t0 = lib.cfg.u;
+        const m1 = mergeLib(lib, { folders: {}, files: {}, setlists: {}, songs: {}, cfg: { lf: 'KEY-B', u: t0 + 5000 } });
+        const m2 = mergeLib(lib, { folders: {}, files: {}, setlists: {}, songs: {}, cfg: { lf: 'KEY-OLD', u: t0 - 5000 } });
+        lib = m1; applyLibCfg();                          // anderes Gerät hat später gespeichert
+        return [m1.cfg.lf, m2.cfg.lf, CONFIG.LASTFM_API_KEY, lsGet('lf_key')];
+      });
+      eq(r, ['KEY-B', 'KEY-A', 'KEY-B', 'KEY-B']);
+      eq(pg.errs, []); await pg.context().close();
+    });
+    await test('Song ohne Blatt antippen → Lyrics-Suche statt Fehlermeldung', async () => {
+      const pg = await open(b, D, { logs: false });
+      await pg.evaluate(() => { lib.songs.nb = newSong('Ohne Blatt', 'Band'); libChanged(); openSong(Object.assign({ id: 'nb' }, lib.songs.nb)); });
+      await pg.waitForTimeout(300);
+      ok(await pg.evaluate(() => [...document.querySelectorAll('.modal h3')].some(e => e.textContent.includes('Ohne Blatt'))), 'Lyrics-Dialog');
       eq(pg.errs, []); await pg.context().close();
     });
   } finally { await b.close(); }

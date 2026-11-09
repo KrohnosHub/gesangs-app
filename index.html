@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-YR7gnJX438624lDlRAQspRZb/Sdp0YhsH50dJ/eOw1A=' 'sha256-bG47npchKr6obYCkQtSI9db7DVvdnAK5RYksaB95Yyc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-AemvkuacV7QS2xepZD02gjxfz+dnzx1eBTKgqjhVOfE=' 'sha256-IqHUidK3ETzq3jDaX6F0yR9FGigoIq8XQ8I/wYOSIxs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -44,7 +44,7 @@
     // nie in dieser Datei, nie über Drive synchronisiert. Ohne Eintrag bleibt die automatische
     // Spotify-Suche einfach leer (YouTube funktioniert unabhängig davon weiter).
     SPOTIFY_CLIENT_SECRET: '',
-    // Ab v2.56.0: Last.fm-API-Key für «Lieder-Vorschläge» (kostenlos, last.fm/api/account/create); nur lokal auf dem Gerät gespeichert.
+    // Ab v2.56.0: Last.fm-API-Key für «Lieder-Vorschläge» (kostenlos, last.fm/api/account/create); ab v2.57.0 zusätzlich in library.json (lib.cfg) → alle Geräte.
     LASTFM_API_KEY: ''
   };
   // Ab v2.22.0 (Entwicklermodus): «?sim=NAME» startet die App als simulierter neuer Nutzer in einer vollständig getrennten
@@ -920,7 +920,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.56.2';
+const APP_VERSION = '2.57.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1603,7 +1603,16 @@ function mergeLib(a, b) {
       } else out[key][id] = JSON.parse(JSON.stringify(x || y));
     }
   }
+  // Geräteübergreifende Einstellungen (ab v2.57.0): derzeit nur der Last.fm-Key; der neuere Stand gewinnt
+  if (a.cfg || b.cfg) { const w = (!a.cfg || (b.cfg && (b.cfg.u || 0) > (a.cfg.u || 0))) ? b.cfg : a.cfg; out.cfg = JSON.parse(JSON.stringify(w)); }
   return out;
+}
+// Last.fm-Key liegt in lib.cfg (→ library.json im eigenen Drive) und gilt damit auf allen angemeldeten Geräten
+function libCfgSetLf(key) { lib.cfg = { lf: key || '', u: nowTs() }; libChanged(); }
+function applyLibCfg() {
+  if (!lib.cfg || typeof lib.cfg.lf !== 'string' || lib.cfg.lf === (CONFIG.LASTFM_API_KEY || '')) return;
+  CONFIG.LASTFM_API_KEY = lib.cfg.lf;
+  if (lib.cfg.lf) lsSet('lf_key', lib.cfg.lf); else lsDel('lf_key');
 }
 
 // ---------------------------------------------------------------
@@ -2172,6 +2181,7 @@ async function loadLocalState() {
   const td = await safe(IDB.get('kv', 'textDirtyIds'));      // Text-Blätter mit noch nicht hochgeladenen Änderungen (ab v2.5.0 dauerhaft gemerkt)
   (td || []).forEach(k => textDirtyIds.add(k));
   migrateSongs();
+  applyLibCfg();
 }
 
 // ---------------------------------------------------------------
@@ -2331,7 +2341,17 @@ function songItem(s, global, idx) {
 function openSong(s) {
   perfCtx = null;
   const f = primarySheet(s.id);
-  if (!f) { toast('Dieser Song hat kein verfügbares Blatt (offline noch nicht geladen?).'); return; }
+  if (!f) {
+    const cur = sget(s.id);
+    if (cur && !(cur.sheets || []).length) {          // Song ganz ohne Blatt (z. B. aus Vorschlägen angelegt) → Lyrics-Suche anbieten (ab v2.57.1)
+      const t = songParts(cur);
+      currentSongId = s.id;
+      const fl = lyricsFlow({ id: s.id, n: cur.n, ar: cur.ar || '', title: t.title || cur.n, artist: t.artist || cur.ar || '' });
+      fl.onClose = () => { const c2 = sget(s.id); if (c2 && !(c2.sheets || []).length) toast('Noch kein Blatt – über «⋯ → Blätter verwalten» hinzufügen.', 3500); };
+      return;
+    }
+    toast('Dieser Song hat kein verfügbares Blatt (offline noch nicht geladen?).'); return;
+  }
   return openFile(f);
 }
 
@@ -4348,6 +4368,7 @@ async function syncLibrary() {
       // lib immer den bestmöglichen bekannten Stand wider (frisch gemergt, schon aktuell, oder –
       // falls noch nie eine library.json existierte – der lokale Stand, gegen den nichts race'n kann).
       migrateSongs();
+      applyLibCfg();
       merged = lib;
       const ver = libVer;                        // erst NACH der Migration merken, sonst bliebe libDirty nach jeder Migration hängen
       const needUp = remote ? stableStr(merged) !== stableStr(remote) : (libDirty && (meta || libHasData(lib)));
@@ -5832,7 +5853,7 @@ function openSettingsDialog() {
   const idInput = h('input', { type: 'text', placeholder: 'Spotify Client-ID', value: CONFIG.SPOTIFY_CLIENT_ID || '', style: 'width:100%; margin-bottom:6px;' });
   const secretInput = h('input', { type: 'password', placeholder: 'Spotify Client-Secret', value: CONFIG.SPOTIFY_CLIENT_SECRET || '', style: 'width:100%;' });
   body.append(h('div', { style: 'padding:9px 6px;' }, idInput, secretInput));
-  body.append(h('div', { class: 'empty-note', style: 'margin:6px 0;' }, h('b', { text: 'Lieder-Vorschläge: ' }), 'kostenloser Last.fm-API-Key (nur lokal gespeichert) für treffsichere Titel – erhältlich unter ',
+  body.append(h('div', { class: 'empty-note', style: 'margin:6px 0;' }, h('b', { text: 'Lieder-Vorschläge: ' }), 'kostenloser Last.fm-API-Key für treffsichere Titel (wird mit deiner Bibliothek in Drive gespeichert und gilt auf allen angemeldeten Geräten) – erhältlich unter ',
     h('a', { href: 'https://www.last.fm/api/account/create', target: '_blank', rel: 'noopener', style: 'color:var(--accent);' }, 'last.fm/api/account/create'), '.'));
   const lfInput = h('input', { type: 'text', placeholder: 'Last.fm API-Key', value: CONFIG.LASTFM_API_KEY || '', style: 'width:100%;' });
   body.append(h('div', { style: 'padding:0 6px 9px;' }, lfInput));
@@ -5846,12 +5867,13 @@ function openSettingsDialog() {
   openModal({
     title: '⚙ Einstellungen', body,
     buttons: [
-      { label: 'Zurücksetzen', fn: () => { lsDel('sp_id'); lsDel('sp_secret'); lsDel('lf_key'); CONFIG.LASTFM_API_KEY = ''; CONFIG.SPOTIFY_CLIENT_ID = 'cba857fdd8fc4118bed7aad8e470ea5d'; CONFIG.SPOTIFY_CLIENT_SECRET = ''; spotifyToken = null; toast('Zurückgesetzt.'); return false; } },
+      { label: 'Zurücksetzen', fn: () => { lsDel('sp_id'); lsDel('sp_secret'); lsDel('lf_key'); CONFIG.LASTFM_API_KEY = ''; if (lib.cfg && lib.cfg.lf) libCfgSetLf(''); CONFIG.SPOTIFY_CLIENT_ID = 'cba857fdd8fc4118bed7aad8e470ea5d'; CONFIG.SPOTIFY_CLIENT_SECRET = ''; spotifyToken = null; toast('Zurückgesetzt.'); return false; } },
       { label: 'Speichern', primary: true, fn: () => {
         const id = idInput.value.trim(), sec = secretInput.value.trim();
         if (id) { lsSet('sp_id', id); CONFIG.SPOTIFY_CLIENT_ID = id; } else { lsDel('sp_id'); }
         if (sec) { lsSet('sp_secret', sec); CONFIG.SPOTIFY_CLIENT_SECRET = sec; } else { lsDel('sp_secret'); CONFIG.SPOTIFY_CLIENT_SECRET = ''; }
         const lfk = lfInput.value.trim(); if (lfk) { lsSet('lf_key', lfk); CONFIG.LASTFM_API_KEY = lfk; } else { lsDel('lf_key'); CONFIG.LASTFM_API_KEY = ''; }
+        if (lfk !== ((lib.cfg && lib.cfg.lf) || '')) libCfgSetLf(lfk);                   // → library.json, gilt auf allen Geräten
         spotifyToken = null; spotifyTokenExp = 0;   // altes Token verwerfen, ggf. neue Zugangsdaten sofort nutzen
         toast('Gespeichert.');
       } }
@@ -6743,11 +6765,13 @@ function suggestDialog() {
       addBtn.disabled = true;
       let v = ytPreviewCache.get(sg.key) || null, title = sg.title;
       if (!title) { toast('Titel unbekannt – bitte von Hand anlegen (Neuer Song).', 3500); addBtn.disabled = false; return; }
-      const id = createSongRaw(title.replace(/[\\/]+/g, '-'), { folder: currentFolder, artist: sg.artist.replace(/[\\/]+/g, '-') });
+      const nm = title.replace(/[\\/]+/g, '-'), ar = sg.artist.replace(/[\\/]+/g, '-');
+      const id = createSongRaw(nm, { folder: currentFolder, artist: ar });
       if (v) addLink(id, { type: 'yt', kind: 'orig', mediaId: v.mediaId, title: v.title, url: v.url, thumb: v.thumb });
       suggDismiss(sg.key);
       addBtn.textContent = '✓ angelegt'; noBtn.remove();
       toast('Song «' + title + '» angelegt.');
+      lyricsFlow({ id, n: nm, ar, title, artist: sg.artist });     // direkt das Lyrics-Blatt anbieten (wie «Neuer Song»), ab v2.57.1
     });
     noBtn.addEventListener('click', () => { suggDismiss(sg.key); row.remove(); });
     return row;

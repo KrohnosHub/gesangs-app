@@ -21,6 +21,13 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.57.1 – Lyrics-Blatt für Songs aus den Vorschlägen
+- «＋ Song» in den Lieder-Vorschlägen öffnet direkt die Lyrics-Suche, wie bei «Neuer Song».
+- Ein Song ganz ohne Blatt lässt sich per Antippen öffnen: statt der Meldung «kein verfügbares Blatt» startet die Lyrics-Suche (betrifft auch bereits angelegte Songs aus Vorschlägen).
+
+### v2.57.0 – Last.fm-Key auf allen Geräten
+- Der Last.fm-API-Key wird beim Speichern in der Bibliothek (`library.json` im eigenen Drive, Feld `cfg`) abgelegt und auf alle angemeldeten Geräte übertragen; bei Konflikt gewinnt der zuletzt gespeicherte. Die Spotify-Zugangsdaten bleiben wie bisher pro Gerät.
+
 ### v2.56.2 – Lieder-Vorschläge: breitere Basis, relevante Vorschau
 - Basis deutlich breiter: mit Last.fm-Key bis zu 20 Ausgangssongs (parallel abgefragt), ohne Key bis zu 8 verschiedene Interpreten (statt bisher 6 bzw. 3). «Neu mischen» wählt andere. Die Statuszeile nennt, wie viele Songs ausgewertet wurden.
 - YouTube-Vorschau nur noch bei Treffern, die Interpret **und** Titel enthalten (kein «How to KISS a MAN …» mehr); sonst öffnet sich die YouTube-Suche. Vorschläge ohne ermittelten Titel öffnen ebenfalls die Suche statt eines geratenen Videos; «＋ Song» legt sie nicht mehr automatisch an.
