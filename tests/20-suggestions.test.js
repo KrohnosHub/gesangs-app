@@ -120,6 +120,21 @@ module.exports = async () => {
       eq(r, ['KEY-B', 'KEY-A', 'KEY-B', 'KEY-B']);
       eq(pg.errs, []); await pg.context().close();
     });
+    await test('Neuer Song (manuell): Original & Karaoke werden sofort verknüpft', async () => {
+      const pg = await open(b, D, { logs: false });
+      await pg.evaluate(() => {
+        CONFIG.YOUTUBE_API_KEY = 'y';
+        window.fetch = async (u) => { u = String(u); const J = (o) => ({ ok: true, json: async () => o, text: async () => '' });
+          if (u.includes('youtube/v3/search')) return J({ items: [u.includes('karaoke') ? { id: { videoId: 'karaokeid02' }, snippet: { title: 'Queen - Bohemian Rhapsody (Karaoke)', thumbnails: {} } } : { id: { videoId: 'origid00002' }, snippet: { title: 'Queen - Bohemian Rhapsody', thumbnails: {} } }] });
+          return { ok: false, status: 404, json: async () => ({}), text: async () => '' }; };
+        newSongFlow();
+      });
+      await pg.fill('.modal input >> nth=0', 'Bohemian Rhapsody'); await pg.fill('.modal input >> nth=1', 'Queen');
+      await pg.click('.modal button.primary'); await pg.waitForTimeout(1500);
+      const sg = await pg.evaluate(() => Object.values(lib.songs).find(s => s.n === 'Bohemian Rhapsody'));
+      ok(sg && sg.links.some(l => l.kind === 'karaoke') && sg.links.some(l => l.kind === 'orig'), 'Links: ' + JSON.stringify(sg && sg.links.map(l => l.kind)));
+      eq(pg.errs, []); await pg.context().close();
+    });
     await test('Song ohne Blatt antippen → Lyrics-Suche statt Fehlermeldung', async () => {
       const pg = await open(b, D, { logs: false });
       await pg.evaluate(() => { lib.songs.nb = newSong('Ohne Blatt', 'Band'); libChanged(); openSong(Object.assign({ id: 'nb' }, lib.songs.nb)); });

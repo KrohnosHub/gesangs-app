@@ -21,6 +21,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.58.0 – «Neuer Song»: Original & Karaoke sofort verknüpft
+- Auch beim normalen Anlegen eines Songs läuft die automatische Suche nach Original- und Karaoke-Verknüpfungen jetzt gleich im Hintergrund (nicht erst beim ersten Öffnen des Verknüpfungen-Dialogs). Gleiche Regeln wie bei Songs aus den Vorschlägen.
+
 ### v2.57.3 – Songs aus den Vorschlägen: Original & Karaoke automatisch verknüpft
 - Beim Anlegen über «＋ Song» werden zusätzlich zur angehörten Vorschau automatisch Original- und Karaoke-Verknüpfungen gesucht und hinterlegt (YouTube/Spotify, nur thematisch passende Treffer, nichts doppelt). Bisher lief diese Auto-Suche nur beim ersten Öffnen des Verknüpfungen-Dialogs.
 

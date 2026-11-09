@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-AemvkuacV7QS2xepZD02gjxfz+dnzx1eBTKgqjhVOfE=' 'sha256-q9tZjC70EZ5ShfqYzIU0CJzQJnvwCQZqorWRIjvjeLM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-AemvkuacV7QS2xepZD02gjxfz+dnzx1eBTKgqjhVOfE=' 'sha256-p6bESiU799gBrKz+NkB5ASgnBw3SoeFrpU/l0d+iGXs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -920,7 +920,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.57.3';
+const APP_VERSION = '2.58.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -6567,6 +6567,7 @@ function newSongFlow() {
     const id = createSongRaw(name, { folder: currentFolder, artist: artist.replace(/[\\/]+/g, '-') });
     currentSongId = id;
     renderSidebar();
+    autoLinkSongBg(id).then(n => { if (n) { toast('«' + title + '»: ' + n + ' Verknüpfung' + (n > 1 ? 'en' : '') + ' (Original/Karaoke) hinterlegt.', 3500); renderSidebar(); } }).catch(() => {});   // ab v2.58.0 auch hier sofort
     const flowApi = lyricsFlow({ id, n: name, ar: artist, title, artist });
     flowApi.onClose = () => { const cur = sget(id); if (cur) manageSheets({ id, ...cur }); };
   }
