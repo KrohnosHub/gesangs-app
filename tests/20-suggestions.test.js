@@ -27,11 +27,16 @@ module.exports = async () => {
       ok(rows.includes('Unchained') && rows.includes('Storm'), 'Vorschläge: ' + rows);
       ok(!rows.includes('Sound of Silence'), 'vorhandener Song (Bibliothek) nicht vorgeschlagen');
       ok(rows.indexOf('Unchained') < rows.indexOf('Storm'), 'Mehrfachtreffer/höhere Wertung zuerst');
-      ok((await pg.evaluate(() => __calls.filter(c => c.includes('audioscrobbler')).length)) >= 2, 'mehrere Ausgangssongs abgefragt');
+      ok((await pg.evaluate(() => __calls.filter(c => c.includes('track.getsimilar')).length)) >= 2, 'mehrere Ausgangssongs abgefragt');
+      await pg.evaluate(() => { for (let i = 0; i < 25; i++) lib.songs['m' + i] = newSong('Song ' + i, 'Band ' + i); });
+      await pg.evaluate(() => { __calls.length = 0; }); await pg.click('text=Neu mischen'); await pg.waitForTimeout(1200);
+      eq(await pg.evaluate(() => __calls.filter(c => c.includes('track.getsimilar') || c.includes('track.search')).length), 20);
       // Vorschau → Mini-Player
       await pg.evaluate(() => { window.__mp = null; window.startMiniPlayerLink = (l) => { window.__mp = l; }; });
       await pg.click('.modal .file-item:has-text("Unchained") >> text=Vorschau'); await pg.waitForTimeout(400);
       eq(await pg.evaluate(() => __mp && __mp.mediaId), 'abcdefghijk');
+      // irrelevanter Treffer (Interpret im Titel, aber kein Songtitel) wird nicht abgespielt
+      eq(await pg.evaluate(() => [ytRelevant({ title: 'How to KISS a MAN on the NECK' }, { artist: 'KISS', title: 'Rock and Roll All Nite' }), ytRelevant({ title: 'KISS - Rock And Roll All Nite (Official)' }, { artist: 'KISS', title: 'Rock and Roll All Nite' })]), [false, true]);
       // Anlegen
       await pg.click('.modal .file-item:has-text("Unchained") >> text=＋ Song'); await pg.waitForTimeout(400);
       const sg = await pg.evaluate(() => Object.values(lib.songs).find(s => s.n === 'Unchained'));
@@ -52,6 +57,7 @@ module.exports = async () => {
           if (u.includes('inc=tags')) return J({ tags: [{ name: 'power metal', count: 5 }] });
           if (u.includes('tag%3A')) return J({ artists: [{ id: 'z2', name: 'Sabaton', score: 100 }, { id: 'z1', name: 'Beast in Black', score: 100 }] });
           if (u.includes('artist%3A')) return J({ artists: [{ id: 'z1', name: 'Beast in Black' }] });
+          if (u.includes('itunes')) return J({ results: [{ artistName: 'Sabaton', trackName: 'Primo Victoria' }] });
           return J({});
         };
         suggestDialog();
@@ -59,7 +65,17 @@ module.exports = async () => {
       });
       await pg.click('text=Vorschläge holen'); await pg.waitForTimeout(6000);
       const rows = await pg.evaluate(() => [...document.querySelectorAll('.modal .file-item b')].map(e => e.textContent));
-      eq(rows, ['Sabaton']);
+      eq(rows, ['Primo Victoria']);
+      ok((await pg.evaluate(() => document.querySelector('.modal .file-item .sub').textContent)).includes('Sabaton'), 'Interpret als Zusatzzeile');
+      eq(pg.errs, []); await pg.context().close();
+    });
+    await test('Entities dekodiert; Mini-Player liegt über Dialogen', async () => {
+      const pg = await open(b, D, { logs: false });
+      eq(await pg.evaluate(() => decodeHtml('H.E.A.T &quot;Dangerous Ground&quot; &amp; Co &#39;x&#39;')), 'H.E.A.T "Dangerous Ground" & Co \'x\'');
+      const z = await pg.evaluate(() => [+getComputedStyle($('miniPlayer') || document.body).zIndex || 0, +getComputedStyle(Object.assign(document.createElement('div'), { className: 'modal-bg' })).zIndex || 0]);
+      const css = await pg.evaluate(() => [...document.styleSheets].flatMap(s => [...s.cssRules]).filter(r => /miniPlayer$|^\.modal-bg$/.test(r.selectorText || '')).map(r => r.selectorText + ':' + r.style.zIndex));
+      const mpz = +css.find(c => c.startsWith('#miniPlayer')).split(':')[1], mz = +css.find(c => c.startsWith('.modal-bg')).split(':')[1];
+      ok(mpz > mz, 'miniPlayer z ' + mpz + ' > modal ' + mz);
       eq(pg.errs, []); await pg.context().close();
     });
   } finally { await b.close(); }

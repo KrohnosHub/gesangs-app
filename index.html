@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-YR7gnJX438624lDlRAQspRZb/Sdp0YhsH50dJ/eOw1A=' 'sha256-XlxX5dweNWbDidHh5Zm7BAu3tFg3huLXP9BX0h1d+yM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-YR7gnJX438624lDlRAQspRZb/Sdp0YhsH50dJ/eOw1A=' 'sha256-bG47npchKr6obYCkQtSI9db7DVvdnAK5RYksaB95Yyc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -368,7 +368,7 @@
   /* ---------- Mini-Player (ab v2.3.3): spielt Verknüpfungen/Backing-Track ausserhalb von
      Dialogen ab, damit das Notenblatt sichtbar bleibt -- läuft auch im Vollbildmodus weiter,
      siehe Ausnahme bei "Auftrittsmodus" unten (kein body.perf-Eintrag für #miniPlayer). */
-  #miniPlayer{position:fixed; right:10px; bottom:10px; width:min(290px,72vw); background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.3); z-index:90; overflow:hidden; flex-direction:column;}
+  #miniPlayer{position:fixed; right:10px; bottom:10px; width:min(290px,72vw); background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.3); z-index:110; overflow:hidden; flex-direction:column;}   /* über Dialogen (100), damit Vorschau-Player bedienbar ist, ohne den Dialog zu schliessen */
   #miniPlayer.min .mp-mount{max-height:0 !important; padding:0 !important; overflow:hidden;}
   #miniPlayer.min .mp-hint{display:none !important;}
   .mp-bar{display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:5px 6px; background:var(--accent-light);}
@@ -920,7 +920,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.56.0';
+const APP_VERSION = '2.56.2';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1218,8 +1218,10 @@ function stopMiniPlayer() {
   mp.lastSig = '';
   mpNotify();
 }
+// YouTube liefert Titel mit HTML-Entities (&quot; &amp; &#39; …) → für die Anzeige zurückwandeln (ab v2.56.1)
+function decodeHtml(t) { const x = document.createElement('textarea'); x.innerHTML = String(t == null ? '' : t); return x.value; }
 function mpSetTitle(title, src) {
-  mp.titleEl.textContent = title || 'Wiedergabe';
+  mp.titleEl.textContent = decodeHtml(title) || 'Wiedergabe';
   mp.srcEl.textContent = src ? ' · ' + src : '';
 }
 // Für die Listen (Verknüpfungen, Aufnahmen): Antippen = abspielen; läuft derselbe Eintrag schon,
@@ -5430,7 +5432,7 @@ async function youtubeSearch(query) {
   if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error('YouTube-Fehler ' + res.status + ': ' + t.slice(0, 200)); }
   const data = await res.json();
   return (data.items || []).filter(it => it.id && it.id.videoId).map(it => ({
-    type: 'yt', mediaId: it.id.videoId, title: it.snippet.title,
+    type: 'yt', mediaId: it.id.videoId, title: decodeHtml(it.snippet.title),
     url: 'https://www.youtube.com/watch?v=' + it.id.videoId,
     thumb: it.snippet.thumbnails && (it.snippet.thumbnails.default || {}).url
   }));
@@ -5640,7 +5642,7 @@ function manageLinks(s) {
     return h('div', { class: 'pick-row' + (isLoaded(l) ? ' playing' : '') },
       h('span', { class: 'type-icon', text: linkIcon(l) }),
       h('div', { class: 'mid', style: 'flex:1; cursor:pointer;', onclick: () => (playableLink(l) ? playLinkInMiniPlayer(l) : openExternal(l.url)) },
-        h('div', { class: 'name', text: l.title || l.url }),
+        h('div', { class: 'name', text: decodeHtml(l.title) || l.url }),
         h('div', { class: 'sub' }, h('span', { text: linkSourceLabel(l) + (playableLink(l) && (pinnedLink(s.id, linkGroup(l) === 'karaoke' ? 'kar' : 'orig') || {}).id === l.id ? ' · 📌 Schnellstart' : '') }), h('span', { class: 'mp-time', 'data-mpid': l.id, text: isLoaded(l) ? mpTimeLabel() : '' }))),
       playableLink(l) ? h('button', { class: 'more', text: isPlaying(l) ? '❚❚' : '▶', title: isPlaying(l) ? 'Pause' : (isLoaded(l) ? 'Fortsetzen' : 'Abspielen (läuft im Mini-Player weiter, auch nach Schliessen)'), onclick: (e) => { e.stopPropagation(); playLinkInMiniPlayer(l); } }) : null,
       playableLink(l) ? (() => {
@@ -6635,6 +6637,14 @@ function aggregateSuggestions(results, existingTitles, seedArtists, dismissed) {
   }));
   return [...map.values()].map(e => Object.assign(e, { rank: e.score * (1 + 0.35 * (e.seeds.size - 1)) })).sort((a, b) => b.rank - a.rank).slice(0, 20);
 }
+// Reine Interpreten-Vorschläge (MusicBrainz): bekanntesten Titel per iTunes-Suche ergänzen (kostenlos, ohne Key)
+async function resolveArtistTitle(artist) {
+  const res = await fetch('https://itunes.apple.com/search?media=music&entity=song&attribute=artistTerm&limit=5&term=' + encodeURIComponent(artist));
+  if (!res.ok) return '';
+  const d = await res.json(), na = normSong(artist);
+  const t = arr(d.results).find(x => normSong(x.artistName) === na && x.trackName);
+  return t ? t.trackName : '';
+}
 const suggDismissed = () => { try { return new Set(JSON.parse(lsGet('sugg_x') || '[]')); } catch (e) { return new Set(); } };
 const suggDismiss = (key) => { const s = suggDismissed(); s.add(key); lsSet('sugg_x', JSON.stringify([...s].slice(-300))); };
 const suggPool = (filter) => aliveSongs().filter(s => {
@@ -6646,11 +6656,18 @@ const suggPool = (filter) => aliveSongs().filter(s => {
 }).map(s => Object.assign(songParts(s), { id: s.id })).filter(p => p.title);
 const shuffled = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const ytPreviewCache = new Map();
+function ytRelevant(v, sg) {
+  const nt = ' ' + normSong(v.title) + ' ';
+  if (sg.artist && !nt.includes(' ' + normSong(sg.artist) + ' ') && !nt.includes(normSong(sg.artist))) return false;
+  const words = normSong(sg.title).split(' ').filter(w => w.length > 2);
+  if (!words.length) return false;
+  return words.filter(w => nt.includes(w)).length >= Math.ceil(words.length * 0.6);
+}
 async function suggestionPreview(sg) {
   const key = sg.key;
   if (!ytPreviewCache.has(key)) {
     const r = await youtubeSearch((sg.artist + ' ' + sg.title).trim());
-    ytPreviewCache.set(key, r[0] || null);
+    ytPreviewCache.set(key, r.find(v => ytRelevant(v, sg)) || null);      // nur Treffer, die Interpret UND Titel enthalten (v2.56.1)
   }
   return ytPreviewCache.get(key);
 }
@@ -6669,19 +6686,36 @@ function suggestDialog() {
     list.replaceChildren();
     const pool = suggPool(filterSel.value);
     if (!pool.length) { status.textContent = 'Keine passenden Songs mit Titel in dieser Auswahl.'; busy = false; return; }
-    const seeds = shuffled(pool).slice(0, hasKey ? 6 : 3);
-    const results = [], errs = [];
-    for (let i = 0; i < seeds.length; i++) {
-      status.textContent = 'Suche … (' + (i + 1) + ' / ' + seeds.length + ': ' + seeds[i].title + ')';
-      try { results.push({ seed: seeds[i], items: await (hasKey ? lfmSimilar(seeds[i]) : mbSimilar(seeds[i])) }); }
-      catch (e) { errs.push(e.message); if (hasKey && /Invalid API key|API Key/i.test(e.message)) break; }
-    }
+    // Ausgangssongs: mit Last.fm bis zu 20 (parallel), ohne Key bis zu 8 verschiedene Interpreten (MusicBrainz: 1 Anfrage/s)
+    let seeds = shuffled(pool);
+    if (!hasKey) { const seen = new Set(); seeds = seeds.filter(p => { const k = normSong(p.artist); if (!k || seen.has(k)) return false; seen.add(k); return true; }); }
+    seeds = seeds.slice(0, hasKey ? 20 : 8);
+    const results = [], errs = []; let done = 0, stop = false;
+    const worker = async (queue) => {
+      while (queue.length && !stop) {
+        const sd = queue.shift();
+        try { results.push({ seed: sd, items: await (hasKey ? lfmSimilar(sd) : mbSimilar(sd)) }); }
+        catch (e) { errs.push(e.message); if (hasKey && /Invalid API key|API Key/i.test(e.message)) stop = true; }
+        status.textContent = 'Suche … (' + (++done) + ' / ' + seeds.length + ')';
+      }
+    };
+    status.textContent = 'Suche … (0 / ' + seeds.length + ')';
+    const q = seeds.slice();
+    await Promise.all(Array.from({ length: hasKey ? 4 : 1 }, () => worker(q)));
     const existing = new Set(aliveSongs().map(s => normSong(songParts(s).title)));
     const seedArtists = new Set(aliveSongs().map(s => normSong(songParts(s).artist)).filter(Boolean));
     const sugg = aggregateSuggestions(results, existing, seedArtists, suggDismissed());
     const src = hasKey ? 'Last.fm' : 'MusicBrainz (ohne Last.fm-Key nur Interpreten mit ähnlichem Genre)';
     status.textContent = sugg.length ? sugg.length + ' Vorschläge · Basis: ' + seeds.map(s => s.title).join(', ') + ' · Quelle: ' + src
       : (errs.length ? errs[0] : 'Keine neuen Vorschläge gefunden – «Neu mischen» versucht andere Ausgangssongs.');
+    for (const sg of sugg.slice(0, 12)) {            // Interpret ohne Titel → bekanntesten Titel nachschlagen
+      if (sg.title) continue;
+      status.textContent = 'Titel ergänzen … ' + sg.artist;
+      try { sg.title = await resolveArtistTitle(sg.artist); } catch (e) {}
+    }
+    const shown = sugg.filter(sg => !sg.title || !existing.has(normSong(sg.title)));
+    sugg.length = 0; sugg.push(...shown);
+    status.textContent = sugg.length ? sugg.length + ' Vorschläge · Basis: ' + seeds.map(s => s.title).join(', ') + ' · Quelle: ' + src : (errs.length ? errs[0] : 'Keine neuen Vorschläge gefunden – «Neu mischen» versucht andere Ausgangssongs.');
     sugg.forEach(sg => list.append(suggRow(sg)));
     busy = false;
   }
@@ -6698,9 +6732,9 @@ function suggestDialog() {
     prevBtn.addEventListener('click', async () => {
       prevBtn.disabled = true; prevBtn.textContent = '…';
       try {
-        if (!CONFIG.YOUTUBE_API_KEY) { window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent((sg.artist + ' ' + sg.title).trim()), '_blank', 'noopener'); return; }
+        if (!CONFIG.YOUTUBE_API_KEY || !sg.title) { window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent((sg.artist + ' ' + sg.title).trim()), '_blank', 'noopener'); return; }
         const v = await suggestionPreview(sg);
-        if (!v) { toast('Kein YouTube-Treffer gefunden.'); return; }
+        if (!v) { toast('Kein passender YouTube-Treffer – Suche wird geöffnet.', 3000); window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent((sg.artist + ' ' + sg.title).trim()), '_blank', 'noopener'); return; }
         startMiniPlayerLink({ id: 'sug_' + v.mediaId, type: 'yt', mediaId: v.mediaId, title: v.title, url: v.url });
       } catch (e) { toast(e.message, 3500); }
       finally { prevBtn.disabled = false; prevBtn.textContent = '▶ Vorschau'; }
@@ -6708,11 +6742,7 @@ function suggestDialog() {
     addBtn.addEventListener('click', async () => {
       addBtn.disabled = true;
       let v = ytPreviewCache.get(sg.key) || null, title = sg.title;
-      if (!title) {                                   // nur Interpret bekannt → Titel aus dem YouTube-Treffer
-        try { v = v || await suggestionPreview(sg); } catch (e) {}
-        if (v) title = String(v.title).replace(new RegExp('^\\s*' + sg.artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[-–:]\\s*', 'i'), '').replace(/\s*[\(\[].*$/, '').trim();
-        if (!title) { toast('Titel unbekannt – bitte zuerst «Vorschau» wählen oder von Hand anlegen.', 3500); addBtn.disabled = false; return; }
-      }
+      if (!title) { toast('Titel unbekannt – bitte von Hand anlegen (Neuer Song).', 3500); addBtn.disabled = false; return; }
       const id = createSongRaw(title.replace(/[\\/]+/g, '-'), { folder: currentFolder, artist: sg.artist.replace(/[\\/]+/g, '-') });
       if (v) addLink(id, { type: 'yt', kind: 'orig', mediaId: v.mediaId, title: v.title, url: v.url, thumb: v.thumb });
       suggDismiss(sg.key);

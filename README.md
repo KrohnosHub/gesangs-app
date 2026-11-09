@@ -21,6 +21,15 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.56.2 – Lieder-Vorschläge: breitere Basis, relevante Vorschau
+- Basis deutlich breiter: mit Last.fm-Key bis zu 20 Ausgangssongs (parallel abgefragt), ohne Key bis zu 8 verschiedene Interpreten (statt bisher 6 bzw. 3). «Neu mischen» wählt andere. Die Statuszeile nennt, wie viele Songs ausgewertet wurden.
+- YouTube-Vorschau nur noch bei Treffern, die Interpret **und** Titel enthalten (kein «How to KISS a MAN …» mehr); sonst öffnet sich die YouTube-Suche. Vorschläge ohne ermittelten Titel öffnen ebenfalls die Suche statt eines geratenen Videos; «＋ Song» legt sie nicht mehr automatisch an.
+
+### v2.56.1 – Lieder-Vorschläge: Korrekturen
+- YouTube-Titel mit HTML-Entities (`&quot;` …) werden im Mini-Player, in der Linkliste und bei neuen Treffern korrekt angezeigt.
+- Mini-Player liegt über Dialogen: Die Vorschau lässt sich bedienen, ohne das Vorschlags-Fenster zu schliessen.
+- Ohne Last.fm-Key (MusicBrainz-Ersatz) wird zum Interpreten jetzt der bekannteste Titel per iTunes-Suche ergänzt (`connect-src` um `itunes.apple.com` erweitert).
+
 ### v2.56.0 – Lieder-Vorschläge
 - Neu im Menü «＋ ▾ Neu»: «💡 Lieder-Vorschläge …». Aus einer Auswahl bestehender Songs (alle, Favoriten, Tag oder Ordner; zufällig gemischt) werden ähnliche Titel vorgeschlagen; vorhandene Songs erscheinen nie, Mehrfachtreffer stehen weiter oben, «✕» lehnt einen Vorschlag dauerhaft ab.
 - Quelle: Last.fm (`track.getSimilar`) mit eigenem, kostenlosem API-Key (⚙ Einstellungen, nur lokal gespeichert). Ohne Key: grober Ersatz über MusicBrainz (Interpreten mit gleichem Genre-Tag, ohne Titel).
