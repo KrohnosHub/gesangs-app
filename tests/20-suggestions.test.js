@@ -17,7 +17,7 @@ module.exports = async () => {
             const tr = (t, a, m) => ({ name: t, match: m, artist: { name: a } });
             return J({ similartracks: { track: [tr('Sound of Silence', 'Disturbed', 0.9), tr('Unchained', 'Nightwish', 0.5), tr('Storm', 'Within Temptation', 0.4)] } });
           }
-          if (u.includes('youtube/v3/search')) return J({ items: [{ id: { videoId: 'abcdefghijk' }, snippet: { title: 'Nightwish - Unchained', thumbnails: {} } }] });
+          if (u.includes('youtube/v3/search')) return J({ items: [u.includes('karaoke') ? { id: { videoId: 'karaokeid01' }, snippet: { title: 'Nightwish - Unchained (Karaoke Version)', thumbnails: {} } } : { id: { videoId: 'abcdefghijk' }, snippet: { title: 'Nightwish - Unchained', thumbnails: {} } }] });
           return J({});
         };
         suggestDialog();
@@ -30,7 +30,8 @@ module.exports = async () => {
       ok((await pg.evaluate(() => __calls.filter(c => c.includes('track.getsimilar')).length)) >= 2, 'mehrere Ausgangssongs abgefragt');
       await pg.evaluate(() => { for (let i = 0; i < 25; i++) lib.songs['m' + i] = newSong('Song ' + i, 'Band ' + i); });
       await pg.evaluate(() => { __calls.length = 0; }); await pg.click('text=Neu mischen'); await pg.waitForTimeout(1200);
-      eq(await pg.evaluate(() => __calls.filter(c => c.includes('track.getsimilar') || c.includes('track.search')).length), 20);
+      eq(await pg.evaluate(() => __calls.filter(c => c.includes('track.getsimilar') || c.includes('track.search')).length), 10);
+      await pg.click('text=Vorschläge holen'); await pg.waitForTimeout(1200);      // von vorn: bereits Gezeigtes wieder möglich
       // Vorschau → Mini-Player
       await pg.evaluate(() => { window.__mp = null; window.startMiniPlayerLink = (l) => { window.__mp = l; }; });
       await pg.click('.modal .file-item:has-text("Unchained") >> text=Vorschau'); await pg.waitForTimeout(400);
@@ -42,11 +43,36 @@ module.exports = async () => {
       const sg = await pg.evaluate(() => Object.values(lib.songs).find(s => s.n === 'Unchained'));
       ok(sg && sg.ar === 'Nightwish', 'Song angelegt');
       ok(await pg.evaluate(() => [...document.querySelectorAll('.modal h3')].some(e => e.textContent.startsWith('Lyrics für «'))), 'Lyrics-Dialog nach «＋ Song»');
-      eq(sg.links.map(l => l.mediaId), ['abcdefghijk']);
+      await pg.waitForTimeout(800);
+      const sg2 = await pg.evaluate(() => Object.values(lib.songs).find(s => s.n === 'Unchained'));
+      ok(sg2.links.some(l => l.mediaId === 'abcdefghijk'), 'Original-Link (Vorschau)');
+      ok(sg2.links.some(l => l.mediaId === 'karaokeid01' && l.kind === 'karaoke'), 'Karaoke automatisch verknüpft: ' + JSON.stringify(sg2.links.map(l => [l.mediaId, l.kind])));
+      eq(sg2.links.filter(l => l.kind === 'orig').length, 1);
       await pg.click('text=Später / ohne Text-Blatt fortfahren'); await pg.waitForTimeout(300);
       // Ablehnen bleibt abgelehnt
       await pg.click('.modal .file-item:has-text("Storm") >> text=✕'); await pg.waitForTimeout(200);
       ok((await pg.evaluate(() => JSON.parse(lsGet('sugg_x')).length)) >= 2, 'abgelehnt gemerkt');
+      eq(pg.errs, []); await pg.context().close();
+    });
+    await test('Neu mischen: andere Ausgangssongs, nichts doppelt', async () => {
+      const pg = await open(b, D, { logs: false });
+      const r = await pg.evaluate(async () => {
+        CONFIG.LASTFM_API_KEY = 'k'; Object.keys(lib.songs).forEach(k => delete lib.songs[k]);
+        for (let i = 0; i < 30; i++) lib.songs['s' + i] = newSong('Song ' + i, 'Band ' + i);
+        const seedsSeen = []; window.fetch = async (u) => {
+          u = new URL(String(u)); const a = u.searchParams.get('artist'); seedsSeen.push(a);
+          const tr = [0, 1, 2, 3].map(j => ({ name: 'Vorschlag ' + a + ' ' + j, match: 0.9 - j * 0.1, artist: { name: 'X' } }));
+          return { ok: true, json: async () => ({ similartracks: { track: tr } }) };
+        };
+        suggestDialog();
+        const btn = (t) => [...document.querySelectorAll('.modal button')].find(x => x.textContent.includes(t));
+        const names = () => [...document.querySelectorAll('.modal .file-item b')].map(e => e.textContent);
+        btn('Vorschläge holen').click(); await new Promise(r => setTimeout(r, 700)); const n1 = names(), s1 = seedsSeen.slice();
+        seedsSeen.length = 0; btn('Neu mischen').click(); await new Promise(r => setTimeout(r, 700)); const n2 = names(), s2 = seedsSeen.slice();
+        return { n1, n2, overlapSeeds: s1.filter(x => s2.includes(x)).length, overlapSug: n1.filter(x => n2.includes(x)).length, c1: s1.length, c2: s2.length };
+      });
+      eq([r.c1, r.c2, r.overlapSeeds, r.overlapSug], [10, 10, 0, 0]);
+      ok(r.n1.length > 0 && r.n2.length > 0, 'beide Durchgänge liefern Vorschläge');
       eq(pg.errs, []); await pg.context().close();
     });
     await test('Vorschläge ohne Key: MusicBrainz-Ersatz (Interpreten), Filter Favoriten ohne Treffer', async () => {

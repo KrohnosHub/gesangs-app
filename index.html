@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-AemvkuacV7QS2xepZD02gjxfz+dnzx1eBTKgqjhVOfE=' 'sha256-IqHUidK3ETzq3jDaX6F0yR9FGigoIq8XQ8I/wYOSIxs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-AemvkuacV7QS2xepZD02gjxfz+dnzx1eBTKgqjhVOfE=' 'sha256-q9tZjC70EZ5ShfqYzIU0CJzQJnvwCQZqorWRIjvjeLM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -920,7 +920,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.57.1';
+const APP_VERSION = '2.57.3';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -6667,6 +6667,26 @@ async function resolveArtistTitle(artist) {
   const t = arr(d.results).find(x => normSong(x.artistName) === na && x.trackName);
   return t ? t.trackName : '';
 }
+// Original- und Karaoke-Verknüpfungen im Hintergrund suchen (wie die Auto-Suche im Verknüpfungen-Dialog, dort nur beim ersten Öffnen);
+// schon vorhandene Links (z. B. die angehörte Vorschau) bleiben, pro Quelle/Bereich wird nichts doppelt angelegt (ab v2.57.2)
+async function autoLinkSongBg(id) {
+  const cur = sget(id);
+  if (!cur || cur.alnk) return 0;
+  if (!CONFIG.YOUTUBE_API_KEY && !(CONFIG.SPOTIFY_CLIENT_ID && CONFIG.SPOTIFY_CLIENT_SECRET)) return 0;
+  sTouch(id, x => { x.alnk = 1; });
+  const full = songFull(cur);
+  let res = [];
+  try { res = await suggestLinksFor(full); } catch (e) { return 0; }
+  const have = new Set(songLinks(id).map(l => l.type + ':' + linkGroup(l)));
+  let n = 0;
+  res.filter(x => !x.error && looksRelevant(full, x.title)).forEach(sg => {
+    const key = sg.type + ':' + (sg.kind === 'karaoke' ? 'karaoke' : 'orig');
+    if (have.has(key)) return;
+    have.add(key); n++;
+    addLink(id, { type: sg.type, mediaId: sg.mediaId, url: sg.url, title: sg.title, kind: sg.kind, auto: 1 });
+  });
+  return n;
+}
 const suggDismissed = () => { try { return new Set(JSON.parse(lsGet('sugg_x') || '[]')); } catch (e) { return new Set(); } };
 const suggDismiss = (key) => { const s = suggDismissed(); s.add(key); lsSet('sugg_x', JSON.stringify([...s].slice(-300))); };
 const suggPool = (filter) => aliveSongs().filter(s => {
@@ -6703,15 +6723,22 @@ function suggestDialog() {
   const status = h('div', { class: 'empty-note', style: 'padding:6px 0;' });
   const list = h('div');
   let busy = false;
-  async function run() {
+  // «Neu mischen» (v2.57.2): andere Ausgangssongs (bis alle einmal dran waren) und nichts erneut zeigen, was in dieser Sitzung schon aufgetaucht ist
+  const usedSeeds = new Set(), shownKeys = new Set();
+  async function run(reset) {
     if (busy) return; busy = true;
+    if (reset === true) { usedSeeds.clear(); shownKeys.clear(); }
     list.replaceChildren();
     const pool = suggPool(filterSel.value);
     if (!pool.length) { status.textContent = 'Keine passenden Songs mit Titel in dieser Auswahl.'; busy = false; return; }
-    // Ausgangssongs: mit Last.fm bis zu 20 (parallel), ohne Key bis zu 8 verschiedene Interpreten (MusicBrainz: 1 Anfrage/s)
-    let seeds = shuffled(pool);
+    // Ausgangssongs: mit Last.fm 10 je Durchgang (parallel), ohne Key 6 verschiedene Interpreten (MusicBrainz: 1 Anfrage/s)
+    const per = hasKey ? 10 : 6;
+    let fresh = pool.filter(p => !usedSeeds.has(p.id));
+    if (fresh.length < Math.min(per, pool.length)) { usedSeeds.clear(); fresh = pool; }
+    let seeds = shuffled(fresh);
     if (!hasKey) { const seen = new Set(); seeds = seeds.filter(p => { const k = normSong(p.artist); if (!k || seen.has(k)) return false; seen.add(k); return true; }); }
-    seeds = seeds.slice(0, hasKey ? 20 : 8);
+    seeds = seeds.slice(0, per);
+    seeds.forEach(sd => usedSeeds.add(sd.id));
     const results = [], errs = []; let done = 0, stop = false;
     const worker = async (queue) => {
       while (queue.length && !stop) {
@@ -6726,7 +6753,7 @@ function suggestDialog() {
     await Promise.all(Array.from({ length: hasKey ? 4 : 1 }, () => worker(q)));
     const existing = new Set(aliveSongs().map(s => normSong(songParts(s).title)));
     const seedArtists = new Set(aliveSongs().map(s => normSong(songParts(s).artist)).filter(Boolean));
-    const sugg = aggregateSuggestions(results, existing, seedArtists, suggDismissed());
+    const sugg = aggregateSuggestions(results, existing, seedArtists, new Set([...suggDismissed(), ...shownKeys]));
     const src = hasKey ? 'Last.fm' : 'MusicBrainz (ohne Last.fm-Key nur Interpreten mit ähnlichem Genre)';
     status.textContent = sugg.length ? sugg.length + ' Vorschläge · Basis: ' + seeds.map(s => s.title).join(', ') + ' · Quelle: ' + src
       : (errs.length ? errs[0] : 'Keine neuen Vorschläge gefunden – «Neu mischen» versucht andere Ausgangssongs.');
@@ -6738,7 +6765,8 @@ function suggestDialog() {
     const shown = sugg.filter(sg => !sg.title || !existing.has(normSong(sg.title)));
     sugg.length = 0; sugg.push(...shown);
     status.textContent = sugg.length ? sugg.length + ' Vorschläge · Basis: ' + seeds.map(s => s.title).join(', ') + ' · Quelle: ' + src : (errs.length ? errs[0] : 'Keine neuen Vorschläge gefunden – «Neu mischen» versucht andere Ausgangssongs.');
-    sugg.forEach(sg => list.append(suggRow(sg)));
+    sugg.forEach(sg => { shownKeys.add(sg.key); list.append(suggRow(sg)); });
+    if (!sugg.length && shownKeys.size && !errs.length) status.textContent = 'Keine weiteren neuen Vorschläge für diese Auswahl – «Vorschläge holen» beginnt von vorn.';
     busy = false;
   }
   function suggRow(sg) {
@@ -6772,15 +6800,17 @@ function suggestDialog() {
       addBtn.textContent = '✓ angelegt'; noBtn.remove();
       toast('Song «' + title + '» angelegt.');
       lyricsFlow({ id, n: nm, ar, title, artist: sg.artist });     // direkt das Lyrics-Blatt anbieten (wie «Neuer Song»), ab v2.57.1
+      autoLinkSongBg(id).then(n => { if (n) toast('«' + title + '»: ' + n + ' Verknüpfung' + (n > 1 ? 'en' : '') + ' (Original/Karaoke) hinterlegt.', 3500); }).catch(() => {});
     });
     noBtn.addEventListener('click', () => { suggDismiss(sg.key); row.remove(); });
     return row;
   }
-  const goBtn = h('button', { class: 'primary', text: hasKey ? 'Vorschläge holen' : 'Vorschläge holen (MusicBrainz)', onclick: run });
+  const goBtn = h('button', { class: 'primary', text: hasKey ? 'Vorschläge holen' : 'Vorschläge holen (MusicBrainz)', onclick: () => run(true) });
+  filterSel.addEventListener('change', () => { usedSeeds.clear(); shownKeys.clear(); });
   const body = h('div', {},
     hasKey ? null : h('div', { class: 'empty-note', style: 'padding:0 0 8px;' }, 'Für treffsichere Titel-Vorschläge einen kostenlosen Last.fm-API-Key unter ⚙ Einstellungen eintragen (last.fm/api/account/create). Ohne Key gibt es nur Interpreten mit ähnlichem Genre.'),
     h('label', { text: 'Ausgangssongs', style: 'display:block; font-size:12px; color:var(--muted); margin:2px 0 4px;' }), filterSel,
-    h('div', { style: 'display:flex; gap:8px; margin:10px 0 4px;' }, goBtn, h('button', { text: '🔀 Neu mischen', onclick: run })),
+    h('div', { style: 'display:flex; gap:8px; margin:10px 0 4px;' }, goBtn, h('button', { text: '🔀 Neu mischen', onclick: () => run(false) })),
     status, list);
   return openModal({ title: '💡 Lieder-Vorschläge', body, wide: true, buttons: [{ label: 'Schliessen' }] });
 }

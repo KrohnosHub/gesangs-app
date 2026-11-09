@@ -21,6 +21,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.57.3 – Songs aus den Vorschlägen: Original & Karaoke automatisch verknüpft
+- Beim Anlegen über «＋ Song» werden zusätzlich zur angehörten Vorschau automatisch Original- und Karaoke-Verknüpfungen gesucht und hinterlegt (YouTube/Spotify, nur thematisch passende Treffer, nichts doppelt). Bisher lief diese Auto-Suche nur beim ersten Öffnen des Verknüpfungen-Dialogs.
+
+### v2.57.2 – «Neu mischen» liefert wirklich Neues
+- Jeder Durchgang nimmt andere Ausgangssongs (10 mit Last.fm, 6 Interpreten ohne Key), bis alle einmal dran waren; Vorschläge, die in der Sitzung schon gezeigt wurden, erscheinen nicht erneut. «Vorschläge holen» und ein Wechsel der Auswahl beginnen von vorn.
+
 ### v2.57.1 – Lyrics-Blatt für Songs aus den Vorschlägen
 - «＋ Song» in den Lieder-Vorschlägen öffnet direkt die Lyrics-Suche, wie bei «Neuer Song».
 - Ein Song ganz ohne Blatt lässt sich per Antippen öffnen: statt der Meldung «kein verfügbares Blatt» startet die Lyrics-Suche (betrifft auch bereits angelegte Songs aus Vorschlägen).
