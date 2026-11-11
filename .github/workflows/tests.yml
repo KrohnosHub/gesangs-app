@@ -1,0 +1,29 @@
+# Testsuite bei jedem Push nach main und bei jedem Pull Request (Playwright + Chromium, Dauer ca. 5–8 Minuten).
+# GitHub Pages veröffentlicht weiterhin direkt von main; für eine Veröffentlichung nur nach grünen Tests
+# Änderungen über einen Pull Request einspielen und den Check «Tests» zur Pflicht machen (siehe README).
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Playwright installieren
+        run: |
+          npm install --no-save playwright@1
+          npx playwright install --with-deps chromium
+      - name: Release-Dateien konsistent? (CSP-Hashes, sw.js-Version)
+        run: |
+          python3 tools/finalize.py
+          git diff --exit-code index.html sw.js || { echo "::error::index.html/sw.js nicht finalisiert – python3 tools/finalize.py ausführen und committen"; exit 1; }
+      - name: Testsuite
+        run: node tests/run.js

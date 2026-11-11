@@ -15,6 +15,7 @@ Die App besteht aus mehreren Dateien, die **zusammen im Hauptverzeichnis des Git
 | `samples/` | Klangbeispiele für die Einsing-Übungen |
 | `tests/` | automatisierte Tests (siehe «Getestet») |
 | `tools/finalize.py` | Release-Hilfsskript (CSP-Hashes + `sw.js`-Version) |
+| `.github/workflows/tests.yml` | GitHub Action: Testsuite bei jedem Push/Pull Request |
 | `poc-drive-share.html` | temporäre Testseite für «Gemeinsames Bearbeiten» (Phase 0, nicht Teil der App) |
 
 **Veröffentlichen (Stand v2.58.0):** GitHub Pages liefert direkt den Stand von `main` aus; es gibt keinen manuellen Upload über die Weboberfläche mehr. Ablauf pro Version:
@@ -22,10 +23,10 @@ Die App besteht aus mehreren Dateien, die **zusammen im Hauptverzeichnis des Git
 1. Änderung in `index.html` (und ggf. weiteren Dateien); `APP_VERSION` erhöhen und oben im Änderungslog einen Eintrag `### vX.Y.Z – …` ergänzen (sonst schlägt der Test in `01-static` fehl).
 2. `python3 tools/finalize.py` – berechnet die CSP-Hashes neu (ohne sie startet die App nicht) und setzt die Version in `sw.js`.
 3. `NODE_PATH=$(npm root -g) node tests/run.js` (Playwright + Chromium; Dauer ca. 5 Minuten, optional Filter wie `node tests/run.js 04`).
-4. Commit und Push nach `main`; GitHub Pages veröffentlicht automatisch.
+4. Commit und Push nach `main`; GitHub Pages veröffentlicht automatisch. Parallel läuft die GitHub Action **«Tests»** (`.github/workflows/tests.yml`): prüft, dass `tools/finalize.py` nichts mehr ändert (CSP-Hashes/`sw.js`-Version), und führt die komplette Testsuite aus. Das Ergebnis steht im Tab «Actions» (grüner Haken beim Commit); bei Rot die Fehlermeldung dort ansehen und korrigieren.
 5. Sicherungskopie: aktuelle Dateien nach `C:\Users\matth\OneDrive\Musik\Gesangs-App`, die Vorversion davor nach `Archiv\vALT` (Zwischenstände werden nicht immer archiviert).
 
-Eine GitHub Action (Tests bei jedem Push/Pull Request) gibt es noch nicht; die Tests laufen bisher von Hand vor dem Push.
+**Strengerer Ablauf (optional, wie bei Notator/Scholaplaner):** Änderungen auf einem Branch machen und per Pull Request nach `main` einspielen. Der Check «Tests» läuft dann vor dem Zusammenführen; mit einer Branch-Schutzregel («Require status checks to pass», Check `Tests`) lässt sich ein Merge bei roten Tests sperren (Einstellung unter Settings → Branches des Repositories, nur durch den Repository-Besitzer). Solange direkt auf `main` gepusht wird, veröffentlicht GitHub Pages **vor** dem Testergebnis.
 
 In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ «Webanwendung», JavaScript-Ursprung = `https://krohnoshub.github.io`). Bei einem anderen Hosting-Ort muss der Ursprung in der Google Cloud Console ergänzt werden (siehe «Fehlerbehebung: origin_mismatch»).
 
