@@ -2,22 +2,34 @@
 
 Single-File-HTML-App (`index.html`) zum Anzeigen und Beschriften von Lyric-Blättern (PDF/Bild). Ablage und Sync über Google Drive (Scope `drive.file`), Hosting z. B. GitHub Pages.
 
-## Einrichtung / Veröffentlichung (ab v2.0 mehrere Dateien)
+## Einrichtung / Veröffentlichung
 
-Seit v2.0 besteht die App nicht mehr nur aus `index.html`. **Alle folgenden Dateien/Ordner müssen zusammen in dasselbe GitHub-Pages-Verzeichnis** (Repository `gesangs-app`, Hauptebene):
+Die App besteht aus mehreren Dateien, die **zusammen im Hauptverzeichnis des GitHub-Pages-Repositories** `KrohnosHub/gesangs-app` (Branch `main`) liegen:
 
 | Datei / Ordner | Zweck |
 |---|---|
-| `index.html` | die App |
-| `sw.js` | Service Worker (Offline-Betrieb) |
+| `index.html` | die App (CSP-Hashes der Inline-Skripte stehen im `<meta>`-Tag) |
+| `sw.js` | Service Worker (Offline-Betrieb, `VERSION` wird beim Release gesetzt) |
 | `manifest.webmanifest` + `icons/` | Installation als App auf Handy/Tablet («Zum Startbildschirm») |
-| `vendor/` | pdf.js und pdf-lib lokal (kein CDN mehr nötig – Voraussetzung für Offline) inkl. Lizenzdateien |
+| `vendor/` | pdf.js und pdf-lib lokal (kein CDN nötig – Voraussetzung für Offline) inkl. Lizenzdateien |
+| `samples/` | Klangbeispiele für die Einsing-Übungen |
+| `tests/` | automatisierte Tests (siehe «Getestet») |
+| `tools/finalize.py` | Release-Hilfsskript (CSP-Hashes + `sw.js`-Version) |
+| `poc-drive-share.html` | temporäre Testseite für «Gemeinsames Bearbeiten» (Phase 0, nicht Teil der App) |
 
-Die Dateien liegen bereits entpackt in `D:\OneDrive\Musik\Gesangs-App` (bei jeder neuen Version wird die Vorversion zuerst nach `Archiv\vALT` verschoben). Für GitHub Pages einfach den **Inhalt** dieses Ordners (nicht den Ordner selbst, und nicht `Archiv/`) im GitHub-Webinterface per «Add file → Upload files» hochladen (Ordner lassen sich dort per Drag & Drop mitziehen).
+**Veröffentlichen (Stand v2.58.0):** GitHub Pages liefert direkt den Stand von `main` aus; es gibt keinen manuellen Upload über die Weboberfläche mehr. Ablauf pro Version:
 
-In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ «Webanwendung», JavaScript-Ursprung = `https://krohnoshub.github.io`). **Sie ist in dieser Lieferung bereits auf `159994249880-flb4nhh2aq51tspov0d7nv787hir84e5…` gesetzt** und wurde vor der Auslieferung geprüft.
+1. Änderung in `index.html` (und ggf. weiteren Dateien); `APP_VERSION` erhöhen und oben im Änderungslog einen Eintrag `### vX.Y.Z – …` ergänzen (sonst schlägt der Test in `01-static` fehl).
+2. `python3 tools/finalize.py` – berechnet die CSP-Hashes neu (ohne sie startet die App nicht) und setzt die Version in `sw.js`.
+3. `NODE_PATH=$(npm root -g) node tests/run.js` (Playwright + Chromium; Dauer ca. 5 Minuten, optional Filter wie `node tests/run.js 04`).
+4. Commit und Push nach `main`; GitHub Pages veröffentlicht automatisch.
+5. Sicherungskopie: aktuelle Dateien nach `C:\Users\matth\OneDrive\Musik\Gesangs-App`, die Vorversion davor nach `Archiv\vALT` (Zwischenstände werden nicht immer archiviert).
 
-**Wichtig beim Umstieg:** Ab v2.0 speichern Notizen im Format v3. Ältere App-Versionen (v1.x) können Textfelder/Symbole daraus nicht darstellen. Bitte alle Geräte auf v2.0 aktualisieren (Seite einmal neu laden; ggf. zweimal, bis der Service Worker die neue Version übernommen hat).
+Eine GitHub Action (Tests bei jedem Push/Pull Request) gibt es noch nicht; die Tests laufen bisher von Hand vor dem Push.
+
+In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ «Webanwendung», JavaScript-Ursprung = `https://krohnoshub.github.io`). Bei einem anderen Hosting-Ort muss der Ursprung in der Google Cloud Console ergänzt werden (siehe «Fehlerbehebung: origin_mismatch»).
+
+**Hinweis zu alten Datenständen:** Seit v2.0 speichern Notizen im Format v3. Ältere App-Versionen (v1.x) können Textfelder/Symbole daraus nicht darstellen. Nach einem Update die Seite einmal neu laden, ggf. zweimal, bis der Service Worker die neue Version übernommen hat.
 
 ## Änderungslog
 
@@ -741,7 +753,7 @@ Jeder Eintrag mit Zeitstempel `u` («neuester Eintrag gewinnt» pro Eintrag; Lö
 
 ## Getestet
 
-Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simuliertem Drive/YouTube/Spotify/lyrics.ovh/LRCLIB/Mikrofon (**≈857 Prüfungen** in 32 Testdateien; Ausführung über `localhost`, teils mit Handy-Emulation: Viewport, Touch, Pixelverhältnis). Stand v2.14.2: **alle bestanden.** Ein Test im Offline/Sync-Testfall (zweiter Geräte-Kontext nach Ablauf des Tokens) ist gelegentlich zeitkritisch/umgebungsabhängig (nicht reproduzierbar durch eine bestimmte App-Version verursacht – bei Bedarf einfach erneut ausführen).
+Automatisierte Tests im Headless-Chromium mit simuliertem Google-Login und simuliertem Drive/YouTube/Spotify/lyrics.ovh/LRCLIB/Mikrofon (**66 Tests in 20 Testdateien**, Ausführung über `localhost`, teils mit Handy-Emulation: Viewport, Touch, Pixelverhältnis). Stand v2.58.0: **alle bestanden.** Ein Test im Offline/Sync-Testfall (zweiter Geräte-Kontext nach Ablauf des Tokens) ist gelegentlich zeitkritisch/umgebungsabhängig (nicht reproduzierbar durch eine bestimmte App-Version verursacht – bei Bedarf einfach erneut ausführen).
 
 - **v2.14.2 (3, neu):** Startbild zeigt den neuen, songbezogenen Hinweistext statt des überholten Datei-Hinweises.
 - **v2.14.1 (15):** Aktuell geöffnetes Blatt über «Blätter verwalten» entfernen, während der Song noch ein weiteres Blatt hat → Viewer schaltet auf das verbleibende Blatt um, bleibt nach «Fertig» im selben Song (Titel/Song-ID korrekt, kein Startbild); letztes verbleibendes Blatt eines Songs entfernen → weiterhin Startbild (Song gilt als gelöscht, unverändert richtig); Blatt eines anderen, nicht geöffneten Songs entfernen → der gerade offene Song bleibt unberührt.
