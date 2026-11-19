@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-AemvkuacV7QS2xepZD02gjxfz+dnzx1eBTKgqjhVOfE=' 'sha256-p6bESiU799gBrKz+NkB5ASgnBw3SoeFrpU/l0d+iGXs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-aZLZjQGQSu+qdSuF733DEYh2wyno8prrEH8/eEncqJ4=' 'sha256-lktcY372kM3AKqv0xif73URouIqMjHTHGqmSh/k8azs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com https://api.dropboxapi.com https://content.dropboxapi.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -45,7 +45,9 @@
     // Spotify-Suche einfach leer (YouTube funktioniert unabhängig davon weiter).
     SPOTIFY_CLIENT_SECRET: '',
     // Ab v2.56.0: Last.fm-API-Key für «Lieder-Vorschläge» (kostenlos, last.fm/api/account/create); ab v2.57.0 zusätzlich in library.json (lib.cfg) → alle Geräte.
-    LASTFM_API_KEY: ''
+    LASTFM_API_KEY: '',
+    // Ab v2.59.0: App key einer eigenen Dropbox-App (dropbox.com/developers) für den Instrumental-Abgleich; liegt wie der Last.fm-Key in lib.cfg.
+    DROPBOX_APP_KEY: ''
   };
   // Ab v2.22.0 (Entwicklermodus): «?sim=NAME» startet die App als simulierter neuer Nutzer in einer vollständig getrennten
   // Umgebung (eigene IndexedDB, eigene localStorage-Schlüssel mit Präfix) – die echten Daten werden weder gelesen noch verändert.
@@ -57,6 +59,7 @@
     const spi = localStorage.getItem(LSP + 'sp_id'); if (spi) CONFIG.SPOTIFY_CLIENT_ID = spi;
     const sps = localStorage.getItem(LSP + 'sp_secret'); if (sps) CONFIG.SPOTIFY_CLIENT_SECRET = sps;
     const lfk = localStorage.getItem(LSP + 'lf_key'); if (lfk) CONFIG.LASTFM_API_KEY = lfk;
+    const dbk = localStorage.getItem(LSP + 'dbx_key'); if (dbk) CONFIG.DROPBOX_APP_KEY = dbk;
   } catch (e) {}
   // Für automatisierte Tests: erlaubt, einzelne Werte oben ohne Codeänderung zu überschreiben.
   if (window.__TEST_CFG) Object.assign(CONFIG, window.__TEST_CFG);
@@ -920,7 +923,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.58.0';
+const APP_VERSION = '2.59.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -1608,8 +1611,10 @@ function mergeLib(a, b) {
   return out;
 }
 // Last.fm-Key liegt in lib.cfg (→ library.json im eigenen Drive) und gilt damit auf allen angemeldeten Geräten
-function libCfgSetLf(key) { lib.cfg = { lf: key || '', u: nowTs() }; libChanged(); }
+function libCfgSet(patch) { lib.cfg = Object.assign({}, lib.cfg || {}, patch, { u: nowTs() }); libChanged(); }
+function libCfgSetLf(key) { libCfgSet({ lf: key || '' }); }
 function applyLibCfg() {
+  if (lib.cfg && typeof lib.cfg.dk === 'string' && lib.cfg.dk !== (CONFIG.DROPBOX_APP_KEY || '')) { CONFIG.DROPBOX_APP_KEY = lib.cfg.dk; if (lib.cfg.dk) lsSet('dbx_key', lib.cfg.dk); else lsDel('dbx_key'); }
   if (!lib.cfg || typeof lib.cfg.lf !== 'string' || lib.cfg.lf === (CONFIG.LASTFM_API_KEY || '')) return;
   CONFIG.LASTFM_API_KEY = lib.cfg.lf;
   if (lib.cfg.lf) lsSet('lf_key', lib.cfg.lf); else lsDel('lf_key');
@@ -1678,8 +1683,8 @@ function addLink(songId, link) {
   // nächsten Öffnen des Dialogs still entfernt, ohne dass dies erkennbar war). Bereich hier
   // absichtlich ohne linkGroup() (11_links.js) nachgebildet, um keine Vorwärtsreferenz einzuführen.
   if (link.auto) {
-    const grp = link.type === 'xm' ? 'xm' : (link.kind === 'karaoke' ? 'karaoke' : 'orig');
-    if (songLinks(songId).filter(l => l.auto && (l.type === 'xm' ? 'xm' : (l.kind === 'karaoke' ? 'karaoke' : 'orig')) === grp).length >= 3) return false;
+    const grp = link.type === 'xm' || link.type === 'dbx' ? 'xm' : (link.kind === 'karaoke' ? 'karaoke' : 'orig');
+    if (songLinks(songId).filter(l => l.auto && (l.type === 'xm' || l.type === 'dbx' ? 'xm' : (l.kind === 'karaoke' ? 'karaoke' : 'orig')) === grp).length >= 3) return false;
   }
   let added = false;
   sTouch(songId, s => {
@@ -5394,6 +5399,7 @@ window.addEventListener('online', () => { loadGsi(); });
   }
 
   loadStoredToken(); updateAuthBtn();
+  setTimeout(() => { dbxHandleRedirect().catch(() => {}); }, 0);
   const haveLocal = filesKnown;
   if (haveLocal) showShell();
   renderSidebar(); updateSyncState(); 
@@ -5528,9 +5534,9 @@ async function suggestLinksFor(name) {
 }
 function isKaraokeText(t) { return /karaoke|instrumental|playback|backing|sing[\s-]?along|minus[\s-]?one|in the style of|originally performed/i.test(String(t || '')); }
 
-const linkIcon = (l) => l.type === 'yt' ? '▶' : l.type === 'xm' ? '🎚' : '♫';
-const linkSourceLabel = (l) => l.type === 'yt' ? 'YouTube' : l.type === 'xm' ? 'x-minus.pro' : 'Spotify';
-const linkGroup = (l) => l.type === 'xm' ? 'xm' : l.kind === 'karaoke' ? 'karaoke' : 'orig';   // 'manual' (Altbestand) fällt unter Original
+const linkIcon = (l) => l.type === 'yt' ? '▶' : l.type === 'xm' ? '🎚' : l.type === 'dbx' ? '📦' : '♫';
+const linkSourceLabel = (l) => l.type === 'yt' ? 'YouTube' : l.type === 'xm' ? 'x-minus.pro' : l.type === 'dbx' ? 'Dropbox' : 'Spotify';
+const linkGroup = (l) => l.type === 'xm' || l.type === 'dbx' ? 'xm' : l.kind === 'karaoke' ? 'karaoke' : 'orig';   // 'manual' (Altbestand) fällt unter Original
 const playableLink = (l) => l.type === 'yt' || l.type === 'sp';
 // --- Schnellstart (ab v2.34.0): je Song ein Standard-Link für Original und Karaoke (s.pin = { orig, kar }) ---
 const QL_KEY = 'gapp_qlast';
@@ -5857,6 +5863,18 @@ function openSettingsDialog() {
     h('a', { href: 'https://www.last.fm/api/account/create', target: '_blank', rel: 'noopener', style: 'color:var(--accent);' }, 'last.fm/api/account/create'), '.'));
   const lfInput = h('input', { type: 'text', placeholder: 'Last.fm API-Key', value: CONFIG.LASTFM_API_KEY || '', style: 'width:100%;' });
   body.append(h('div', { style: 'padding:0 6px 9px;' }, lfInput));
+  body.append(h('div', { class: 'empty-note', style: 'margin:6px 0;' }, h('b', { text: 'Dropbox (Instrumentals): ' }), 'Eigene kostenlose App auf ',
+    h('a', { href: 'https://www.dropbox.com/developers/apps', target: '_blank', rel: 'noopener', style: 'color:var(--accent);' }, 'dropbox.com/developers/apps'),
+    ' anlegen (Scoped access, «Full Dropbox»), Rechte files.metadata.read + files.content.read aktivieren, als Redirect URI ', h('b', { text: dbxRedirectUri() }), ' eintragen und den App key hier einfügen (gilt auf allen Geräten).'));
+  const dbInput = h('input', { type: 'text', placeholder: 'Dropbox App key', value: CONFIG.DROPBOX_APP_KEY || '', style: 'width:100%; margin-bottom:6px;' });
+  const dbFolder = h('input', { type: 'text', placeholder: 'Ordnername in Dropbox', value: dbxFolderName(), style: 'width:100%; margin-bottom:6px;' });
+  const dbRow = h('div', { style: 'display:flex; gap:8px; flex-wrap:wrap;' });
+  const saveDbx = () => { const k = dbInput.value.trim(); CONFIG.DROPBOX_APP_KEY = k; if (k) lsSet('dbx_key', k); else lsDel('dbx_key'); if (k !== ((lib.cfg && lib.cfg.dk) || '')) libCfgSet({ dk: k }); const f = dbFolder.value.trim(); if (f && f !== 'Matthias Krohn - Gesangsunterricht') lsSet('dbx_folder', f); else lsDel('dbx_folder'); };
+  if (dbxConnected()) dbRow.append(h('span', { class: 'sub', text: '✓ mit Dropbox verbunden' }),
+    h('button', { text: '📦 Ordner abgleichen …', onclick: () => { saveDbx(); dbxSyncDialog(); } }),
+    h('button', { text: 'Trennen', onclick: () => { dbxLogout(); toast('Dropbox getrennt.'); } }));
+  else dbRow.append(h('button', { text: '📦 Bei Dropbox anmelden', onclick: () => { saveDbx(); dbxLogin(); } }));
+  body.append(h('div', { style: 'padding:0 6px 9px;' }, dbInput, dbFolder, dbRow));
   if (!SIM) {
     const devCb = h('input', { type: 'checkbox', checked: rawGet('gapp_dev') === '1' || null });
     devCb.addEventListener('change', () => { rawSet('gapp_dev', devCb.checked ? '1' : '0'); devRow.style.display = devCb.checked ? '' : 'none'; });
@@ -5874,6 +5892,7 @@ function openSettingsDialog() {
         if (sec) { lsSet('sp_secret', sec); CONFIG.SPOTIFY_CLIENT_SECRET = sec; } else { lsDel('sp_secret'); CONFIG.SPOTIFY_CLIENT_SECRET = ''; }
         const lfk = lfInput.value.trim(); if (lfk) { lsSet('lf_key', lfk); CONFIG.LASTFM_API_KEY = lfk; } else { lsDel('lf_key'); CONFIG.LASTFM_API_KEY = ''; }
         if (lfk !== ((lib.cfg && lib.cfg.lf) || '')) libCfgSetLf(lfk);                   // → library.json, gilt auf allen Geräten
+        saveDbx();
         spotifyToken = null; spotifyTokenExp = 0;   // altes Token verwerfen, ggf. neue Zugangsdaten sofort nutzen
         toast('Gespeichert.');
       } }
@@ -10457,7 +10476,7 @@ async function importBackingDialog(songId, file, onDone) {
     } }]
   });
 }
-async function runBackingImport(songId, file, { name, semi = 0, ext, dir = null }) {
+async function runBackingImport(songId, file, { name, semi = 0, ext, dir = null, extra = null }) {
   if (!(await requireOnline('Backing-Track importieren'))) return null;
   ext = ext || audioExtOf(file);
   const fname = name + ext, typed = new File([file], fname, { type: file.type || 'audio/mpeg' });
@@ -10467,6 +10486,7 @@ async function runBackingImport(songId, file, { name, semi = 0, ext, dir = null 
     created = await uploadOne(typed);
     const item = { id: created.id, name, kind: 'backing' };
     if (semi) item.kt = semi;
+    if (extra) Object.assign(item, extra);
     addAudio(songId, item);
     await storeBlob({ id: created.id, name: created.name, mimeType: created.mimeType || typed.type }, typed);
   } catch (e) { fail('Backing-Track: Hochladen fehlgeschlagen', e); return null; }
@@ -10478,6 +10498,159 @@ async function runBackingImport(songId, file, { name, semi = 0, ext, dir = null 
   setStatus('Backing-Track gespeichert', 'ok');
   toast('«' + fname + '» importiert' + (copied ? ' und im Ordner «' + dir.name + '» abgelegt' : ''), 3500);
   return { id: created.id, fname, copied };
+}
+
+// ---------------------------------------------------------------
+// Dropbox-Anbindung (ab v2.59.0): Instrumental-Versionen aus einem (z. B. von der Gesangslehrerin
+// geteilten) Dropbox-Ordner automatisch dem passenden Lied zuordnen oder von Hand auswählen.
+// Anmeldung: OAuth 2.0 mit PKCE direkt in der App (kein Server, kein Secret). Nötig ist nur der
+// «App key» einer eigenen, kostenlosen Dropbox-App (dropbox.com/developers); er wird mit der
+// Bibliothek (lib.cfg.dk) auf allen Geräten gespeichert, das Refresh-Token bleibt pro Gerät.
+// Je Datei: Kopie als Backing-Track im eigenen Drive (offline, für Aufnahme nutzbar; item.dbx = Dropbox-id
+// gegen Doppelimport) + Verknüpfung «Instrumental» (type 'dbx') auf die Datei in Dropbox.
+// ---------------------------------------------------------------
+function dbxFolderName() { return lsGet('dbx_folder') || 'Matthias Krohn - Gesangsunterricht'; }
+function dbxConnected() { return !!lsGet('dbx_rt'); }
+function dbxRedirectUri() { return location.origin + location.pathname; }
+function dbxB64url(buf) { let s = ''; new Uint8Array(buf).forEach(b => { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+async function dbxLogin() {
+  const key = CONFIG.DROPBOX_APP_KEY;
+  if (!key) { toast('Bitte zuerst den Dropbox App key in den Einstellungen eintragen und speichern.', 4000); return; }
+  const ver = dbxB64url(crypto.getRandomValues(new Uint8Array(48))), st = dbxB64url(crypto.getRandomValues(new Uint8Array(12)));
+  const chal = dbxB64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ver)));
+  lsSet('dbx_pk', JSON.stringify({ v: ver, s: st }));
+  location.href = 'https://www.dropbox.com/oauth2/authorize?' + new URLSearchParams({
+    client_id: key, response_type: 'code', code_challenge: chal, code_challenge_method: 'S256',
+    token_access_type: 'offline', redirect_uri: dbxRedirectUri(), state: st });
+}
+async function dbxTokenRequest(params) {
+  const r = await fetch('https://api.dropboxapi.com/oauth2/token', { method: 'POST', body: new URLSearchParams(Object.assign({ client_id: CONFIG.DROPBOX_APP_KEY }, params)) });
+  if (!r.ok) throw new Error('Dropbox-Anmeldung fehlgeschlagen (' + r.status + ')');
+  return r.json();
+}
+// Rückkehr von Dropbox (?code=…&state=…) → Code gegen Refresh-Token tauschen
+async function dbxHandleRedirect() {
+  const q = new URLSearchParams(location.search), code = q.get('code'), st = q.get('state');
+  if (!st) return;
+  let pk = null; try { pk = JSON.parse(lsGet('dbx_pk') || 'null'); } catch (e) {}
+  if (!pk || pk.s !== st) return;
+  history.replaceState(null, '', location.pathname); lsDel('dbx_pk');
+  if (!code) { toast('Dropbox-Anmeldung abgebrochen.'); return; }
+  try {
+    const t = await dbxTokenRequest({ grant_type: 'authorization_code', code, code_verifier: pk.v, redirect_uri: dbxRedirectUri() });
+    if (!t.refresh_token) throw new Error('kein Refresh-Token erhalten (App-Einstellung «offline access»?)');
+    lsSet('dbx_rt', t.refresh_token); window.__dbx = { at: t.access_token, exp: Date.now() + (t.expires_in || 14400) * 1000 };
+    toast('Dropbox verbunden.');
+    setTimeout(() => openSettingsDialog(), 300);
+  } catch (e) { toast(e.message, 5000); }
+}
+function dbxLogout() { lsDel('dbx_rt'); window.__dbx = null; }
+async function dbxToken() {
+  const c = window.__dbx || (window.__dbx = {});
+  if (c.at && Date.now() < c.exp - 60000) return c.at;
+  const rt = lsGet('dbx_rt'); if (!rt) throw new Error('Nicht mit Dropbox verbunden (Einstellungen ⚙).');
+  const t = await dbxTokenRequest({ grant_type: 'refresh_token', refresh_token: rt });
+  c.at = t.access_token; c.exp = Date.now() + (t.expires_in || 14400) * 1000;
+  return c.at;
+}
+async function dbxApi(path, body) {
+  const r = await fetch('https://api.dropboxapi.com/2/' + path, { method: 'POST', headers: { Authorization: 'Bearer ' + await dbxToken(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error(/not_found/.test(t) ? 'Ordner «' + dbxFolderName() + '» nicht gefunden (Name in den Einstellungen prüfen).' : 'Dropbox-Fehler ' + r.status); }
+  return r.json();
+}
+const DBX_AUDIO_RE = /\.(mp3|m4a|wav|flac|ogg|aac|wma|aif|aiff)$/i;
+async function dbxListAudio() {
+  let res = await dbxApi('files/list_folder', { path: '/' + dbxFolderName().replace(/^\/+/, ''), recursive: true, limit: 2000 });
+  let all = res.entries;
+  while (res.has_more) { res = await dbxApi('files/list_folder/continue', { cursor: res.cursor }); all = all.concat(res.entries); }
+  return all.filter(e => e['.tag'] === 'file' && DBX_AUDIO_RE.test(e.name)).sort((a, b) => a.name.localeCompare(b.name));
+}
+async function dbxDownload(entry) {
+  const r = await fetch('https://content.dropboxapi.com/2/files/download', { method: 'POST', headers: { Authorization: 'Bearer ' + await dbxToken(), 'Dropbox-API-Arg': JSON.stringify({ path: entry.id }) } });
+  if (!r.ok) throw new Error('Download fehlgeschlagen (' + r.status + ')');
+  const blob = await r.blob();
+  return new File([blob], entry.name, { type: blob.type && blob.type !== 'application/octet-stream' ? blob.type : 'audio/mpeg' });
+}
+function dbxWebUrl(entry) {
+  const p = String(entry.path_display || ('/' + entry.name)), i = p.lastIndexOf('/');
+  return 'https://www.dropbox.com/home' + encodeURI(p.slice(0, i)) + '?preview=' + encodeURIComponent(p.slice(i + 1));
+}
+const dbxHas = (entry) => aliveSongs().some(s => (s.audio || []).some(a => a.dbx === entry.id));
+// Dateiname ↔ Song: Titel muss als ganze Wörter im Dateinamen vorkommen; Interpret im Namen gibt Zusatzpunkte.
+// Eindeutig nur bei höchster Punktzahl allein und (≥ 2 Titelwörter oder Interpret passt).
+function dbxMatch(entries) {
+  const songs = aliveSongs().map(s => ({ s, t: normSong(s.n), a: normSong(s.ar || '') })).filter(x => x.t);
+  const out = [];
+  entries.forEach(e => {
+    const f = ' ' + normSong(e.name.replace(DBX_AUDIO_RE, '').replace(/_/g, ' ')) + ' ';
+    let best = [], top = 0;
+    songs.forEach(x => {
+      if (!f.includes(' ' + x.t + ' ')) return;
+      const art = !!x.a && f.includes(' ' + x.a + ' ');
+      const sc = x.t.split(' ').length + (art ? 3 : 0);
+      if (sc > top) { top = sc; best = [{ x, art }]; } else if (sc === top) best.push({ x, art });
+    });
+    if (best.length === 1 && (best[0].art || best[0].x.t.split(' ').length >= 2)) out.push({ entry: e, song: best[0].x.s });
+    else out.push({ entry: e, song: null, cand: best.map(b => b.x.s) });
+  });
+  return out;
+}
+async function dbxImport(songId, entry) {
+  const s = sget(songId); if (!s) return false;
+  let file;
+  try { setStatus('Dropbox: «' + entry.name + '» wird geladen …', 'saving'); file = await dbxDownload(entry); }
+  catch (e) { fail('Dropbox-Download fehlgeschlagen', e); return false; }
+  const semi = detectSemitones(entry.name);
+  const r = await runBackingImport(songId, file, { name: stdTrackName(songFull(s), semi) + '_Instrumental', semi, ext: audioExtOf(file), dir: null, extra: { dbx: entry.id } });
+  if (!r) return false;
+  addLink(songId, { type: 'dbx', mediaId: entry.id, url: dbxWebUrl(entry), title: 'Instrumental – ' + entry.name, kind: 'karaoke' });
+  return true;
+}
+async function dbxEnsureReady() {
+  if (!CONFIG.DROPBOX_APP_KEY) { toast('Zuerst in den Einstellungen den Dropbox App key eintragen.', 4000); return false; }
+  if (!dbxConnected()) { toast('Zuerst in den Einstellungen bei Dropbox anmelden.', 4000); return false; }
+  return await requireOnline('Dropbox');
+}
+// Gesamten Ordner abgleichen: Vorschau → bestätigen → importieren
+async function dbxSyncDialog() {
+  if (!(await dbxEnsureReady())) return;
+  setStatus('Dropbox-Ordner wird gelesen …', 'saving');
+  let entries; try { entries = await dbxListAudio(); } catch (e) { fail('Dropbox', e); toast(e.message, 5000); return; }
+  setStatus('', 'ok');
+  const res = dbxMatch(entries), fresh = res.filter(r => !dbxHas(r.entry)), done = res.length - fresh.length;
+  const hit = fresh.filter(r => r.song), miss = fresh.filter(r => !r.song);
+  const checks = hit.map(r => h('input', { type: 'checkbox', checked: true }));
+  const body = h('div', { class: 'dbx-sync' },
+    h('div', { class: 'sub', text: entries.length + ' Audio-Dateien im Ordner · ' + done + ' schon zugeordnet · ' + hit.length + ' neu zuordenbar · ' + miss.length + ' ohne passendes Lied' }));
+  hit.forEach((r, i) => body.append(h('label', { class: 'pick-row' }, checks[i],
+    h('div', { class: 'mid' }, h('div', { class: 'name', text: r.entry.name }), h('div', { class: 'sub', text: '→ ' + songFull(r.song) })))));
+  if (miss.length) body.append(h('div', { class: 'sub', style: 'padding:8px 6px 2px; font-weight:600;', text: 'Ohne Zuordnung (von Hand im Song unter «Verknüpfungen» wählen)' }),
+    h('div', { class: 'sub', style: 'padding:0 6px;', text: miss.map(r => r.entry.name).join(' · ') }));
+  openModal({ title: '📦 Dropbox-Ordner abgleichen', body, wide: true, buttons: [{ label: 'Abbrechen' }, hit.length ? { label: 'Zuordnen & importieren', primary: true, fn: async () => {
+    let ok = 0, bad = 0;
+    for (let i = 0; i < hit.length; i++) { if (!checks[i].checked) continue; (await dbxImport(hit[i].song.id, hit[i].entry)) ? ok++ : bad++; }
+    toast(ok + ' Instrumental(s) zugeordnet' + (bad ? ', ' + bad + ' fehlgeschlagen' : '') + '.', 4000);
+    if (typeof renderSidebar === 'function') renderSidebar();
+  } } : null].filter(Boolean) });
+}
+// Einzelne Datei von Hand zu einem Song wählen
+async function dbxPickDialog(songId, onDone) {
+  if (!(await dbxEnsureReady())) return;
+  let entries; try { entries = await dbxListAudio(); } catch (e) { toast(e.message, 5000); return; }
+  const s = sget(songId), filter = h('input', { type: 'text', placeholder: 'Filtern …', style: 'width:100%; margin-bottom:6px;' }), list = h('div');
+  let m;
+  const draw = () => {
+    list.innerHTML = '';
+    const q = normSong(filter.value), tok = q ? q.split(' ') : [];
+    const rows = entries.filter(e => { const n = ' ' + normSong(e.name) + ' '; return tok.every(t => n.includes(t)); });
+    if (!rows.length) list.append(h('div', { class: 'empty-note', text: 'Keine Datei gefunden.' }));
+    rows.slice(0, 200).forEach(e => list.append(h('div', { class: 'pick-row', onclick: async () => {
+      m.close(); if (await dbxImport(songId, e)) { toast('«' + e.name + '» zugeordnet.'); if (onDone) onDone(); }
+    } }, h('span', { class: 'type-icon', text: dbxHas(e) ? '✓' : '🎵' }), h('div', { class: 'mid' }, h('div', { class: 'name', text: e.name })))));
+  };
+  filter.addEventListener('input', draw);
+  m = openModal({ title: '📦 Aus Dropbox wählen – «' + s.n + '»', body: [filter, list], wide: true, buttons: [{ label: 'Schliessen' }] });
+  const f = normSong(s.n); filter.value = f; draw(); if (!list.querySelector('.name')) { filter.value = ''; draw(); }
 }
 
 // --- Abschnitt «x-minus.pro» in den Verknüpfungen ---------------------------------------------
@@ -10506,6 +10679,8 @@ function xmSection(s, list, linkRow, redraw) {
   inp.addEventListener('change', () => { const f = inp.files[0]; inp.value = ''; if (f) importBackingDialog(s.id, f, redraw); });
   wrap.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => inp.click() },
     h('span', { text: '⇩' }), h('span', { text: 'Heruntergeladenen Track als Backing-Track importieren …' }), inp));
+  wrap.append(h('div', { class: 'pick-row', style: 'color:var(--accent);', onclick: () => dbxPickDialog(s.id, redraw) },
+    h('span', { text: '📦' }), h('span', { text: 'Aus Dropbox wählen …' })));
   if (!list.length && !songAudio(s.id, 'backing').length) wrap.append(h('div', { class: 'empty-note', text: 'Tipp: Die Seite des Tracks bei x-minus.pro kannst du unten als Link einfügen – dann öffnet sie sich hier direkt. Importierte Tracks erscheinen ebenfalls hier.' }));
   return wrap;
 }

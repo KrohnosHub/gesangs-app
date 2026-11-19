@@ -34,6 +34,12 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.59.0 – Dropbox: Instrumentals der Gesangslehrerin automatisch zuordnen
+- Neu in ⚙ Einstellungen: Dropbox-Anmeldung (OAuth/PKCE direkt in der App; nur der «App key» einer eigenen kostenlosen Dropbox-App nötig, gilt via library.json auf allen Geräten) und Ordnername (Standard «Matthias Krohn - Gesangsunterricht»)
+- «Ordner abgleichen»: liest die Audio-Dateien, ordnet sie über Titel/Interpret im Dateinamen den Liedern zu (Vorschau mit Abwahl, nicht Zuordenbares wird aufgelistet), kopiert sie als Backing-Track ins eigene Drive und legt die Verknüpfung «Instrumental» (📦, Link auf die Dropbox-Datei) an; bereits importierte Dateien werden übersprungen
+- Manuell: im Song unter Verknüpfungen › «Aus Dropbox wählen …»
+- Transposition (z. B. «_-2») wird aus dem Dateinamen erkannt; CSP um api.dropboxapi.com und content.dropboxapi.com ergänzt
+
 ### v2.58.0 – «Neuer Song»: Original & Karaoke sofort verknüpft
 - Auch beim normalen Anlegen eines Songs läuft die automatische Suche nach Original- und Karaoke-Verknüpfungen jetzt gleich im Hintergrund (nicht erst beim ersten Öffnen des Verknüpfungen-Dialogs). Gleiche Regeln wie bei Songs aus den Vorschlägen.
 
