@@ -34,6 +34,9 @@ In `index.html` oben im `CONFIG`-Block steht die `CLIENT_ID` (OAuth-Client-Typ �
 
 ## Änderungslog
 
+### v2.60.0 – Dropbox: Hinweis auf neue Dateien beim Start
+- Beim App-Start (verbunden, online, bei Google angemeldet) prüft die App den Dropbox-Ordner; neue, noch nicht importierte Dateien werden in einem Pop-up gemeldet, mit Knopf «Abgleichen & verknüpfen …» (öffnet den Abgleich mit Vorschau). Jede Datei wird nur einmal gemeldet
+
 ### v2.59.1 – Dropbox: App key wird geprüft
 - Ein offensichtlich falscher App key (z. B. die eingefügte Weiterleitungs-URL) wird beim Speichern/Anmelden abgewiesen, statt eine Dropbox-Fehlerseite zu öffnen
 

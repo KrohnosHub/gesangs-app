@@ -4,7 +4,7 @@ module.exports = async () => {
   const { test, eq, ok } = T;
   const b = await launch(); const D = { width: 1280, height: 800 };
   const setup = (pg) => pg.evaluate(() => {
-    CONFIG.DROPBOX_APP_KEY = 'appkey'; lsSet('dbx_rt', 'refresh');
+    CONFIG.DROPBOX_APP_KEY = 'appkey12345'; lsSet('dbx_rt', 'refresh');
     window.__dbx = { at: 'tok', exp: Date.now() + 3600e3 };
     lib.songs.s1 = newSong('Oceandeep', 'Beast in Black'); lib.songs.s2 = newSong('Hello', 'Adele'); lib.songs.s3 = newSong('Hello Again', 'Foo');
     window.__imp = []; window.requireOnline = async () => true;
@@ -65,6 +65,16 @@ module.exports = async () => {
       eq(await pg.evaluate(() => [dbxKeyOk('https://krohnoshub.github.io/gesangs-app/'), dbxKeyOk('c138jydva0ccqek'), dbxKeyOk('')]), [false, true, false]);
       await pg.evaluate(() => { CONFIG.DROPBOX_APP_KEY = 'https://x.io/'; dbxLogin(); }); await pg.waitForTimeout(300);
       ok(await pg.evaluate(() => !location.href.includes('dropbox.com')), 'keine Weiterleitung');
+      eq(pg.errs, []); await pg.context().close();
+    });
+    await test('Dropbox: Start-Check meldet neue Dateien einmalig, Knopf öffnet Abgleich', async () => {
+      const pg = await open(b, D, { logs: false }); await setup(pg);
+      await pg.evaluate(() => { accessToken = 't'; tokenExpiry = Date.now() + 36e5; window.__dbxWait = 0; window.__dbxChecked = false; dbxStartupCheck(); });
+      await pg.waitForSelector('text=Neues in Dropbox');
+      ok(await pg.evaluate(() => document.querySelector('.modal').textContent.includes('3 neue Dateien') && document.querySelector('.modal').textContent.includes('2 davon')), 'Anzahl');
+      await pg.click('text=Abgleichen & verknüpfen'); await pg.waitForSelector('text=Zuordnen & importieren');
+      await pg.evaluate(() => { document.querySelectorAll('.modal-bg').forEach(e => e.remove()); window.__dbxChecked = false; dbxStartupCheck(); }); await pg.waitForTimeout(500);
+      ok(await pg.evaluate(() => !document.querySelector('.modal h3') || !document.querySelector('.modal h3').textContent.includes('Neues in Dropbox')), 'nicht erneut gemeldet');
       eq(pg.errs, []); await pg.context().close();
     });
   } finally { await b.close(); }

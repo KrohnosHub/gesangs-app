@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-aZLZjQGQSu+qdSuF733DEYh2wyno8prrEH8/eEncqJ4=' 'sha256-PFa+0wlAdhz3+19K7L83AYx3LhId/sBvzwbiUh3DqxE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com https://api.dropboxapi.com https://content.dropboxapi.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-aZLZjQGQSu+qdSuF733DEYh2wyno8prrEH8/eEncqJ4=' 'sha256-wr5CaMUyj2F7nxfGbmvLbkR/+05kH5C2Rgs5Cpd6CYE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com https://api.dropboxapi.com https://content.dropboxapi.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -923,7 +923,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.59.1';
+const APP_VERSION = '2.60.0';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -5417,6 +5417,7 @@ window.addEventListener('online', () => { loadGsi(); });
   await loadGsi();
   updateAuthBtn(); updateSyncState();
   trySilentToken();
+  setTimeout(() => { dbxStartupCheck().catch(() => {}); }, 3000);
   if (!tokenValid() && haveLocal && isOnline()) setStatus('Nicht angemeldet – alles lokal verfügbar', '');
 })();
 
@@ -10612,6 +10613,27 @@ async function dbxEnsureReady() {
   if (!CONFIG.DROPBOX_APP_KEY) { toast('Zuerst in den Einstellungen den Dropbox App key eintragen.', 4000); return false; }
   if (!dbxConnected()) { toast('Zuerst in den Einstellungen bei Dropbox anmelden.', 4000); return false; }
   return await requireOnline('Dropbox');
+}
+// Beim Start (ab v2.60.0): gibt es neue Audio-Dateien im Dropbox-Ordner? → Hinweis mit direktem Abgleich.
+// Pro Datei nur einmal gemeldet (dbx_seen), auch bei «Später»; im Abgleich-Dialog bleiben sie weiterhin wählbar.
+async function dbxStartupCheck() {
+  if (window.__dbxChecked || !dbxKeyOk(CONFIG.DROPBOX_APP_KEY) || !dbxConnected() || !isOnline()) return;
+  window.__dbxChecked = true;
+  for (let i = 0; i < 15 && !tokenValid(); i++) await new Promise(r => setTimeout(r, 2000));
+  if (!tokenValid()) return;
+  await new Promise(r => setTimeout(r, window.__dbxWait == null ? 4000 : window.__dbxWait));       // Bibliothek-Sync abwarten (bereits importierte erkennen)
+  let entries; try { entries = await dbxListAudio(); } catch (e) { return; }                      // still: kein Netz/Token → nichts melden
+  let seen = []; try { seen = JSON.parse(lsGet('dbx_seen') || '[]'); } catch (e) {}
+  const fresh = entries.filter(e => !dbxHas(e) && !seen.includes(e.id));
+  if (!fresh.length) return;
+  const mark = () => lsSet('dbx_seen', JSON.stringify(seen.concat(fresh.map(e => e.id)).slice(-2000)));
+  const nm = dbxMatch(fresh).filter(r => r.song).length;
+  const body = h('div', {},
+    h('div', { text: fresh.length + (fresh.length === 1 ? ' neue Datei' : ' neue Dateien') + ' im Dropbox-Ordner «' + dbxFolderName() + '»' + (nm ? ' – ' + nm + ' davon einem Lied zuordenbar.' : '.') }),
+    h('div', { class: 'sub', style: 'margin-top:6px;', text: fresh.slice(0, 5).map(e => e.name).join(' · ') + (fresh.length > 5 ? ' · …' : '') }));
+  openModal({ title: '📦 Neues in Dropbox', body, buttons: [
+    { label: 'Später', fn: mark },
+    { label: 'Abgleichen & verknüpfen …', primary: true, fn: () => { mark(); dbxSyncDialog(); } }] });
 }
 // Gesamten Ordner abgleichen: Vorschau → bestätigen → importieren
 async function dbxSyncDialog() {
