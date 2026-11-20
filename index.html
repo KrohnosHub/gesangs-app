@@ -7,7 +7,7 @@
      die fertige Policy ersetzt (inkl. sha256-Hashes der beiden Inline-Skript-Bloecke dieser Datei --
      aendert sich also bei jedem Build automatisch mit). Nur per Meta-Tag lieferbare Direktiven; einige
      (z. B. frame-ancestors) funktionieren nur per HTTP-Header und werden hier bewusst weggelassen. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-aZLZjQGQSu+qdSuF733DEYh2wyno8prrEH8/eEncqJ4=' 'sha256-lktcY372kM3AKqv0xif73URouIqMjHTHGqmSh/k8azs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com https://api.dropboxapi.com https://content.dropboxapi.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://accounts.google.com https://www.youtube.com https://open.spotify.com 'sha256-aZLZjQGQSu+qdSuF733DEYh2wyno8prrEH8/eEncqJ4=' 'sha256-PFa+0wlAdhz3+19K7L83AYx3LhId/sBvzwbiUh3DqxE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://accounts.spotify.com https://api.spotify.com https://api.lyrics.ovh https://lrclib.net https://ws.audioscrobbler.com https://musicbrainz.org https://itunes.apple.com https://api.dropboxapi.com https://content.dropboxapi.com blob: data:; frame-src https://www.youtube.com https://open.spotify.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#7a2e3a">
 <meta name="color-scheme" content="light dark">
@@ -923,7 +923,7 @@ for (const C of [Map, WeakMap]) {
 // ---------------------------------------------------------------
 // Konstanten / Helfer
 // ---------------------------------------------------------------
-const APP_VERSION = '2.59.0';
+const APP_VERSION = '2.59.1';
 const REF_W = 900;              // Strichstärke "3" entspricht 3 px auf einer 900 px breiten Seite
 const LEGACY_REF_W = 900;       // Annahme für Annotationen im alten Pixel-Format (v1)
 const MIN_ZOOM = 0.4, MAX_ZOOM = 5;
@@ -5869,11 +5869,11 @@ function openSettingsDialog() {
   const dbInput = h('input', { type: 'text', placeholder: 'Dropbox App key', value: CONFIG.DROPBOX_APP_KEY || '', style: 'width:100%; margin-bottom:6px;' });
   const dbFolder = h('input', { type: 'text', placeholder: 'Ordnername in Dropbox', value: dbxFolderName(), style: 'width:100%; margin-bottom:6px;' });
   const dbRow = h('div', { style: 'display:flex; gap:8px; flex-wrap:wrap;' });
-  const saveDbx = () => { const k = dbInput.value.trim(); CONFIG.DROPBOX_APP_KEY = k; if (k) lsSet('dbx_key', k); else lsDel('dbx_key'); if (k !== ((lib.cfg && lib.cfg.dk) || '')) libCfgSet({ dk: k }); const f = dbFolder.value.trim(); if (f && f !== 'Matthias Krohn - Gesangsunterricht') lsSet('dbx_folder', f); else lsDel('dbx_folder'); };
+  const saveDbx = () => { const k = dbInput.value.trim(); if (k && !dbxKeyOk(k)) { toast('Dropbox App key ungültig (nur Buchstaben/Ziffern, z. B. «c138jydva0ccqek» – nicht die Weiterleitungs-URL). Nicht gespeichert.', 5500); return false; } CONFIG.DROPBOX_APP_KEY = k; if (k) lsSet('dbx_key', k); else lsDel('dbx_key'); if (k !== ((lib.cfg && lib.cfg.dk) || '')) libCfgSet({ dk: k }); const f = dbFolder.value.trim(); if (f && f !== 'Matthias Krohn - Gesangsunterricht') lsSet('dbx_folder', f); else lsDel('dbx_folder'); return true; };
   if (dbxConnected()) dbRow.append(h('span', { class: 'sub', text: '✓ mit Dropbox verbunden' }),
-    h('button', { text: '📦 Ordner abgleichen …', onclick: () => { saveDbx(); dbxSyncDialog(); } }),
+    h('button', { text: '📦 Ordner abgleichen …', onclick: () => { if (saveDbx()) dbxSyncDialog(); } }),
     h('button', { text: 'Trennen', onclick: () => { dbxLogout(); toast('Dropbox getrennt.'); } }));
-  else dbRow.append(h('button', { text: '📦 Bei Dropbox anmelden', onclick: () => { saveDbx(); dbxLogin(); } }));
+  else dbRow.append(h('button', { text: '📦 Bei Dropbox anmelden', onclick: () => { if (saveDbx()) dbxLogin(); } }));
   body.append(h('div', { style: 'padding:0 6px 9px;' }, dbInput, dbFolder, dbRow));
   if (!SIM) {
     const devCb = h('input', { type: 'checkbox', checked: rawGet('gapp_dev') === '1' || null });
@@ -10510,12 +10510,14 @@ async function runBackingImport(songId, file, { name, semi = 0, ext, dir = null,
 // gegen Doppelimport) + Verknüpfung «Instrumental» (type 'dbx') auf die Datei in Dropbox.
 // ---------------------------------------------------------------
 function dbxFolderName() { return lsGet('dbx_folder') || 'Matthias Krohn - Gesangsunterricht'; }
+const dbxKeyOk = (k) => /^[a-z0-9]{8,24}$/i.test(String(k || ''));   // App key: nur Buchstaben/Ziffern (z. B. versehentlich eingefügte URL abfangen)
 function dbxConnected() { return !!lsGet('dbx_rt'); }
 function dbxRedirectUri() { return location.origin + location.pathname; }
 function dbxB64url(buf) { let s = ''; new Uint8Array(buf).forEach(b => { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 async function dbxLogin() {
   const key = CONFIG.DROPBOX_APP_KEY;
   if (!key) { toast('Bitte zuerst den Dropbox App key in den Einstellungen eintragen und speichern.', 4000); return; }
+  if (!dbxKeyOk(key)) { toast('Der Dropbox App key sieht ungültig aus (nur Buchstaben und Ziffern, kein Link). Bitte in den Einstellungen korrigieren.', 5000); return; }
   const ver = dbxB64url(crypto.getRandomValues(new Uint8Array(48))), st = dbxB64url(crypto.getRandomValues(new Uint8Array(12)));
   const chal = dbxB64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ver)));
   lsSet('dbx_pk', JSON.stringify({ v: ver, s: st }));

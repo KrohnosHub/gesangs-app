@@ -60,5 +60,12 @@ module.exports = async () => {
       eq(r.rt, 'r1'); eq(r.q, ''); ok(r.body.includes('code_verifier=ver') && r.body.includes('grant_type=authorization_code') && r.body.includes('client_id=appkey'), r.body);
       eq(pg.errs, []); await pg.context().close();
     });
+    await test('Dropbox: ungültiger App key (URL) wird abgewiesen', async () => {
+      const pg = await open(b, D, { logs: false });
+      eq(await pg.evaluate(() => [dbxKeyOk('https://krohnoshub.github.io/gesangs-app/'), dbxKeyOk('c138jydva0ccqek'), dbxKeyOk('')]), [false, true, false]);
+      await pg.evaluate(() => { CONFIG.DROPBOX_APP_KEY = 'https://x.io/'; dbxLogin(); }); await pg.waitForTimeout(300);
+      ok(await pg.evaluate(() => !location.href.includes('dropbox.com')), 'keine Weiterleitung');
+      eq(pg.errs, []); await pg.context().close();
+    });
   } finally { await b.close(); }
 };
